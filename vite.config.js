@@ -38,4 +38,17 @@ export default defineConfig({
             typeAware: true,
         },
     },
+    fmt: {
+        printWidth: 120,
+        tabWidth: 4,
+        singleQuote: true,
+        semi: true,
+        singleAttributePerLine: false,
+        htmlWhitespaceSensitivity: 'css',
+        ignorePatterns: ['.github/**', 'composer.json', 'resources/js/components/ui/*', 'resources/views/mail/*'],
+        sortTailwindcss: {
+            functions: ['clsx', 'cn'],
+            stylesheet: 'resources/css/app.css',
+        },
+    },
 });
