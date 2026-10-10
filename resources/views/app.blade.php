@@ -7,10 +7,15 @@
     <title>Tensura</title>
 
     @fonts
-    @vite (['resources/css/app.css'])
+    @viteReactRefresh
+
+    @vite([ 'resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx" ])
+    <x-inertia::head>
+        <title>{{ config('app.name', 'Tensura') }}</title>
+    </x-inertia::head>
 </head>
 
 <body class="bg-gray-50 font-sans text-gray-900 antialiased">
-    <h1>Welcome to My Fresh App</h1>
+    <x-inertia::app id="tensura-root" />
 </body>
 </html>

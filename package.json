@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vp build",
+        "build:ssr": "vp build && vp build --ssr",
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
@@ -12,9 +13,21 @@
         "p:format": "prettier --write .",
         "p:check": "prettier --check ."
     },
+    "dependencies": {
+        "@inertiajs/react": "^3.8.0",
+        "@inertiajs/vite": "^3.8.0",
+        "@vitejs/plugin-react": "^6.1.2",
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0",
+        "typescript": "^7.0.2"
+    },
     "devDependencies": {
         "@prettier/plugin-php": "^0.25.0",
+        "@rolldown/plugin-babel": "^0.2.4",
         "@tailwindcss/vite": "^4.3.3",
+        "@types/node": "^24.19.1",
+        "@types/react": "^19.3.0",
+        "babel-plugin-react-compiler": "^1.0.0",
         "concurrently": "^10.0.5",
         "laravel-vite-plugin": "^3.2.0",
         "prettier": "^3.9.9",
