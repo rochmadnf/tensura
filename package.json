@@ -3,10 +3,13 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite",
-        "format": "prettier --write .",
-        "check": "prettier --check ."
+        "build": "vp build",
+        "dev": "vp dev",
+        "check": "vp check",
+        "check:fix": "vp check --fix",
+        "types:check": "tsc --noEmit",
+        "p:format": "prettier --write .",
+        "p:check": "prettier --check ."
     },
     "devDependencies": {
         "@prettier/plugin-php": "^0.25.0",
@@ -18,9 +21,11 @@
         "prettier-plugin-organize-imports": "^4.3.0",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "tailwindcss": "^4.3.3",
-        "vite": "^8.3.3"
+        "vite": "catalog:",
+        "vite-plus": "catalog:"
     },
     "optionalDependencies": {
-        "@laravel/multiplex": "^0.4.5"
+        "@laravel/multiplex": "^0.4.5",
+        "fontaine": "~0.8.2"
     }
 }

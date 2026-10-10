@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Rochmad Nurul Fahmi" />
     <title>Tensura</title>
+
+    @fonts
+    @vite (['resources/css/app.css'])
 </head>
 
 <body class="bg-gray-50 font-sans text-gray-900 antialiased">
