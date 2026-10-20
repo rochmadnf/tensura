@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\AuthenticatedUserResource;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,7 +43,7 @@ class HandleInertiaRequests extends Middleware
                 'version' => config('app.version'),
             ],
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? AuthenticatedUserResource::make($request->user()) : null,
             ],
         ];
     }
