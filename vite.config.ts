@@ -1,21 +1,16 @@
 import { defineConfig, lazyPlugins } from 'vite-plus';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import inertia from '@inertiajs/vite';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 
 export default defineConfig({
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
-            fonts: [
-                bunny('Inter', {
-                    weights: [400, 500, 600],
-                }),
-            ],
         }),
         inertia(),
         react(),
@@ -23,6 +18,12 @@ export default defineConfig({
             presets: [reactCompilerPreset()],
         }),
         tailwindcss(),
+        wayfinder({
+            routes: true,
+            actions: false,
+            formVariants: false,
+            command: 'php artisan wayfinder:generate',
+        }),
     ]),
     server: {
         watch: {

@@ -6,7 +6,6 @@
     <meta name="author" content="Rochmad Nurul Fahmi" />
     <title>Tensura</title>
 
-    @fonts
     @viteReactRefresh
 
     @vite([ 'resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx" ])

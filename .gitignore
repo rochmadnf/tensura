@@ -28,3 +28,12 @@ Thumbs.db
 
 composer.lock
 pnpm-lock.yaml
+
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+
+.claude
+.agents
+.mcp.json
+boost.json

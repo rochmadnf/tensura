@@ -1,6 +1,11 @@
-import { Head } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { logout } from '@/routes';
+import login from '@/routes/login';
+import { Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Welcome() {
+    const [test, setTest] = useState<boolean>(false);
     return (
         <>
             <Head>
@@ -8,7 +13,14 @@ export default function Welcome() {
             </Head>
 
             <div>
-                <h1 className="text-lg font-bold text-blue-500">Hello World! from fresh app</h1>
+                {test ? (
+                    <h1 className="text-lg font-bold text-blue-500">Hello World! from fresh app</h1>
+                ) : (
+                    <p>test: false</p>
+                )}
+                <button onClick={() => setTest(!test)} className="rounded-md bg-blue-500 px-4 py-2">
+                    Klik Me
+                </button>
             </div>
         </>
     );
