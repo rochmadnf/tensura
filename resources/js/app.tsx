@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/react';
 import AuthLayout from '@/layouts/auth-layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import AppLayout from '@/layouts/app-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -14,11 +15,11 @@ createInertiaApp({
                 return AuthLayout;
 
             default:
-                return null;
+                return AppLayout;
         }
     },
     withApp(app) {
-        return <TooltipProvider>{app}</TooltipProvider>;
+        return <TooltipProvider delay={0}>{app}</TooltipProvider>;
     },
     progress: {
         color: '#2b7fff',
