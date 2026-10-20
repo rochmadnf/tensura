@@ -38,6 +38,7 @@ export default defineConfig({
         },
     },
     lint: {
+        jsPlugins: ['eslint-plugin-unused-imports'],
         ignorePatterns: [
             'vendor/**',
             'node_modules/**',
@@ -53,6 +54,10 @@ export default defineConfig({
             denyWarnings: true,
             typeAware: true,
         },
+        rules: {
+            'unused-imports/no-unused-imports': 'error',
+            'no-unused-vars': 'error',
+        },
     },
     fmt: {
         printWidth: 120,
@@ -63,7 +68,7 @@ export default defineConfig({
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: ['.github/**', 'composer.json', 'resources/js/components/ui/*', 'resources/views/mail/*'],
         sortTailwindcss: {
-            functions: ['clsx', 'cn'],
+            functions: ['clsx', 'cn', 'cva'],
             stylesheet: 'resources/css/app.css',
         },
     },
