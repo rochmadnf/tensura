@@ -1,11 +1,10 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')
-    ->get('/', function () {
-        return inertia('welcome');
-    })
-    ->name('dashboard');
+Route::middleware('auth')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+});
 
 require __DIR__ . '/auth.php';

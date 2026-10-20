@@ -1,7 +1,4 @@
-import { Button } from '@/components/ui/button';
-import { logout } from '@/routes';
-import login from '@/routes/login';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Welcome() {
@@ -25,3 +22,7 @@ export default function Welcome() {
         </>
     );
 }
+
+Welcome.layout = {
+    pageName: 'Dashboard',
+};
