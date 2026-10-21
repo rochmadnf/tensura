@@ -23,6 +23,7 @@ import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 import { dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
+import ln from '@/routes/ln';
 
 const navigations = {
     navMain: [
@@ -46,7 +47,7 @@ const navigations = {
             {
                 id: 'a3063dab-44a6-4de2-9c93-8fa84742e3da',
                 name: 'Penomoran Surat',
-                url: '#',
+                url: ln.index().url,
                 icon: <HugeiconsIcon icon={InputNumericIcon} strokeWidth={2} />,
             },
             {

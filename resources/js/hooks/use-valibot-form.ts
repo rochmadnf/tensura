@@ -2,7 +2,7 @@ import { useForm } from '@inertiajs/react';
 import type { ChangeEvent } from 'react';
 import * as v from 'valibot';
 
-type Method = 'post' | 'put' | 'patch' | 'delete';
+type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 type SubmitOptions = Parameters<ReturnType<typeof useForm>['post']>[1];
 
