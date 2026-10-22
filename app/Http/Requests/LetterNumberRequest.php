@@ -24,7 +24,6 @@ class LetterNumberRequest extends FormRequest
 
     public function rules(): array
     {
-
         $attributes = [
             'classification_name' => ['bail', 'required', 'string', 'min:3'],
             'classification_code' => ['bail', 'required', 'string', 'digits:3', Rule::unique('letter_numbers')],

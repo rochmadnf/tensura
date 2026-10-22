@@ -1,19 +1,19 @@
-import { GooeyToaster as GooeyToasterPrimitive, gooeyToast } from "goey-toast"
-import type { GooeyToasterProps } from "goey-toast"
-import "goey-toast/styles.css"
+import { GooeyToaster as GooeyToasterPrimitive, gooeyToast } from 'goey-toast';
+import type { GooeyToasterProps } from 'goey-toast';
+import 'goey-toast/styles.css';
 
-export { gooeyToast }
-export type { GooeyToasterProps }
+export { gooeyToast };
+export type { GooeyToasterProps };
 export type {
-  GooeyToastOptions,
-  GooeyPromiseData,
-  GooeyToastAction,
-  GooeyToastClassNames,
-  GooeyToastTimings,
-} from "goey-toast"
+    GooeyToastOptions,
+    GooeyPromiseData,
+    GooeyToastAction,
+    GooeyToastClassNames,
+    GooeyToastTimings,
+} from 'goey-toast';
 
 function GooeyToaster(props: GooeyToasterProps) {
-  return <GooeyToasterPrimitive position="bottom-right" {...props} />
+    return <GooeyToasterPrimitive position="bottom-right" {...props} />;
 }
 
-export { GooeyToaster }
+export { GooeyToaster };

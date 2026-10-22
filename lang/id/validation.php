@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     // 'accepted'        => '',
     // 'accepted_if'     => '',
     // 'active_url'      => '',
@@ -107,7 +106,8 @@ return [
         'mixed' => ':Attribute harus berisi setidaknya satu huruf besar dan satu huruf kecil.',
         'numbers' => ':Attribute harus berisi setidaknya satu angka.',
         'symbols' => ':Attribute harus berisi setidaknya satu simbol.',
-        'uncompromised' => ':Attribute yang dimasukkan terindikasi dalam kebocoran data. Mohon masukkan :attribute yang berbeda.',
+        'uncompromised' =>
+            ':Attribute yang dimasukkan terindikasi dalam kebocoran data. Mohon masukkan :attribute yang berbeda.',
     ],
     // 'present'              => '',
     // 'prohibited'           => '',
