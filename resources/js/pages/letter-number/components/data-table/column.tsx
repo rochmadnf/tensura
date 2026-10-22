@@ -2,24 +2,36 @@ import { createColumnHelper } from '@tanstack/react-table';
 
 import { type DataTableFeatures } from './features';
 
-export type Payment = {
+export type LetterNumberColumns = {
     id: string;
-    amount: number;
-    status: 'pending' | 'processing' | 'success' | 'failed';
-    email: string;
+    name: string;
+    code: string;
+    page_number: number;
+    sequence_number: number;
 };
 
-// Use `accessor` for data columns and `display` for columns without one.
-const columnHelper = createColumnHelper<DataTableFeatures, Payment>();
+const columnHelper = createColumnHelper<DataTableFeatures, LetterNumberColumns>();
 
 export const columns = columnHelper.columns([
-    columnHelper.accessor('status', {
-        header: 'Status',
+    columnHelper.display({
+        id: 'no',
+        header: '#',
+        cell: ({ row, table }) => {
+            const { pageIndex, pageSize } = table.store.state.pagination;
+
+            return pageIndex * pageSize + row.index + 1;
+        },
     }),
-    columnHelper.accessor('email', {
-        header: 'Email',
+    columnHelper.accessor('name', {
+        header: 'Nama Klasifikasi',
     }),
-    columnHelper.accessor('amount', {
-        header: 'Amount',
+    columnHelper.accessor('code', {
+        header: 'Kode Klasifikasi',
+    }),
+    columnHelper.accessor('page_number', {
+        header: 'Nomor Halaman',
+    }),
+    columnHelper.accessor('sequence_number', {
+        header: 'Nomor Urut',
     }),
 ]);

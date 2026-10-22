@@ -1,4 +1,4 @@
-import { JSXElementConstructor, ReactElement, SubmitEventHandler } from 'react';
+import { JSXElementConstructor, ReactElement, ReactNode, SubmitEventHandler } from 'react';
 import { Field, FieldError, FieldGroup } from './ui/field';
 import { Input } from './ui/input';
 import { useValibotForm } from '@/hooks/use-valibot-form';
@@ -14,9 +14,11 @@ export type SectionDataProps = {
         | ComponentRenderFn<HTMLProps, ButtonState>
         | undefined;
     textButton?: string | undefined;
+    isNativeButton?: boolean;
+    dataTable: ReactNode;
 };
 
-export function SectionData({ renderButton, textButton }: SectionDataProps) {
+export function SectionData({ dataTable, renderButton, textButton, isNativeButton = false }: SectionDataProps) {
     const { form, submit, bind } = useValibotForm(InputSearchSchema, {
         keyword: '',
     });
@@ -28,8 +30,8 @@ export function SectionData({ renderButton, textButton }: SectionDataProps) {
     };
 
     return (
-        <section className="container mx-auto">
-            <div className="flex flex-row items-center gap-4">
+        <section className="container mx-auto space-y-6">
+            <div className="flex flex-row gap-4">
                 <form onSubmit={handleSearch} noValidate className="w-full flex-1">
                     <FieldGroup>
                         <Field data-invalid={!!form.errors.keyword}>
@@ -39,7 +41,6 @@ export function SectionData({ renderButton, textButton }: SectionDataProps) {
                                     type="text"
                                     className="w-full ps-20 pe-10.5 align-middle text-sm placeholder:text-sm"
                                     placeholder="Masukkan kata kunci..."
-                                    autoFocus
                                     autoComplete="keyword"
                                     tabIndex={1}
                                     {...bind('keyword')}
@@ -56,11 +57,12 @@ export function SectionData({ renderButton, textButton }: SectionDataProps) {
                     </FieldGroup>
                 </form>
 
-                <Button render={renderButton}>
+                <Button render={renderButton} nativeButton={isNativeButton}>
                     <HugeiconsIcon icon={PlusIcon} strokeWidth={2} />
                     {textButton ?? 'Tambah Data'}
                 </Button>
             </div>
+            {dataTable}
         </section>
     );
 }

@@ -1,31 +1,25 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { columns } from './components/data-table/column';
 import { DataTable } from './components/data-table';
 import { SectionData } from '@/components/section-data';
-import { dashboard } from '@/routes';
+import ln from '@/routes/ln';
 
 const pageName = 'Penomoran Surat';
 
 export default function LetterNumberIndex() {
+    const { resources } = usePage().props;
+
     return (
         <>
             <Head title={pageName}>
                 <meta name="description" content="Halaman untuk membuat referensi nomor surat" />
             </Head>
 
-            <div className="container mx-auto py-10">
-                <SectionData renderButton={<Link href={dashboard().url} />} />
-                <DataTable
-                    columns={columns}
-                    data={[
-                        {
-                            id: '728ed52f',
-                            amount: 100,
-                            status: 'pending',
-                            email: 'm@example.com',
-                        },
-                        // ...
-                    ]}
+            <div className="container mx-auto">
+                <SectionData
+                    renderButton={<Link href={ln.create().url} />}
+                    textButton="Nomor Baru"
+                    dataTable={<DataTable columns={columns} data={resources.data} meta={resources.meta} />}
                 />
             </div>
         </>
