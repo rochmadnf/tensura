@@ -34,5 +34,4 @@ pnpm-lock.yaml
 
 .claude
 .agents
-.mcp.json
-boost.json
+.github

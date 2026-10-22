@@ -8,3 +8,8 @@ peerDependencyRules:
         - vite
     allowedVersions:
         vite: '*'
+permissions:
+  '@tanstack/react-table':
+    skills: true
+  goey-toast:
+    skills: true
