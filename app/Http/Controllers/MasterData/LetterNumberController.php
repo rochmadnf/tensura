@@ -26,12 +26,12 @@ class LetterNumberController extends Controller
 
         $records = LetterNumber::query()
             ->when($keyword !== '', function (Builder $query) use ($keyword) {
-                $term = '%'.addcslashes($keyword, '\\%_').'%';
+                $term = '%' . addcslashes($keyword, '\\%_') . '%';
 
                 $query->where(
-                    fn (Builder $q) => $q
+                    fn(Builder $q) => $q
                         ->where('classification_name', 'like', $term)
-                        ->orWhere('classification_code', 'like', $term)
+                        ->orWhere('classification_code', 'like', $term),
                 );
             })
             ->paginate($perPage)
