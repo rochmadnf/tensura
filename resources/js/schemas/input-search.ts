@@ -1,12 +1,13 @@
+import { defineRequest } from '@/lib/request';
 import { object, pipe, string, trim, nonEmpty, minLength, InferInput } from 'valibot';
 
-export const InputSearchSchema = object({
-    keyword: pipe(
-        string(),
-        trim(),
-        nonEmpty('Kata kunci wajib diisi.'),
-        minLength(2, 'Kata kunci minimal 2 karakter.'),
-    ),
-});
+export const InputSearchSchema = defineRequest(
+    object({
+        keyword: pipe(string(), trim(), nonEmpty(), minLength(2)),
+    }),
+    {
+        keyword: 'Kata kunci',
+    },
+);
 
-export type InputSearchProps = InferInput<typeof InputSearchSchema>;
+export type InputSearchProps = InferInput<typeof InputSearchSchema.schema>;
