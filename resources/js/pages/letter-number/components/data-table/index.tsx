@@ -1,6 +1,8 @@
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useTableLoading } from '@/hooks/use-table-loading';
 import { cn } from '@/lib/utils';
 import { features, DataTableFeatures } from './features';
 import { DataTableFooter, type PaginationMeta } from './footer';
@@ -11,6 +13,8 @@ const columnClassName: Record<string, string> = {
     sequence_number: 'w-40 text-center',
 };
 
+const SKELETON_ROW_LIMIT = 10;
+
 interface DataTableProps<TData extends RowData> {
     columns: ColumnDef<DataTableFeatures, TData>[];
     data: TData[];
@@ -18,6 +22,9 @@ interface DataTableProps<TData extends RowData> {
 }
 
 export function DataTable<TData extends RowData>({ columns, data, meta }: DataTableProps<TData>) {
+    const isLoading = useTableLoading();
+    const skeletonRowCount = Math.min(meta.per_page, SKELETON_ROW_LIMIT);
+
     const table = useTable(
         {
             features,
@@ -33,7 +40,7 @@ export function DataTable<TData extends RowData>({ columns, data, meta }: DataTa
 
     return (
         <div className="space-y-4">
-            <div className="overflow-hidden rounded-lg border bg-card shadow-xs">
+            <div className="overflow-hidden rounded-lg border bg-card shadow-xs" aria-busy={isLoading}>
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -53,7 +60,26 @@ export function DataTable<TData extends RowData>({ columns, data, meta }: DataTa
                         ))}
                     </TableHeader>
                     <TableBody className="[&_tr:last-child]:border-0">
-                        {table.getRowModel().rows?.length ? (
+                        {isLoading ? (
+                            Array.from({ length: skeletonRowCount }, (_, rowIndex) => (
+                                <TableRow key={`skeleton-${rowIndex}`} className="hover:bg-transparent">
+                                    {table.getVisibleLeafColumns().map((column) => {
+                                        const className = columnClassName[column.id];
+
+                                        return (
+                                            <TableCell key={column.id} className={cn('px-4 py-3', className)}>
+                                                <Skeleton
+                                                    className={cn(
+                                                        'h-4',
+                                                        className?.includes('text-center') ? 'mx-auto w-8' : 'w-full',
+                                                    )}
+                                                />
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            ))
+                        ) : table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
                                 <TableRow
                                     key={row.id}
