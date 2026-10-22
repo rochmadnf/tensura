@@ -7,6 +7,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { PlusIcon, SearchIcon } from '@hugeicons/core-free-icons';
 import { Button } from './ui/button';
 import { ButtonState, ComponentRenderFn, HTMLProps } from '@base-ui/react';
+import { router } from '@inertiajs/react';
 
 export type SectionDataProps = {
     renderButton?:
@@ -16,17 +17,39 @@ export type SectionDataProps = {
     textButton?: string | undefined;
     isNativeButton?: boolean;
     dataTable: ReactNode;
+    searchUrl: string;
+    defaultKeyword?: string;
 };
 
-export function SectionData({ dataTable, renderButton, textButton, isNativeButton = false }: SectionDataProps) {
-    const { form, submit, bind } = useValibotForm(InputSearchSchema, {
-        keyword: '',
+export function SectionData({
+    dataTable,
+    renderButton,
+    textButton,
+    searchUrl,
+    defaultKeyword = '',
+    isNativeButton = false,
+}: SectionDataProps) {
+    const { form, bind } = useValibotForm(InputSearchSchema, {
+        keyword: defaultKeyword,
     });
 
     const handleSearch: SubmitEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
-        console.log(form.data);
-        submit('get', '/');
+
+        const keyword = String(form.data.keyword ?? '').trim();
+
+        // pertahankan query lain (mis. per_page), reset ke halaman 1
+        const params = new URLSearchParams(window.location.search);
+        params.delete('page');
+        params.delete('keyword');
+        if (keyword) params.set('keyword', keyword);
+
+        router.get(searchUrl, Object.fromEntries(params), {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: ['resources', 'filters'],
+        });
     };
 
     return (

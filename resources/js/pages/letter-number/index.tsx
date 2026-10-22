@@ -7,7 +7,7 @@ import ln from '@/routes/ln';
 const pageName = 'Penomoran Surat';
 
 export default function LetterNumberIndex() {
-    const { resources } = usePage().props;
+    const { resources, filters } = usePage().props;
 
     return (
         <>
@@ -19,6 +19,8 @@ export default function LetterNumberIndex() {
                 <SectionData
                     renderButton={<Link href={ln.create().url} />}
                     textButton="Nomor Baru"
+                    searchUrl={ln.index().url}
+                    defaultKeyword={filters.keyword}
                     dataTable={<DataTable columns={columns} data={resources.data} meta={resources.meta} />}
                 />
             </div>

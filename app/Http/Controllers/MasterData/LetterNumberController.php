@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LetterNumberRequest;
 use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
@@ -16,16 +17,29 @@ class LetterNumberController extends Controller
 
     public function index(Request $request): InertiaResponse
     {
-
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
-        ? $request->integer('per_page')
-        : 10;
+            ? $request->integer('per_page')
+            : 10;
 
-        $records = LetterNumberResource::collection(LetterNumber::query()->paginate($perPage)->withQueryString());
+        $keyword = trim($request->string('keyword')->toString());
+
+        $records = LetterNumber::query()
+            ->when($keyword !== '', function (Builder $query) use ($keyword) {
+                $term = '%'.addcslashes($keyword, '\\%_').'%';
+
+                $query->where(fn (Builder $q) => $q
+                    ->where('classification_name', 'like', $term)
+                    ->orWhere('classification_code', 'like', $term)
+                    ->orWhere('page_number', 'like', $term)
+                    ->orWhere('sequence_number', 'like', $term));
+            })
+            ->paginate($perPage)
+            ->withQueryString();
 
         return inertia('letter-number/index', [
             'page' => ['id' => $this->pageId],
-            'resources' => $records,
+            'filters' => ['keyword' => $keyword],
+            'resources' => LetterNumberResource::collection($records),
         ]);
     }
 
