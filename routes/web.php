@@ -11,7 +11,9 @@ Route::middleware('auth')->group(function () {
         ->prefix('letter-number')
         ->group(function () {
             Route::get('/', 'index')->name('ln.index');
+            Route::get('/create', 'create')->name('ln.create');
+            Route::post('/store', 'store')->name('ln.store');
         });
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

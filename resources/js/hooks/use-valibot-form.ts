@@ -1,12 +1,21 @@
 import { useForm } from '@inertiajs/react';
 import type { ChangeEvent } from 'react';
-import * as v from 'valibot';
+import type * as v from 'valibot';
 
 type Method = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 type SubmitOptions = Parameters<ReturnType<typeof useForm>['post']>[1];
 
 type FormSchema = v.GenericSchema<Record<string, any>>;
+
+type RequestLike<TSchema extends FormSchema> = {
+    schema: TSchema;
+    validate: (input: unknown) => {
+        success: boolean;
+        data?: unknown;
+        errors: Record<string, string[]>;
+    };
+};
 
 type LooseForm = {
     data: Record<string, unknown>;
@@ -17,20 +26,6 @@ type LooseForm = {
     transform: (callback: (data: any) => unknown) => void;
 } & Record<Method, (url: string, options?: SubmitOptions) => void>;
 
-function toErrors(issues: [v.BaseIssue<unknown>, ...v.BaseIssue<unknown>[]]) {
-    const errors: Record<string, string> = {};
-
-    for (const issue of issues) {
-        const path = v.getDotPath(issue);
-
-        if (path && !errors[path]) {
-            errors[path] = issue.message;
-        }
-    }
-
-    return errors;
-}
-
 function toInputValue(value: unknown): string {
     if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
         return String(value);
@@ -39,22 +34,27 @@ function toInputValue(value: unknown): string {
     return '';
 }
 
-export function useValibotForm<TSchema extends FormSchema>(schema: TSchema, initialValues: v.InferInput<TSchema>) {
+export function useValibotForm<TSchema extends FormSchema>(
+    request: RequestLike<TSchema>,
+    initialValues: v.InferInput<TSchema>,
+) {
     type Data = v.InferInput<TSchema>;
 
     const form = useForm<Data>(initialValues);
     const loose = form as unknown as LooseForm;
 
     const submit = (method: Method, url: string, options?: SubmitOptions) => {
-        const result = v.safeParse(schema, loose.data);
+        const result = request.validate(loose.data);
 
         if (!result.success) {
-            loose.setError(toErrors(result.issues));
+            loose.setError(
+                Object.fromEntries(Object.entries(result.errors).map(([key, messages]) => [key, messages[0]])),
+            );
             return false;
         }
 
         loose.clearErrors();
-        loose.transform(() => result.output);
+        loose.transform(() => result.data);
         loose[method](url, options);
 
         return true;
