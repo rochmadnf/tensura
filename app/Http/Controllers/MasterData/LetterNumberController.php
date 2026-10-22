@@ -22,6 +22,7 @@ class LetterNumberController extends Controller
             : 10;
 
         $keyword = trim($request->string('keyword')->toString());
+        $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
         $records = LetterNumber::query()
             ->when($keyword !== '', function (Builder $query) use ($keyword) {
