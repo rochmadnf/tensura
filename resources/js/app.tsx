@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import AuthLayout from '@/layouts/auth-layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
+import { GooeyToaster } from '@/components/ui/goey-toaster';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -19,7 +20,12 @@ createInertiaApp({
         }
     },
     withApp(app) {
-        return <TooltipProvider delay={0}>{app}</TooltipProvider>;
+        return (
+            <TooltipProvider delay={0}>
+                {app}
+                <GooeyToaster position="top-center" showTimestamp={false} />
+            </TooltipProvider>
+        );
     },
     progress: {
         color: '#2b7fff',
