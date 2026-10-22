@@ -4,7 +4,10 @@ import { Input } from '@/components/ui/input';
 import { useValibotForm } from '@/hooks/use-valibot-form';
 import login from '@/routes/login';
 import { LoginSchema } from '@/schemas/login';
+import { LoaderIcon, LockIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { Head } from '@inertiajs/react';
+import { cn } from 'cn';
 import { SubmitEventHandler } from 'react';
 
 export default function Login() {
@@ -52,6 +55,11 @@ export default function Login() {
                     </Field>
                     <Field>
                         <Button type="submit" tabIndex={3} disabled={form.processing}>
+                            <HugeiconsIcon
+                                icon={form.processing ? LoaderIcon : LockIcon}
+                                strokeWidth={2}
+                                className={cn(form.processing ? 'animate-spin' : null)}
+                            />
                             Login
                         </Button>
                     </Field>

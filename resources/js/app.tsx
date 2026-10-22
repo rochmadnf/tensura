@@ -3,6 +3,7 @@ import AuthLayout from '@/layouts/auth-layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
 import { GooeyToaster } from '@/components/ui/goey-toaster';
+import { PageLoadingOverlay } from '@/components/page-loading-overlay';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -24,6 +25,7 @@ createInertiaApp({
             <TooltipProvider delay={0}>
                 {app}
                 <GooeyToaster position="top-center" showTimestamp={false} />
+                <PageLoadingOverlay />
             </TooltipProvider>
         );
     },
