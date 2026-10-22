@@ -13,11 +13,12 @@ import {
     integer,
     toNumber,
     InferInput,
+    maxLength,
 } from 'valibot';
 
 export const LetterNumberSchema = defineRequest(
     object({
-        classification_name: pipe(string(), trim(), nonEmpty(), minLength(3)),
+        classification_name: pipe(string(), trim(), nonEmpty(), minLength(3), maxLength(100)),
         classification_code: pipe(
             string(),
             trim(),
