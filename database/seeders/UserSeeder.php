@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
             ],
         ])->each(function ($user) {
-            User::create($user);
+            User::updateOrCreate(['username' => $user['username']], $user);
         });
     }
 }
