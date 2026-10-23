@@ -17,6 +17,8 @@ import {
     InputNumericIcon,
     AiMail01Icon,
     FolderDetailsReferenceIcon,
+    BookUserIcon,
+    UserDollarIcon,
 } from '@hugeicons/core-free-icons';
 import { usePage } from '@inertiajs/react';
 import { NavMain } from './nav-main';
@@ -64,6 +66,23 @@ const navigations = {
             },
         ],
     },
+    employee: {
+        name: 'Pegawai',
+        items: [
+            {
+                id: 'a30c21b9-15ef-4dc0-97ef-524ead13be55',
+                name: 'Daftar Pegawai',
+                url: '#',
+                icon: <HugeiconsIcon icon={BookUserIcon} strokeWidth={2} />,
+            },
+            {
+                id: 'a30c2273-d730-4e1a-af2c-479e149cf54b',
+                name: 'Jabatan',
+                url: '#',
+                icon: <HugeiconsIcon icon={UserDollarIcon} strokeWidth={2} />,
+            },
+        ],
+    },
 };
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { app, auth } = usePage().props;
@@ -83,6 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <NavMain items={navigations.navMain} />
                 <NavGroups items={navigations.masterData.items} groupName={navigations.masterData.name} />
+                <NavGroups items={navigations.employee.items} groupName={navigations.employee.name} />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={auth.user} />
