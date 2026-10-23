@@ -10,6 +10,7 @@ import { Cancel01Icon, PlusIcon, SearchIcon } from '@hugeicons/core-free-icons';
 import { Button } from './ui/button';
 import { ButtonState, ComponentRenderFn, HTMLProps } from '@base-ui/react';
 import { router } from '@inertiajs/react';
+import { buildListingQuery } from '@/lib/listing-query';
 
 const DEBOUNCE_MS = 500;
 const MIN_KEYWORD_LENGTH = 2; // samakan dengan minLength(2) di InputSearchSchema
@@ -24,6 +25,7 @@ export type SectionDataProps = {
     dataTable: ReactNode;
     searchUrl: string;
     defaultKeyword?: string;
+    filterAction?: ReactNode;
 };
 
 export function SectionData({
@@ -33,6 +35,7 @@ export function SectionData({
     searchUrl,
     defaultKeyword = '',
     isNativeButton = false,
+    filterAction,
 }: SectionDataProps) {
     const { form, bind } = useValibotForm(InputSearchSchema, {
         keyword: defaultKeyword,
@@ -43,12 +46,9 @@ export function SectionData({
     const visit = (keyword: string) => {
         appliedKeyword.current = keyword;
 
-        const params = new URLSearchParams(window.location.search);
-        params.delete('page');
-        params.delete('keyword');
-        if (keyword) params.set('keyword', keyword);
+        const query = buildListingQuery(window.location.search, { page: null, keyword: keyword || null });
 
-        router.get(searchUrl, Object.fromEntries(params), {
+        router.get(searchUrl, query, {
             preserveScroll: true,
             preserveState: true,
             replace: true,
@@ -109,8 +109,8 @@ export function SectionData({
 
     return (
         <section className="container mx-auto space-y-6">
-            <div className="flex flex-row gap-4">
-                <form onSubmit={handleSubmit} noValidate className="w-full flex-1">
+            <div className="flex flex-wrap items-start gap-4">
+                <form onSubmit={handleSubmit} noValidate className="w-full min-w-0 flex-1 basis-full sm:basis-0">
                     <FieldGroup>
                         <Field data-invalid={!!form.errors.keyword}>
                             <div className="relative flex items-center">
@@ -147,6 +147,8 @@ export function SectionData({
                         </Field>
                     </FieldGroup>
                 </form>
+
+                {filterAction}
 
                 <Button render={renderButton} nativeButton={isNativeButton}>
                     <HugeiconsIcon icon={PlusIcon} strokeWidth={2} />

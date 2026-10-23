@@ -26,7 +26,17 @@ class JobTitleController extends Controller
         $keyword = trim($request->string('keyword')->toString());
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
+        $requestedGroups = $request->query('groups', []);
+        $groups = collect(is_array($requestedGroups) ? $requestedGroups : [])
+            ->filter(fn(mixed $value): bool => is_int($value) || (is_string($value) && ctype_digit($value)))
+            ->map(fn(int|string $value): ?int => JobTitleGroupEnum::tryFrom((int) $value)?->value)
+            ->filter(fn(?int $value): bool => $value !== null)
+            ->unique()
+            ->values()
+            ->all();
+
         $records = JobTitle::query()
+            ->when($groups !== [], fn(Builder $query): Builder => $query->whereIn('group', $groups))
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
                 $term = '%' . addcslashes($keyword, '\\%_') . '%';
 
@@ -39,7 +49,8 @@ class JobTitleController extends Controller
 
         return inertia('job-title/index', [
             'page' => ['id' => $this->pageId],
-            'filters' => ['keyword' => $keyword],
+            'filters' => ['keyword' => $keyword, 'groups' => $groups],
+            'groups' => JobTitleGroupEnum::options(),
             'resources' => JobTitleResource::collection($records),
         ]);
     }

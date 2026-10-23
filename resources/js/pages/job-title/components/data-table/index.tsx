@@ -8,6 +8,7 @@ import {
 import { useTableLoading } from '@/hooks/use-table-loading';
 import jt from '@/routes/jt';
 import { router } from '@inertiajs/react';
+import { buildListingQuery } from '@/lib/listing-query';
 import { columns, type JobTitleColumns } from './column';
 
 interface JobTitleDataTableProps {
@@ -29,17 +30,13 @@ export function JobTitleDataTable({ data, meta }: JobTitleDataTableProps) {
     });
 
     function visit(params: PaginationParams) {
-        const query = Object.fromEntries(new URLSearchParams(window.location.search));
+        const query = buildListingQuery(window.location.search, params);
 
-        router.get(
-            jt.index().url,
-            { ...query, ...params },
-            {
-                preserveScroll: true,
-                preserveState: true,
-                only: ['resources'],
-            },
-        );
+        router.get(jt.index().url, query, {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['resources', 'filters'],
+        });
     }
 
     return (

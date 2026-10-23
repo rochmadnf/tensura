@@ -69,4 +69,42 @@ describe('OptionSelect', () => {
         expect(markup).toMatch(/<input\b[^>]*role="combobox"[^>]*aria-invalid="true"/);
         expect(markup).toMatch(/<input\b[^>]*name="group"[^>]*value=""/);
     });
+
+    it('uses checkboxes for multiple selection with at most five options', () => {
+        const markup = renderSelect({ multiple: true, value: ['1', '3'], items: items.slice(0, 5) });
+
+        expect(markup.match(/role="checkbox"/g)).toHaveLength(5);
+        expect(markup.match(/aria-checked="true"/g)).toHaveLength(2);
+        expect(markup).toContain('for="group-1"');
+        expect(markup).not.toContain('role="combobox"');
+    });
+
+    it('uses a searchable combobox with removable chips for more than five multiple options', () => {
+        const markup = renderSelect({ multiple: true, value: ['1', '3'] });
+
+        expect(markup).toMatch(/<input\b[^>]*role="combobox"/);
+        expect(markup.match(/data-slot="combobox-chip"/g)).toHaveLength(2);
+        expect(markup).toContain('aria-label="Hapus Dokter"');
+        expect(markup).toContain('aria-label="Hapus Kefarmasian"');
+        expect(markup).toMatch(/<button\b[^>]*tabindex="0"[^>]*aria-label="Reset kelompok jabatan"/);
+        expect(markup).toMatch(/<input\b[^>]*name="group"[^>]*value="1"/);
+        expect(markup).toMatch(/<input\b[^>]*name="group"[^>]*value="3"/);
+    });
+
+    it('renders no chips for an empty multiple value', () => {
+        const markup = renderSelect({ multiple: true, value: [] });
+
+        expect(markup).toContain('placeholder="Pilih kelompok jabatan"');
+        expect(markup).not.toContain('data-slot="combobox-chip"');
+    });
+
+    it('disables the input, chip removal, and clear button for a disabled multiple combobox', () => {
+        const markup = renderSelect({ multiple: true, value: ['1'], disabled: true });
+        const controls = markup
+            .match(/<(?:input|button)\b[^>]*>/g)
+            .filter((control) => /role="combobox"|aria-label="(?:Hapus Dokter|Reset kelompok jabatan)"/.test(control));
+
+        expect(controls).toHaveLength(3);
+        expect(controls.every((control) => / disabled=""|aria-disabled="true"/.test(control))).toBe(true);
+    });
 });
