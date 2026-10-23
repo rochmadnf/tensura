@@ -2,6 +2,27 @@ import { describe, expect, it } from 'vite-plus/test';
 import { buildListingQuery } from './listing-query';
 
 describe('listing query', () => {
+    it('updates one filter field while retaining other fields and unrelated query parameters', () => {
+        expect(
+            buildListingQuery(
+                '?filter=group:1,2|year:2034&keyword=Jabatan&per_page=20&page=3',
+                { page: null },
+                { group: ['3', '1'] },
+            ),
+        ).toEqual({ filter: 'group:3,1|year:2034', keyword: 'Jabatan', per_page: '20' });
+    });
+
+    it('removes only the cleared field and removes the parameter when no fields remain', () => {
+        expect(buildListingQuery('?filter=group:1,2|year:2034', {}, { group: [] })).toEqual({ filter: 'year:2034' });
+        expect(buildListingQuery('?filter=group:1|year:2034', {}, { group: [], year: [] })).toEqual({});
+    });
+
+    it('adds a new single-value field alongside an existing multiple-value filter', () => {
+        expect(buildListingQuery('?filter=group:3,1', {}, { year: ['2034'] })).toEqual({
+            filter: 'group:3,1|year:2034',
+        });
+    });
+
     it('applies a compact filter and removes legacy groups and the current page', () => {
         expect(
             buildListingQuery('?keyword=Jabatan&per_page=20&page=3&groups%5B0%5D=1&groups%5B1%5D=2', {

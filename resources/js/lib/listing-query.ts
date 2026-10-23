@@ -1,6 +1,12 @@
+import { parseFilterQuery, serializeFilterQuery, type FilterQueryValues } from './filter-query';
+
 type ListingQueryChanges = Record<string, string | number | string[] | null>;
 
-export function buildListingQuery(search: string, changes: ListingQueryChanges): Record<string, string> {
+export function buildListingQuery(
+    search: string,
+    changes: ListingQueryChanges,
+    filterChanges?: FilterQueryValues,
+): Record<string, string> {
     const params = new URLSearchParams(search);
 
     for (const [name, value] of Object.entries(changes)) {
@@ -14,6 +20,16 @@ export function buildListingQuery(search: string, changes: ListingQueryChanges):
             value.forEach((item, index) => params.set(`${name}[${index}]`, item));
         } else if (value !== null) {
             params.set(name, String(value));
+        }
+    }
+
+    if (filterChanges) {
+        const filter = serializeFilterQuery({ ...parseFilterQuery(params.get('filter')), ...filterChanges });
+
+        if (filter) {
+            params.set('filter', filter);
+        } else {
+            params.delete('filter');
         }
     }
 

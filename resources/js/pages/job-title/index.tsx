@@ -24,11 +24,11 @@ export default function JobTitleIndex({ resources, filters, groups }: JobTitleIn
     const groupItems = groups.map((group) => ({ value: String(group.id), label: group.label }));
 
     function applyFilters(selectedGroups: string[]) {
-        const query = buildListingQuery(window.location.search, {
-            page: null,
-            groups: null,
-            filter: selectedGroups.length > 0 ? `group:${selectedGroups.join(',')}` : null,
-        });
+        const query = buildListingQuery(
+            window.location.search,
+            { page: null, groups: null },
+            { group: selectedGroups },
+        );
 
         router.get(jt.index().url, query, {
             preserveScroll: true,

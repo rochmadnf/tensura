@@ -98,12 +98,12 @@ class JobTitleIndexTest extends TestCase
 
         $response = $this->actingAs(UserFactory::new()->create())
             ->withoutVite()
-            ->get(route('jt.index', ['filter' => 'group:1,2', 'per_page' => 5]));
+            ->get(route('jt.index', ['filter' => 'group:1,2|year:2034', 'per_page' => 5]));
 
         $response->assertOk()->assertInertia(fn(Assert $page) => $page
             ->has('resources.data', 5)
             ->where('resources.meta.total', 7)
-            ->where('resources.links.next', fn(string $url): bool => str_contains(urldecode($url), 'filter=group:1,2')));
+            ->where('resources.links.next', fn(string $url): bool => str_contains(urldecode($url), 'filter=group:1,2|year:2034')));
 
         $this->get($response->inertiaProps('resources.links.next'))
             ->assertOk()
@@ -136,6 +136,9 @@ class JobTitleIndexTest extends TestCase
     {
         return [
             'multiple' => ['group:1,2', [1, 2], 2],
+            'additional filter after group' => ['group:1,2|year:2034', [1, 2], 2],
+            'additional filter before group' => ['year:2034|group:2', [2], 1],
+            'repeated group fields' => ['group:1|year:2034|group:2', [1, 2], 2],
             'duplicates and invalid ids' => ['group:1,1,999,invalid,1.5', [1], 1],
             'query injection' => ['group:2,1 OR 1=1', [2], 1],
             'empty values' => ['group:', [], 3],
