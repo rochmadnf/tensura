@@ -1,5 +1,10 @@
 {
-    "agents": ["codex", "copilot", "claude_code", "zed"],
+    "agents": [
+        "codex",
+        "copilot",
+        "claude_code",
+        "zed"
+    ],
     "cloud": false,
     "guidelines": true,
     "mcp": true,
@@ -13,6 +18,7 @@
         "inertia-react-development",
         "tailwindcss-development",
         "code-review",
+        "design-taste-frontend",
         "getting-started",
         "goey-toast",
         "grill-me",
