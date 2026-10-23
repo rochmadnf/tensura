@@ -1,5 +1,10 @@
 {
-    "agents": ["codex", "copilot", "claude_code", "zed"],
+    "agents": [
+        "codex",
+        "copilot",
+        "claude_code",
+        "zed"
+    ],
     "cloud": false,
     "guidelines": true,
     "mcp": true,
@@ -10,9 +15,15 @@
         "laravel-best-practices",
         "testing-best-practices",
         "wayfinder-development",
+        "inertia-react-development",
         "tailwindcss-development",
         "code-review",
         "grill-me",
-        "grill-with-docs"
+        "grill-with-docs",
+        "getting-started",
+        "migrate-v8-to-v9",
+        "table-state",
+        "goey-toast",
+        "shadcn"
     ]
 }
