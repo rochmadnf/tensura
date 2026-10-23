@@ -20,8 +20,6 @@ export function PageLoadingOverlay() {
         const pendingVisits = new Set<object>();
         let revealTimeout: ReturnType<typeof setTimeout> | undefined;
         let animationInterval: ReturnType<typeof setInterval> | undefined;
-        let previousOverflow: string | undefined;
-        let previousScrollbarGutter: string | undefined;
 
         const unlock = () => {
             clearTimeout(revealTimeout);
@@ -30,16 +28,6 @@ export function PageLoadingOverlay() {
             animationInterval = undefined;
             dialog.close();
             delete dialog.dataset.visible;
-
-            if (previousOverflow !== undefined) {
-                document.body.style.overflow = previousOverflow;
-                previousOverflow = undefined;
-            }
-
-            if (previousScrollbarGutter !== undefined) {
-                document.documentElement.style.scrollbarGutter = previousScrollbarGutter;
-                previousScrollbarGutter = undefined;
-            }
         };
 
         const offStart = router.on('start', (event) => {
@@ -55,10 +43,6 @@ export function PageLoadingOverlay() {
                 return;
             }
 
-            previousOverflow = document.body.style.overflow;
-            previousScrollbarGutter = document.documentElement.style.scrollbarGutter;
-            document.documentElement.style.scrollbarGutter = 'stable';
-            document.body.style.overflow = 'hidden';
             dialog.showModal();
             revealTimeout = setTimeout(() => {
                 dialog.dataset.visible = 'true';
@@ -83,6 +67,7 @@ export function PageLoadingOverlay() {
     return (
         <dialog
             ref={dialogRef}
+            data-slot="page-loading-overlay"
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
             tabIndex={-1}

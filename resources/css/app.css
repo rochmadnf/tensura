@@ -140,4 +140,8 @@
     html {
         @apply font-sans;
     }
+    html:has(dialog[data-slot='page-loading-overlay'][open]) {
+        overflow: hidden;
+        scrollbar-gutter: stable;
+    }
 }
