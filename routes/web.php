@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('employees', EmployeeController::class)
+        ->parameters(['employees' => 'employee'])
+        ->scoped(['employee' => 'uuid'])
+        ->names('empl');
 
     Route::resource('job-title', JobTitleController::class)
         ->except('show')

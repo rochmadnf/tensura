@@ -27,6 +27,7 @@ import { dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
 import jt from '@/routes/jt';
+import empl from '@/routes/empl';
 
 const navigations = {
     navMain: [
@@ -73,7 +74,7 @@ const navigations = {
             {
                 id: 'a30c21b9-15ef-4dc0-97ef-524ead13be55',
                 name: 'Daftar Pegawai',
-                url: '#',
+                url: empl.index().url,
                 icon: <HugeiconsIcon icon={BookUserIcon} strokeWidth={2} />,
             },
             {

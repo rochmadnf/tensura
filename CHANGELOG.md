@@ -4,6 +4,9 @@
 
 ### Ditambahkan
 
+- Fitur Pegawai dengan halaman daftar, tambah, detail, ubah, dan hapus permanen; pencarian nama/NIK/NIP/email; filter jabatan, status kontrak, status pegawai, dan rentang masa kerja. Pegawai aktif ditampilkan terlebih dahulu dengan urutan masa kerja terlama.
+- Validasi identitas unik, jabatan wajib, dan tanggal bergabung maksimal hari berjalan; tombol detail berikon Info dengan varian `info` biru muda.
+
 - Konfigurasi `pint.json` menyelaraskan aturan format PHP dengan Prettier, termasuk spasi penggabungan string, arrow function, constructor, dan anonymous class, agar kedua formatter tidak saling mengubah hasil.
 - CRUD Jabatan dengan pencarian nama, paginasi, formulir tambah/ubah, konfirmasi hapus, dan navigasi melalui route terautentikasi `jt.*` pada URL `job-title`.
 - Migration `2026_10_23_114205_add_uuid_to_job_titles_table.php` menambahkan UUID berindex, mengisi UUID untuk data lama, dan menetapkan kolom UUID sebagai NOT NULL pada SQLite. UUID hanya dipakai untuk URL; primary key tetap id numerik auto-increment untuk relasi.
