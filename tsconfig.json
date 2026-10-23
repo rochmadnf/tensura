@@ -25,6 +25,7 @@
         /* Completeness */
         "skipLibCheck": true /* Skip type checking all .d.ts files. */,
         "paths": {
+            "@inertiajs/core": ["./node_modules/.pnpm/node_modules/@inertiajs/core"],
             "@/*": ["./resources/js/*"]
         },
         "jsx": "react-jsx"
