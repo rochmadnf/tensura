@@ -26,6 +26,7 @@ import { NavUser } from './nav-user';
 import { dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
+import jt from '@/routes/jt';
 
 const navigations = {
     navMain: [
@@ -78,7 +79,7 @@ const navigations = {
             {
                 id: 'a30c2273-d730-4e1a-af2c-479e149cf54b',
                 name: 'Jabatan',
-                url: '#',
+                url: jt.index().url,
                 icon: <HugeiconsIcon icon={UserDollarIcon} strokeWidth={2} />,
             },
         ],
