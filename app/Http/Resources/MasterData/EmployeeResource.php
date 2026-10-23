@@ -36,6 +36,7 @@ class EmployeeResource extends JsonResource
             'rank' => $this->rank,
             'grade' => $this->grade,
             'email' => $this->email,
+            'join_date' => $this->join_date?->format('d-m-Y'),
             'contract_status' => [
                 'id' => $this->contract_status?->value,
                 'label' => $this->contract_status?->label(),

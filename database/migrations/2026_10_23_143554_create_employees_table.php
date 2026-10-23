@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('job_title_id')->nullable()->constrained('job_titles')->onDelete('set null');
             $table->string('rank', 50)->nullable();
             $table->string('grade', 50)->nullable();
+            $table->date('join_date');
             $table->string('email', 100)->nullable()->unique();
             $table->unsignedTinyInteger('contract_status');
             $table->unsignedTinyInteger('status');

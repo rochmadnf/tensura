@@ -19,6 +19,7 @@ class Employee extends Model
         'job_title_id',
         'rank', // pangkat
         'grade', // golongan
+        'join_date',
         'email',
         'contract_status', // 'PNS', 'PPPK', 'PPPK Paruh Waktu', 'Kontrak BLUD'
         'status',
@@ -34,6 +35,7 @@ class Employee extends Model
         return [
             'contract_status' => ContractStatusEnum::class,
             'status' => AsnStatusEnum::class,
+            'join_date' => 'date',
         ];
     }
 
