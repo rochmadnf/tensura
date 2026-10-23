@@ -10,7 +10,9 @@
         "laravel-best-practices",
         "testing-best-practices",
         "wayfinder-development",
-        "inertia-react-development",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "code-review",
+        "grill-me",
+        "grill-with-docs"
     ]
 }
