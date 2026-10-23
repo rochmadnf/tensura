@@ -1,9 +1,9 @@
+import { OptionSelect } from '@/components/option-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useValibotForm } from '@/hooks/use-valibot-form';
 import jt from '@/routes/jt';
 import { createJobTitleSchema, type JobTitleGroupOption } from '@/schemas/job-title';
@@ -93,31 +93,22 @@ export default function JobTitleEdit({ groups, resource }: JobTitleEditProps) {
                                     />
                                     {form.errors.name && <FieldError>{form.errors.name}</FieldError>}
                                 </Field>
-                                <Field data-invalid={!!form.errors.group}>
+                                <Field data-invalid={!!form.errors.group} data-disabled={form.processing}>
                                     <FieldLabel htmlFor="group">Kelompok Jabatan</FieldLabel>
-                                    <Select
+                                    <OptionSelect
+                                        id="group"
                                         name="group"
                                         items={groupItems}
-                                        value={form.data.group || null}
+                                        value={form.data.group}
+                                        placeholder="Pilih kelompok jabatan"
+                                        resetLabel="Reset kelompok jabatan"
+                                        aria-invalid={!!form.errors.group}
                                         disabled={form.processing}
                                         onValueChange={(value) => {
-                                            form.setData('group', value ?? '');
+                                            form.setData('group', value);
                                             form.clearErrors('group');
                                         }}
-                                    >
-                                        <SelectTrigger id="group" className="w-full" aria-invalid={!!form.errors.group}>
-                                            <SelectValue placeholder="Pilih kelompok jabatan" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                {groupItems.map((group) => (
-                                                    <SelectItem key={group.value} value={group.value}>
-                                                        {group.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
+                                    />
                                     {form.errors.group && <FieldError>{form.errors.group}</FieldError>}
                                 </Field>
                                 <Field orientation="responsive">
