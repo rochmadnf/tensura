@@ -37,6 +37,7 @@ class EmployeeResource extends JsonResource
                     (is_null($this->back_title) ? '' : " {$this->back_title}"),
                 'last' => $this->back_title,
             ],
+            'gender' => $this->gender ? 'Laki-laki' : 'Perempuan',
             'job_title' => $this->when($this->relationLoaded('jobTitle'), function (): array {
                 return [
                     'id' => $this->jobTitle?->uuid,
@@ -49,6 +50,20 @@ class EmployeeResource extends JsonResource
             'join_date' => $this->join_date?->format('d-m-Y'),
             'join_date_input' => $this->join_date?->toDateString(),
             'tenure_years' => $this->join_date === null ? null : max(0, $this->join_date->diff(today())->y),
+            'str' => is_null($this->str_number)
+                ? null
+                : [
+                    'number' => $this->str_number,
+                    'status' => $this->str_status,
+                    'published_date' => $this->str_published_date?->format('d-m-Y'),
+                ],
+            'sip' => is_null($this->sip_number)
+                ? null
+                : [
+                    'number' => $this->sip_number,
+                    'published_date' => $this->sip_published_date?->format('d-m-Y'),
+                    'expired_date' => $this->sip_expired_date?->format('d-m-Y'),
+                ],
             'contract_status' => [
                 'id' => $this->contract_status?->value,
                 'label' => $this->contract_status?->label(),
