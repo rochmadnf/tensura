@@ -10,7 +10,7 @@ class ReferenceItem extends Model
 {
     use HasUuids;
 
-    protected $fillable = ['reference_group_id', 'content'];
+    protected $fillable = ['reference_group_id', 'content', 'sort_order'];
 
     public function uniqueIds(): array
     {

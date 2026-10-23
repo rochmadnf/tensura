@@ -17,6 +17,7 @@ class ReferenceItemResource extends JsonResource
         return [
             'id' => $this->uuid,
             'content' => $this->content,
+            'sort_order' => $this->sort_order,
             'group' => ReferenceGroupResource::make($this->whenLoaded('group')),
         ];
     }

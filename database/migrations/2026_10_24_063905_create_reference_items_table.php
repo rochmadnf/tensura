@@ -18,6 +18,7 @@ return new class extends Migration {
                 ->constrained('reference_groups')
                 ->onDelete('cascade');
             $table->string('content', 255);
+            $table->unsignedSmallInteger('sort_order');
             $table->timestamps();
         });
     }
