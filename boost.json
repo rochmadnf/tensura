@@ -1,5 +1,5 @@
 {
-    "agents": ["codex", "copilot", "claude_code", "zed"],
+    "agents": ["codex", "copilot", "claude_code"],
     "cloud": false,
     "guidelines": true,
     "mcp": true,
@@ -13,16 +13,19 @@
         "inertia-react-development",
         "tailwindcss-development",
         "code-review",
-        "design-taste-frontend",
+        "codebase-design",
         "getting-started",
         "goey-toast",
         "grill-me",
         "grill-with-docs",
         "hugeicons",
+        "improve-codebase-architecture",
         "laravel-patterns",
         "migrate-v8-to-v9",
         "table-state",
         "shadcn",
-        "typescript-advanced-types"
+        "typescript-advanced-types",
+        "ui-styling",
+        "ui-ux-pro-max"
     ]
 }
