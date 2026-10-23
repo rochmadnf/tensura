@@ -26,7 +26,13 @@ class JobTitleController extends Controller
         $keyword = trim($request->string('keyword')->toString());
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
-        $requestedGroups = $request->query('groups', []);
+        $filter = $request->query('filter');
+        $requestedGroups = $filter === null ? $request->query('groups', []) : [];
+
+        if (is_string($filter) && str_starts_with($filter, 'group:')) {
+            $requestedGroups = explode(',', substr($filter, strlen('group:')));
+        }
+
         $groups = collect(is_array($requestedGroups) ? $requestedGroups : [])
             ->filter(fn(mixed $value): bool => is_int($value) || (is_string($value) && ctype_digit($value)))
             ->map(fn(int|string $value): ?int => JobTitleGroupEnum::tryFrom((int) $value)?->value)

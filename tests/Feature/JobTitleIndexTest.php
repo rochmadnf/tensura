@@ -24,7 +24,7 @@ class JobTitleIndexTest extends TestCase
 
         $this->actingAs(UserFactory::new()->create())
             ->withoutVite()
-            ->get(route('jt.index', ['groups' => ['1', '2'], 'keyword' => 'Jabatan']))
+            ->get(route('jt.index', ['filter' => 'group:1,2', 'keyword' => 'Jabatan']))
             ->assertOk()
             ->assertInertia(fn(Assert $page) => $page
                 ->where('filters.groups', [1, 2])
@@ -98,11 +98,12 @@ class JobTitleIndexTest extends TestCase
 
         $response = $this->actingAs(UserFactory::new()->create())
             ->withoutVite()
-            ->get(route('jt.index', ['groups' => ['1', '2'], 'per_page' => 5]));
+            ->get(route('jt.index', ['filter' => 'group:1,2', 'per_page' => 5]));
 
         $response->assertOk()->assertInertia(fn(Assert $page) => $page
             ->has('resources.data', 5)
-            ->where('resources.meta.total', 7));
+            ->where('resources.meta.total', 7)
+            ->where('resources.links.next', fn(string $url): bool => str_contains(urldecode($url), 'filter=group:1,2')));
 
         $this->get($response->inertiaProps('resources.links.next'))
             ->assertOk()
@@ -112,6 +113,52 @@ class JobTitleIndexTest extends TestCase
                 ->where('resources.meta.current_page', 2)
                 ->where('resources.meta.per_page', 5)
                 ->where('resources.meta.total', 7));
+    }
+
+    #[DataProvider('compactGroupFilters')]
+    public function test_normalizes_compact_group_filters(mixed $filter, array $expectedGroups, int $expectedTotal): void
+    {
+        JobTitle::factory()->create(['group' => JobTitleGroupEnum::DOKTER]);
+        JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
+        JobTitle::factory()->create(['group' => null]);
+
+        $this->actingAs(UserFactory::new()->create())
+            ->withoutVite()
+            ->get(route('jt.index', ['filter' => $filter]))
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page
+                ->where('filters.groups', $expectedGroups)
+                ->where('resources.meta.total', $expectedTotal));
+    }
+
+    /** @return array<string, array{mixed, list<int>, int}> */
+    public static function compactGroupFilters(): array
+    {
+        return [
+            'multiple' => ['group:1,2', [1, 2], 2],
+            'duplicates and invalid ids' => ['group:1,1,999,invalid,1.5', [1], 1],
+            'query injection' => ['group:2,1 OR 1=1', [2], 1],
+            'empty values' => ['group:', [], 3],
+            'empty filter' => ['', [], 3],
+            'unknown field' => ['other:1,2', [], 3],
+            'missing field' => ['1,2', [], 3],
+            'array input' => [['group:1'], [], 3],
+        ];
+    }
+
+    public function test_compact_filter_takes_precedence_over_legacy_group_parameters(): void
+    {
+        $nurse = JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
+        JobTitle::factory()->create(['group' => JobTitleGroupEnum::DOKTER]);
+
+        $this->actingAs(UserFactory::new()->create())
+            ->withoutVite()
+            ->get(route('jt.index', ['filter' => 'group:2', 'groups' => ['1']]))
+            ->assertOk()
+            ->assertInertia(fn(Assert $page) => $page
+                ->where('filters.groups', [2])
+                ->has('resources.data', 1)
+                ->where('resources.data.0.id', $nurse->uuid));
     }
 
     public function test_guests_are_redirected_to_login(): void

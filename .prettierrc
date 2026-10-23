@@ -13,7 +13,7 @@
     "tailwindFunctions": ["clsx", "cn"],
     "tailwindStylesheet": "resources/css/app.css",
     "tabWidth": 4,
-    "phpVersion": "8.3",
+    "phpVersion": "8.4",
     "braceStyle": "psr-2",
     "overrides": [
         {
