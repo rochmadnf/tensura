@@ -1,4 +1,5 @@
-import { createColumnHelper } from '@tanstack/react-table';
+import { Subscribe } from '@tanstack/react-table';
+import { createDataTableColumnHelper } from '@/components/data-table';
 import { Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -6,7 +7,6 @@ import { Edit04Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import ln from '@/routes/ln';
 
-import { type DataTableFeatures } from './features';
 import { DeleteAction } from './delete-action';
 
 export type LetterNumberColumns = {
@@ -17,17 +17,20 @@ export type LetterNumberColumns = {
     sequence_number: number;
 };
 
-const columnHelper = createColumnHelper<DataTableFeatures, LetterNumberColumns>();
+const columnHelper = createDataTableColumnHelper<LetterNumberColumns>();
 
 export const columns = columnHelper.columns([
     columnHelper.display({
         id: 'no',
         header: '#',
-        cell: ({ row, table }) => {
-            const { pageIndex, pageSize } = table.store.state.pagination;
-
-            return <span className="text-muted-foreground tabular-nums">{pageIndex * pageSize + row.index + 1}</span>;
-        },
+        meta: { className: 'w-16 text-center', skeletonClassName: 'mx-auto w-8' },
+        cell: ({ row, table }) => (
+            <Subscribe source={table.atoms.pagination}>
+                {({ pageIndex, pageSize }) => (
+                    <span className="text-muted-foreground tabular-nums">{pageIndex * pageSize + row.index + 1}</span>
+                )}
+            </Subscribe>
+        ),
     }),
     columnHelper.accessor('name', {
         header: 'Nama Klasifikasi',
@@ -43,15 +46,18 @@ export const columns = columnHelper.columns([
     }),
     columnHelper.accessor('page_number', {
         header: 'Nomor Halaman',
+        meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
         cell: ({ cell }) => <span className="tabular-nums">{cell.getValue()}</span>,
     }),
     columnHelper.accessor('sequence_number', {
         header: 'Nomor Urut',
+        meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
         cell: ({ cell }) => <span className="tabular-nums">{cell.getValue()}</span>,
     }),
     columnHelper.display({
         id: 'actions',
         header: 'Aksi',
+        meta: { className: 'w-15 text-center', skeletonClassName: 'mx-auto w-8' },
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
                 <Tooltip>

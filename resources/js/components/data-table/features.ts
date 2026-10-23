@@ -4,7 +4,9 @@ import {
     createFilteredRowModel,
     createPaginatedRowModel,
     createSortedRowModel,
+    createTableHook,
     filterFn_includesString,
+    metaHelper,
     rowPaginationFeature,
     rowSelectionFeature,
     rowSortingFeature,
@@ -12,6 +14,11 @@ import {
     sortFn_text,
     tableFeatures,
 } from '@tanstack/react-table';
+
+export interface DataTableColumnMeta {
+    className?: string;
+    skeletonClassName?: string;
+}
 
 export const features = tableFeatures({
     columnFilteringFeature,
@@ -24,6 +31,11 @@ export const features = tableFeatures({
     sortedRowModel: createSortedRowModel(),
     filterFns: { includesString: filterFn_includesString },
     sortFns: { alphanumeric: sortFn_alphanumeric, text: sortFn_text },
+    columnMeta: metaHelper<DataTableColumnMeta>(),
 });
 
 export type DataTableFeatures = typeof features;
+
+export const { createAppColumnHelper: createDataTableColumnHelper, useAppTable: useDataTable } = createTableHook({
+    features,
+});

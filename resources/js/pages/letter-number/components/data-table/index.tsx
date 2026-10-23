@@ -1,114 +1,52 @@
-import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table';
-
-import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+    DataTable,
+    DataTableFooter,
+    useDataTable,
+    type PaginationMeta,
+    type PaginationParams,
+} from '@/components/data-table';
 import { useTableLoading } from '@/hooks/use-table-loading';
-import { cn } from '@/lib/utils';
-import { features, DataTableFeatures } from './features';
-import { DataTableFooter, type PaginationMeta } from './footer';
+import { index } from '@/routes/ln';
+import { router } from '@inertiajs/react';
+import { columns, type LetterNumberColumns } from './column';
 
-const columnClassName: Record<string, string> = {
-    no: 'w-16 text-center',
-    page_number: 'w-40 text-center',
-    sequence_number: 'w-40 text-center',
-    actions: 'w-15 text-center',
-};
-
-const SKELETON_ROW_LIMIT = 10;
-
-interface DataTableProps<TData extends RowData> {
-    columns: ColumnDef<DataTableFeatures, TData>[];
-    data: TData[];
+interface LetterNumberDataTableProps {
+    data: LetterNumberColumns[];
     meta: PaginationMeta;
 }
 
-export function DataTable<TData extends RowData>({ columns, data, meta }: DataTableProps<TData>) {
-    const isLoading = useTableLoading();
-    const skeletonRowCount = Math.min(meta.per_page, SKELETON_ROW_LIMIT);
-
-    const table = useTable(
-        {
-            features,
-            data,
-            columns,
-            manualPagination: true,
-            state: {
-                pagination: { pageIndex: meta.current_page - 1, pageSize: meta.per_page },
-            },
+export function LetterNumberDataTable({ data, meta }: LetterNumberDataTableProps) {
+    const isLoading = useTableLoading('resources');
+    const table = useDataTable({
+        data,
+        columns,
+        getRowId: (row) => row.id,
+        manualPagination: true,
+        rowCount: meta.total,
+        state: {
+            pagination: { pageIndex: meta.current_page - 1, pageSize: meta.per_page },
         },
-        (state) => ({ pagination: state.pagination }),
-    );
+    });
+
+    function visit(params: PaginationParams) {
+        const query = Object.fromEntries(new URLSearchParams(window.location.search));
+
+        router.get(
+            index().url,
+            { ...query, ...params },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: ['resources'],
+            },
+        );
+    }
 
     return (
-        <div className="space-y-4">
-            <div className="overflow-hidden rounded-lg border bg-card shadow-xs" aria-busy={isLoading}>
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="bg-muted/40 hover:bg-muted/40">
-                                {headerGroup.headers.map((header) => (
-                                    <TableHead
-                                        key={header.id}
-                                        className={cn(
-                                            'h-11 px-4 font-medium text-muted-foreground',
-                                            columnClassName[header.column.id],
-                                        )}
-                                    >
-                                        {header.isPlaceholder ? null : <table.FlexRender header={header} />}
-                                    </TableHead>
-                                ))}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody className="[&_tr:last-child]:border-0">
-                        {isLoading ? (
-                            Array.from({ length: skeletonRowCount }, (_, rowIndex) => (
-                                <TableRow key={`skeleton-${rowIndex}`} className="hover:bg-transparent">
-                                    {table.getVisibleLeafColumns().map((column) => {
-                                        const className = columnClassName[column.id];
-
-                                        return (
-                                            <TableCell key={column.id} className={cn('px-4 py-3', className)}>
-                                                <Skeleton
-                                                    className={cn(
-                                                        'h-4',
-                                                        className?.includes('text-center') ? 'mx-auto w-8' : 'w-full',
-                                                    )}
-                                                />
-                                            </TableCell>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))
-                        ) : table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && 'selected'}
-                                    className="transition-colors"
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell
-                                            key={cell.id}
-                                            className={cn('px-4 py-3', columnClassName[cell.column.id])}
-                                        >
-                                            <table.FlexRender cell={cell} />
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow className="hover:bg-transparent">
-                                <TableCell colSpan={columns.length} className="h-32 text-center text-muted-foreground">
-                                    Belum ada data yang tersedia.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-
-            <DataTableFooter meta={meta} />
-        </div>
+        <DataTable
+            table={table}
+            isLoading={isLoading}
+            footer={<DataTableFooter meta={meta} onPaginationChange={visit} disabled={isLoading} />}
+        />
     );
 }

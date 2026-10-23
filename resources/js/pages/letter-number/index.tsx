@@ -1,14 +1,18 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { columns } from './components/data-table/column';
-import { DataTable } from './components/data-table';
+import { Head, Link } from '@inertiajs/react';
+import { LetterNumberDataTable } from './components/data-table';
+import type { LetterNumberColumns } from './components/data-table/column';
+import type { PaginationMeta } from '@/components/data-table';
 import { SectionData } from '@/components/section-data';
 import ln from '@/routes/ln';
 
 const pageName = 'Penomoran Surat';
 
-export default function LetterNumberIndex() {
-    const { resources, filters } = usePage().props;
+interface LetterNumberIndexProps {
+    resources: { data: LetterNumberColumns[]; meta: PaginationMeta };
+    filters: { keyword: string };
+}
 
+export default function LetterNumberIndex({ resources, filters }: LetterNumberIndexProps) {
     return (
         <>
             <Head title={pageName}>
@@ -21,7 +25,7 @@ export default function LetterNumberIndex() {
                     textButton="Nomor Baru"
                     searchUrl={ln.index().url}
                     defaultKeyword={filters.keyword}
-                    dataTable={<DataTable columns={columns} data={resources.data} meta={resources.meta} />}
+                    dataTable={<LetterNumberDataTable data={resources.data} meta={resources.meta} />}
                 />
             </div>
         </>
