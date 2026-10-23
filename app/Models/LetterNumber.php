@@ -11,7 +11,10 @@ class LetterNumber extends Model
 
     protected $fillable = ['classification_name', 'classification_code', 'page_number', 'sequence_number'];
 
-    public function uniqueIds()
+    /**
+     * @return list<string>
+     */
+    public function uniqueIds(): array
     {
         return ['uuid'];
     }

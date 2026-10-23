@@ -2,15 +2,19 @@
 
 namespace App\Http\Resources;
 
+use App\Models\LetterNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin LetterNumber
+ */
 class LetterNumberResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @return array<string, mixed>
+     * @return array{id: string, name: string, code: string, page_number: int, sequence_number: int}
      */
     public function toArray(Request $request): array
     {

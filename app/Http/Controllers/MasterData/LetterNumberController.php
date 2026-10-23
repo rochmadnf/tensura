@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\LetterNumberRequest;
+use App\Http\Requests\StoreLetterNumberRequest;
 use App\Http\Requests\UpdateLetterNumberRequest;
 use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
@@ -52,9 +52,11 @@ class LetterNumberController extends Controller
         ]);
     }
 
-    public function store(LetterNumberRequest $request): RedirectResponse
+    public function store(StoreLetterNumberRequest $request): RedirectResponse
     {
-        LetterNumber::create($request->whenFulfill());
+        LetterNumber::create(
+            $request->safe()->only(['classification_name', 'classification_code', 'page_number', 'sequence_number']),
+        );
 
         return redirect()->route('ln.index');
     }

@@ -13,10 +13,12 @@ class UpdateLetterNumberRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        return $this->user() !== null;
     }
 
-    /** @return array<string, string> */
+    /**
+     * @return array{classification_name: string, classification_code: string}
+     */
     public function attributes(): array
     {
         return [
