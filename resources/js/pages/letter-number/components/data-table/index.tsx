@@ -11,6 +11,7 @@ const columnClassName: Record<string, string> = {
     no: 'w-16 text-center',
     page_number: 'w-40 text-center',
     sequence_number: 'w-40 text-center',
+    actions: 'w-15 text-center',
 };
 
 const SKELETON_ROW_LIMIT = 10;

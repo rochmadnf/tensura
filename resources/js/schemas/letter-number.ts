@@ -14,6 +14,7 @@ import {
     toNumber,
     InferInput,
     maxLength,
+    pick,
 } from 'valibot';
 
 export const LetterNumberSchema = defineRequest(
@@ -38,3 +39,11 @@ export const LetterNumberSchema = defineRequest(
 );
 
 export type LetterNumberProps = InferInput<typeof LetterNumberSchema.schema>;
+
+export const UpdateLetterNumberSchema = defineRequest(
+    pick(LetterNumberSchema.schema, ['classification_name', 'classification_code']),
+    {
+        classification_name: 'Nama Klasifikasi Surat',
+        classification_code: 'Kode Klasifikasi Surat',
+    },
+);

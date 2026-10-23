@@ -1,6 +1,13 @@
 import { createColumnHelper } from '@tanstack/react-table';
+import { Link } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Edit04Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import ln from '@/routes/ln';
 
 import { type DataTableFeatures } from './features';
+import { DeleteAction } from './delete-action';
 
 export type LetterNumberColumns = {
     id: string;
@@ -41,5 +48,26 @@ export const columns = columnHelper.columns([
     columnHelper.accessor('sequence_number', {
         header: 'Nomor Urut',
         cell: ({ cell }) => <span className="tabular-nums">{cell.getValue()}</span>,
+    }),
+    columnHelper.display({
+        id: 'actions',
+        header: 'Aksi',
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <Tooltip>
+                    <Button
+                        variant="warning"
+                        size="icon-sm"
+                        nativeButton={false}
+                        render={<TooltipTrigger render={<Link href={ln.edit(row.original.id).url} />} />}
+                        aria-label={`Ubah ${row.original.name}`}
+                    >
+                        <HugeiconsIcon icon={Edit04Icon} strokeWidth={2} />
+                    </Button>
+                    <TooltipContent>Ubah</TooltipContent>
+                </Tooltip>
+                <DeleteAction letterNumber={row.original} />
+            </div>
+        ),
     }),
 ]);

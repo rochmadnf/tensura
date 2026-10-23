@@ -13,6 +13,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('ln.index');
             Route::get('/create', 'create')->name('ln.create');
             Route::post('/store', 'store')->name('ln.store');
+            Route::get('/{letterNumber:uuid}/edit', 'edit')->name('ln.edit');
+            Route::patch('/{letterNumber:uuid}', 'update')->name('ln.update');
+            Route::delete('/{letterNumber:uuid}', 'destroy')->name('ln.destroy');
         });
 });
 

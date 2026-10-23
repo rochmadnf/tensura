@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LetterNumberRequest;
+use App\Http\Requests\UpdateLetterNumberRequest;
 use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,6 +55,28 @@ class LetterNumberController extends Controller
     public function store(LetterNumberRequest $request): RedirectResponse
     {
         LetterNumber::create($request->whenFulfill());
+
+        return redirect()->route('ln.index');
+    }
+
+    public function edit(LetterNumber $letterNumber): InertiaResponse
+    {
+        return inertia('letter-number/edit', [
+            'page' => ['id' => $this->pageId],
+            'resource' => LetterNumberResource::make($letterNumber),
+        ]);
+    }
+
+    public function update(UpdateLetterNumberRequest $request, LetterNumber $letterNumber): RedirectResponse
+    {
+        $letterNumber->update($request->safe()->only(['classification_name', 'classification_code']));
+
+        return redirect()->route('ln.index');
+    }
+
+    public function destroy(LetterNumber $letterNumber): RedirectResponse
+    {
+        $letterNumber->delete();
 
         return redirect()->route('ln.index');
     }
