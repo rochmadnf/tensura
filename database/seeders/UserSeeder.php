@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\MasterData\User;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -16,7 +17,7 @@ class UserSeeder extends Seeder
                 'password' => bcrypt('password'),
             ],
         ])->each(function ($user) {
-            \App\Models\MasterData\User::create($user);
+            User::create($user);
         });
     }
 }

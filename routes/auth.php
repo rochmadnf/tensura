@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthenticatedUserController;
+use Illuminate\Support\Facades\Route;
 
 Route::controller(AuthenticatedUserController::class)->group(function () {
     Route::middleware('auth')->group(function () {
