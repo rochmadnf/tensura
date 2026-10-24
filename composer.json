@@ -14,7 +14,6 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.21",
-        "mis3085/turso-laravel": "^2.0",
         "phpoffice/phpword": "dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e"
     },
     "require-dev": {
@@ -68,7 +67,6 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [
