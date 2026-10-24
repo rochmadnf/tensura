@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1–5 selesai, tahap 6–10 belum selesai.
+Status: implementasi bertahap; tahap 1–6 selesai, tahap 7–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -376,7 +376,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 | 3. Pratinjau/token           | Selesai       | `feat(archive): add conflict previews and confirmation tokens`         |
 | 4. Restore induk/paket       | Selesai       | `feat(archive): restore reference parents and packages`                |
 | 5. Children/konflik          | Selesai       | `feat(archive): restore selected children and resolve group conflicts` |
-| 6. Delete Forever backend    | Belum dimulai | `feat(archive): permanently delete archived packages and records`      |
+| 6. Delete Forever backend    | Selesai       | `feat(archive): permanently delete archived packages and records`      |
 | 7. Daftar/navigasi           | Belum dimulai | `feat(archive): add archive listings and secondary navigation`         |
 | 8. UI restore                | Belum dimulai | `feat(archive): add restore selection and conflict resolution flows`   |
 | 9. UI Delete Forever         | Belum dimulai | `feat(archive): add permanent deletion confirmation flows`             |
@@ -386,15 +386,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 5 selesai; berikutnya tahap 6.
-- **Status:** kelima mode restore, penggabungan, dan rename grup arsip tersedia melalui backend. Eksekusi Delete Forever dan halaman/menu Archive belum diimplementasikan.
-- **Commit terakhir yang relevan:** tahap 4 `d7ab21f`; commit tahap ini menggunakan `feat(archive): restore selected children and resolve group conflicts`.
-- **File/kontrak penting:** `RestoreReference::restore` kini menangani kelima mode dan tujuan eksplisit; `RenameArchivedReferenceGroup::rename` mengubah nama; request/controller/resource baru memakai route `archives.reference-group.update`. Kontrak terbaru tercatat di bagian 10.
-- **Pekerjaan selesai:** tahap 1–4 ditambah restore semua/satu/children terpilih, append sesuai urutan relatif arsip, remap FK ke induk aktif sambil mempertahankan identitas/timestamps item, merge tanpa menimpa metadata grup aktif, tujuan retry tersimpan, serta rename transaksional dengan invalidasi token lama.
-- **Verifikasi:** 24 tes baru children/merge/rename dengan 217 assertions lulus; regresi Archive/Reference 205 tes/1219 assertions lulus di SQLite. Tes tahap 4 diperbarui karena mode children/merge sekarang didukung. Pint dijalankan. Frontend tidak berubah sehingga TypeScript/build tidak diulang.
-- **Keputusan baru:** tujuan eksplisit ikut dikunci sebelum verifikasi dan append. Mode children saja tidak menyelesaikan snapshot induk yang tidak dipilih; target tersimpan dipakai untuk children berikutnya. Mode induk biasa tanpa tujuan eksplisit tetap memulihkan identitas induk asal, bukan otomatis menggabungkan ke target children sebelumnya. Rename hanya boleh selama snapshot induk didukung dan belum diselesaikan; keunikan nama diperiksa terhadap tabel aktif, bukan terhadap arsip lain.
-- **Pekerjaan tersisa/kendala:** tahap 6–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL dan pembuktian konkurensi nyata tetap di tahap 10. Tidak ada migration baru pada tahap 5.
-- **Langkah berikutnya:** tahap 6, implementasikan eksekusi Delete Forever untuk paket, satu record, dan children terpilih dengan token/kunci/transaksi yang sama. Pastikan data aktif dan snapshot induk yang belum selesai tidak ikut terhapus ketika hanya children dipilih.
+- **Tahap aktif:** tahap 6 selesai; berikutnya tahap 7.
+- **Status:** backend restore, rename, dan Delete Forever tersedia. Halaman/menu Archive belum diimplementasikan.
+- **Commit terakhir yang relevan:** tahap 5 `b356089`; commit tahap ini menggunakan `feat(archive): permanently delete archived packages and records`.
+- **File/kontrak penting:** `DeleteArchivedRecords::delete`, `DeleteArchiveRequest`, `ArchiveDestroyController`, `ArchiveDeleteResource`, route `archives.destroy`. DELETE menerima `action: delete_forever`, mode `package|child|children_selected`, `record_uuids` sesuai cakupan, serta `confirmation_token`. Respons `data` berisi `archive_uuid`, `mode`, `counts` (`requested`, `deleted`, `remaining`), dan `archive_exists`.
+- **Pekerjaan selesai:** ketiga cakupan penghapusan permanen memakai token, verifikasi fingerprint, kunci paket/record, dan transaksi. Record tersisa mempertahankan konteks serta menambah revision; paket kosong dibersihkan. Snapshot induk tidak dapat dipilih sebagai child; snapshot yang versinya belum didukung tetap dapat dihapus permanen.
+- **Verifikasi:** 21 tes Delete Forever/160 assertions lulus; seluruh suite PHPUnit 599 tes/3783 assertions lulus di SQLite. Pint dijalankan. Frontend belum berubah.
+- **Keputusan baru:** Delete Forever tidak membaca atau mengunci data aktif karena sasaran/fingerprint penghapusannya hanya arsip. Penguncian paket terlebih dahulu menyelaraskan eksekusi dengan restore/rename; kondisi yang berubah menghasilkan `archive_changed` tanpa mutasi.
+- **Pekerjaan tersisa/kendala:** tahap 7–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL dan konkurensi nyata tetap tahap 10.
+- **Langkah berikutnya:** tahap 7, daftar/detail berpaginasi, pencarian/filter, dua pintu masuk dan NavSecondary, tipe frontend serta Wayfinder. Belum mengekspos tombol restore/purge.
 
 ## 15. Pengujian dan kriteria penerimaan
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountAvatarController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
+use App\Http\Controllers\ArchiveDestroyController;
 use App\Http\Controllers\ArchivePreviewController;
 use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
@@ -19,6 +20,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('archives/{archive:uuid}/preview', ArchivePreviewController::class)->name('archives.preview');
     Route::post('archives/{archive:uuid}/restore', ArchiveRestoreController::class)->name('archives.restore');
+    Route::delete('archives/{archive:uuid}', ArchiveDestroyController::class)->name('archives.destroy');
     Route::patch('archives/{archive:uuid}/reference-group', ArchiveReferenceGroupController::class)->name('archives.reference-group.update');
 
     Route::get('account', [AccountController::class, 'edit'])->name('account.edit');
