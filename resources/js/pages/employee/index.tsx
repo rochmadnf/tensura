@@ -108,6 +108,7 @@ export default function EmployeeIndex({
         );
         router.get(empl.index().url, query, {
             preserveScroll: true,
+            showProgress: false,
             preserveState: true,
             replace: true,
             only: ['resources', 'filters'],

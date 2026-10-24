@@ -32,6 +32,7 @@ export default function JobTitleIndex({ resources, filters, groups }: JobTitleIn
 
         router.get(jt.index().url, query, {
             preserveScroll: true,
+            showProgress: false,
             preserveState: true,
             replace: true,
             only: ['resources', 'filters'],
