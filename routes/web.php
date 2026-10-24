@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountAvatarController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\ArchiveDestroyController;
 use App\Http\Controllers\ArchivePreviewController;
 use App\Http\Controllers\ArchiveReferenceGroupController;
@@ -18,6 +19,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('archives', [ArchiveController::class, 'index'])->name('archives.index');
+    Route::get('reference/archive', [ArchiveController::class, 'index'])->name('ref.archive.index');
+    Route::get('archives/{archive:uuid}', [ArchiveController::class, 'show'])->name('archives.show');
     Route::post('archives/{archive:uuid}/preview', ArchivePreviewController::class)->name('archives.preview');
     Route::post('archives/{archive:uuid}/restore', ArchiveRestoreController::class)->name('archives.restore');
     Route::delete('archives/{archive:uuid}', ArchiveDestroyController::class)->name('archives.destroy');

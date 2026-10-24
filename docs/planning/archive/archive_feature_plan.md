@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1–6 selesai, tahap 7–10 belum selesai.
+Status: implementasi bertahap; tahap 1–7 selesai, tahap 8–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -377,7 +377,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 | 4. Restore induk/paket       | Selesai       | `feat(archive): restore reference parents and packages`                |
 | 5. Children/konflik          | Selesai       | `feat(archive): restore selected children and resolve group conflicts` |
 | 6. Delete Forever backend    | Selesai       | `feat(archive): permanently delete archived packages and records`      |
-| 7. Daftar/navigasi           | Belum dimulai | `feat(archive): add archive listings and secondary navigation`         |
+| 7. Daftar/navigasi           | Selesai       | `feat(archive): add archive listings and secondary navigation`         |
 | 8. UI restore                | Belum dimulai | `feat(archive): add restore selection and conflict resolution flows`   |
 | 9. UI Delete Forever         | Belum dimulai | `feat(archive): add permanent deletion confirmation flows`             |
 | 10. Verifikasi lintas engine | Belum dimulai | `test(archive): verify cross-database behavior and concurrency`        |
@@ -386,15 +386,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 6 selesai; berikutnya tahap 7.
-- **Status:** backend restore, rename, dan Delete Forever tersedia. Halaman/menu Archive belum diimplementasikan.
-- **Commit terakhir yang relevan:** tahap 5 `b356089`; commit tahap ini menggunakan `feat(archive): permanently delete archived packages and records`.
-- **File/kontrak penting:** `DeleteArchivedRecords::delete`, `DeleteArchiveRequest`, `ArchiveDestroyController`, `ArchiveDeleteResource`, route `archives.destroy`. DELETE menerima `action: delete_forever`, mode `package|child|children_selected`, `record_uuids` sesuai cakupan, serta `confirmation_token`. Respons `data` berisi `archive_uuid`, `mode`, `counts` (`requested`, `deleted`, `remaining`), dan `archive_exists`.
-- **Pekerjaan selesai:** ketiga cakupan penghapusan permanen memakai token, verifikasi fingerprint, kunci paket/record, dan transaksi. Record tersisa mempertahankan konteks serta menambah revision; paket kosong dibersihkan. Snapshot induk tidak dapat dipilih sebagai child; snapshot yang versinya belum didukung tetap dapat dihapus permanen.
-- **Verifikasi:** 21 tes Delete Forever/160 assertions lulus; seluruh suite PHPUnit 599 tes/3783 assertions lulus di SQLite. Pint dijalankan. Frontend belum berubah.
-- **Keputusan baru:** Delete Forever tidak membaca atau mengunci data aktif karena sasaran/fingerprint penghapusannya hanya arsip. Penguncian paket terlebih dahulu menyelaraskan eksekusi dengan restore/rename; kondisi yang berubah menghasilkan `archive_changed` tanpa mutasi.
-- **Pekerjaan tersisa/kendala:** tahap 7–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL dan konkurensi nyata tetap tahap 10.
-- **Langkah berikutnya:** tahap 7, daftar/detail berpaginasi, pencarian/filter, dua pintu masuk dan NavSecondary, tipe frontend serta Wayfinder. Belum mengekspos tombol restore/purge.
+- **Tahap aktif:** tahap 7 selesai; berikutnya tahap 8.
+- **Status:** backend restore/rename/Delete Forever serta daftar/detail baca Archive tersedia. Aksi eksekusi frontend tetap menunggu tahap 8/9.
+- **Commit terakhir yang relevan:** tahap 6 `25e6b3f`; commit tahap ini menggunakan `feat(archive): add archive listings and secondary navigation`.
+- **File/kontrak penting:** `ArchiveController`, `ReadArchive`, `ArchiveResource`, `ArchiveRecordResource`, `resources/js/pages/archive`, `resources/js/types/archive.ts`, `NavSecondary`. GET `archives.index` dan `ref.archive.index` memakai halaman yang sama dengan props `resources`, `filters` (`keyword`, `module`, `kind`), `modules`, dan `context` (`reference|null`). GET `archives.show` memakai `resource.data`, `parent_record.data|null`, `resources` children berpaginasi, dan konteks dari query `context=reference` bila modul sesuai.
+- **Pekerjaan selesai:** pencarian label paket/children melalui EXISTS tanpa duplikasi paket, filter modul/jenis, pagination `archived_at DESC, id DESC`, jumlah record/item tersisa melalui aggregate, status induk `archived|active|missing|unavailable`, tujuan aktif dibaca sekaligus berdasarkan UUID konteks. Detail memisahkan snapshot induk dari children serta membatasi atribut snapshot yang disajikan. Menu Archive di bawah SidebarContent memakai Link Inertia dan page ID `archive`; tombol Arsip Reference dan tautan detail memakai Wayfinder, termasuk konteks Reference. Tipe mode/pratinjau/konflik/hasil tersedia untuk tahap berikutnya.
+- **Verifikasi:** 17 tes endpoint baca/318 assertions dan 10 tes render baru lulus. Seluruh suite PHPUnit 616 tes/4101 assertions serta frontend 184 tes dalam 11 file lulus. TypeScript, lint file frontend terdampak, build produksi, Pint, route:list, dan diff check lulus. Wayfinder diperbarui melalui generator/plugin build. Tes render ditempatkan di folder komponen agar tidak dibundel sebagai halaman Inertia.
+- **Keputusan baru:** nama penghapus memakai salinan arsip; status induk tidak dianggap status konflik. Tujuan tersimpan yang hilang tidak digantikan otomatis dengan grup asal. Snapshot tidak didukung tetap dapat dibaca dengan alasan, tanpa mengekspos payload/konteks internal. Gaya app screen `framed-sheet` (seed `516433048`) mempertahankan shell, font, palette, dan tabel existing; ciri layar adalah paket/induk/children serta status tujuan. Kedua layar menjawab data apa yang diarsipkan dan item apa yang masih tersisa. Ikon `Archive01Icon` diverifikasi pada package Hugeicons Free Stroke Rounded terpasang.
+- **Pekerjaan tersisa/kendala:** tahap 8–10; verifikasi visual interaktif/screenshot belum dijalankan karena Chromium/Chrome/Edge untuk inspector tidak tersedia (deteksi `findChrome()` menghasilkan null). Tes render tidak menggantikan pemeriksaan browser. Lint desain tidak menemukan FAIL; peringatan em dash dipertahankan karena dipakai sebagai penanda nilai kosong. Database aplikasi tidak dimigrasikan; integrasi MySQL/PostgreSQL dan konkurensi nyata tetap tahap 10.
+- **Langkah berikutnya:** tahap 8, hubungkan kelima mode restore, selection lintas halaman, pratinjau useHttp, konflik/rename/merge, konfirmasi, dan hasil parsial. Tahap 9 menambahkan UI Delete Forever.
 
 ## 15. Pengujian dan kriteria penerimaan
 
