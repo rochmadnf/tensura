@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1 selesai, tahap 2–10 belum selesai.
+Status: implementasi bertahap; tahap 1–2 selesai, tahap 3–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -365,7 +365,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 | Tahap                        | Status        | Commit message rencana                                                 |
 | ---------------------------- | ------------- | ---------------------------------------------------------------------- |
 | 1. Fondasi                   | Selesai       | `feat(archive): add shared archive storage and snapshot contracts`     |
-| 2. Pengarsipan Reference     | Belum dimulai | `feat(reference): archive groups and items on deletion`                |
+| 2. Pengarsipan Reference     | Selesai       | `feat(reference): archive groups and items on deletion`                |
 | 3. Pratinjau/token           | Belum dimulai | `feat(archive): add conflict previews and confirmation tokens`         |
 | 4. Restore induk/paket       | Belum dimulai | `feat(archive): restore reference parents and packages`                |
 | 5. Children/konflik          | Belum dimulai | `feat(archive): restore selected children and resolve group conflicts` |
@@ -379,15 +379,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 1 selesai; berikutnya tahap 2.
-- **Status:** fondasi siap untuk integrasi delete Reference.
-- **Commit terakhir yang relevan:** basis `3bbeef2`; commit tahap ini menggunakan `feat(archive): add shared archive storage and snapshot contracts`.
-- **File/kontrak penting:** `Archive`, `ArchiveRecord`, `SnapshotHandler`, `ReferenceSnapshot`, dan `ArchiveEntityRegistry`. Envelope record memakai `source_key` string, `source_uuid`, tiga kolom identitas induk, `schema_version`, dan payload kolom asli. Registry hanya mengenali `reference_group`/`reference_item`.
-- **Pekerjaan selesai:** dua tabel bersama, model/factory, snapshot Reference versi 1 dan validasi envelope, registry eksplisit, serta migration preflight UUID unik.
-- **Verifikasi:** `ArchiveStorageTest` 7 tes/22 assertions dan regresi Reference 91 tes/501 assertions lulus di SQLite; Pint dijalankan. Database aplikasi belum dimigrasikan.
-- **Keputusan baru:** konteks Reference memakai `parent`, `target`, dan `parent_resolved`; identitas induk disalin sebagai metadata, bukan FK yang menghapus children. Tidak ada seeder data arsip fiktif: arsip produksi berasal dari operasi hapus.
-- **Pekerjaan tersisa/kendala:** tahap 2–10; integrasi MySQL/PostgreSQL belum diverifikasi dan tetap menjadi bagian tahap 10.
-- **Langkah berikutnya:** implementasikan layanan pengarsipan transaksional dan integrasikan endpoint delete Reference pada tahap 2.
+- **Tahap aktif:** tahap 2 selesai; berikutnya tahap 3.
+- **Status:** delete Reference sudah memindahkan data ke arsip; belum tersedia alur restore atau menu Archive.
+- **Commit terakhir yang relevan:** tahap 1 `a4262ea`; commit tahap ini menggunakan `feat(reference): archive groups and items on deletion`.
+- **File/kontrak penting:** `ArchiveReference::group/item`, `ReferenceSnapshot`, dan kedua controller Reference. `context.parent` menyimpan `entity`, `source_key`, `source_uuid`, dan `label`; `context.target` berisi `entity`/`uuid` jika induk aktif; `parent_resolved` membedakan induk yang sudah diselesaikan.
+- **Pekerjaan selesai:** pengarsipan transaksional per grup/item, pembacaan children per 200 record tanpa query induk berulang, penguncian grup pada edit/tambah/hapus/reorder, serta pesan konfirmasi/notifikasi arsip.
+- **Verifikasi:** 5 tes pengarsipan/42 assertions dan regresi Reference 96 tes/543 assertions lulus di SQLite. TypeScript lulus setelah regenerasi route Wayfinder yang diabaikan Git; Pint dan format frontend diperiksa.
+- **Keputusan baru:** tidak ada UI atau endpoint eksekusi restore/purge pada tahap ini. Snapshot induk dan item mandiri tetap dipisahkan. Tidak ada seeder arsip fiktif; arsip berasal dari operasi hapus.
+- **Pekerjaan tersisa/kendala:** tahap 3–10; database aplikasi belum dimigrasikan, integrasi kedua engine tetap di tahap 10.
+- **Langkah berikutnya:** pemeriksa konflik, pratinjau seluruh mode, fingerprint kanonis, dan token terikat konteks pada tahap 3.
 
 ## 15. Pengujian dan kriteria penerimaan
 

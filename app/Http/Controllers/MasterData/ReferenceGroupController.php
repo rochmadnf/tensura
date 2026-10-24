@@ -7,9 +7,11 @@ use App\Http\Requests\StoreReferenceGroupRequest;
 use App\Http\Requests\UpdateReferenceGroupRequest;
 use App\Http\Resources\MasterData\ReferenceGroupResource;
 use App\Models\MasterData\ReferenceGroup;
+use App\Services\Archive\ArchiveReference;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Response as InertiaResponse;
 
 class ReferenceGroupController extends Controller
@@ -70,14 +72,21 @@ class ReferenceGroupController extends Controller
 
     public function update(UpdateReferenceGroupRequest $request, ReferenceGroup $referenceGroup): RedirectResponse
     {
-        $referenceGroup->update($request->safe()->only(['name', 'description']));
+        DB::transaction(function () use ($request, $referenceGroup): void {
+            ReferenceGroup::query()
+                ->whereKey($referenceGroup->id)
+                ->where('uuid', $referenceGroup->uuid)
+                ->lockForUpdate()
+                ->firstOrFail()
+                ->update($request->safe()->only(['name', 'description']));
+        }, 5);
 
         return redirect()->route('ref.edit', $referenceGroup->uuid);
     }
 
-    public function destroy(ReferenceGroup $referenceGroup): RedirectResponse
+    public function destroy(Request $request, ReferenceGroup $referenceGroup, ArchiveReference $archive): RedirectResponse
     {
-        $referenceGroup->delete();
+        $archive->group($referenceGroup, $request->user());
 
         return redirect()->route('ref.index');
     }

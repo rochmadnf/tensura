@@ -8,7 +8,9 @@ use App\Http\Requests\StoreReferenceItemRequest;
 use App\Http\Requests\UpdateReferenceItemRequest;
 use App\Models\MasterData\ReferenceGroup;
 use App\Models\MasterData\ReferenceItem;
+use App\Services\Archive\ArchiveReference;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ReferenceItemController extends Controller
@@ -18,7 +20,7 @@ class ReferenceItemController extends Controller
     public function store(StoreReferenceItemRequest $request, ReferenceGroup $referenceGroup): RedirectResponse
     {
         DB::transaction(function () use ($request, $referenceGroup): void {
-            ReferenceGroup::query()->lockForUpdate()->findOrFail($referenceGroup->id);
+            ReferenceGroup::query()->whereKey($referenceGroup->id)->where('uuid', $referenceGroup->uuid)->lockForUpdate()->firstOrFail();
             $referenceGroup
                 ->items()
                 ->create([
@@ -35,17 +37,18 @@ class ReferenceItemController extends Controller
         ReferenceGroup $referenceGroup,
         ReferenceItem $item,
     ): RedirectResponse {
-        $item->update($request->safe()->only(['content']));
+        DB::transaction(function () use ($request, $referenceGroup, $item): void {
+            ReferenceGroup::query()->whereKey($referenceGroup->id)->where('uuid', $referenceGroup->uuid)->lockForUpdate()->firstOrFail();
+            $referenceGroup->items()->whereKey($item->id)->where('uuid', $item->uuid)->firstOrFail()
+                ->update($request->safe()->only(['content']));
+        }, 5);
 
         return back();
     }
 
-    public function destroy(ReferenceGroup $referenceGroup, ReferenceItem $item): RedirectResponse
+    public function destroy(Request $request, ReferenceGroup $referenceGroup, ReferenceItem $item, ArchiveReference $archive): RedirectResponse
     {
-        DB::transaction(function () use ($referenceGroup, $item): void {
-            ReferenceGroup::query()->lockForUpdate()->findOrFail($referenceGroup->id);
-            $item->delete();
-        }, 5);
+        $archive->item($referenceGroup, $item, $request->user());
 
         return back();
     }
@@ -53,7 +56,7 @@ class ReferenceItemController extends Controller
     public function reorder(ReorderReferenceItemsRequest $request, ReferenceGroup $referenceGroup): RedirectResponse
     {
         DB::transaction(function () use ($request, $referenceGroup): void {
-            ReferenceGroup::query()->lockForUpdate()->findOrFail($referenceGroup->id);
+            ReferenceGroup::query()->whereKey($referenceGroup->id)->where('uuid', $referenceGroup->uuid)->lockForUpdate()->firstOrFail();
             $request->assertCurrentItems();
 
             foreach ($request->validated('ids') as $index => $uuid) {

@@ -217,7 +217,7 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                 const next = group.items[position + 1] ?? group.items[position - 1];
                 focusTarget.current = next ? `edit-${next.id}` : 'add-item';
                 setDeleting(null);
-                gooeyToast.success('Berhasil', { description: 'Item berhasil dihapus.' });
+                gooeyToast.success('Berhasil', { description: 'Item berhasil dipindahkan ke arsip.' });
             },
         });
     }
@@ -495,7 +495,8 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                     <AlertDialogContent>
                         <AlertDialogTitle>Hapus Item Referensi?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Hapus <strong>{deleting?.content}</strong>? Item yang dihapus tidak dapat dikembalikan.
+                            Hapus <strong>{deleting?.content}</strong>? Item akan dipindahkan ke arsip dan dapat
+                            dipulihkan.
                         </AlertDialogDescription>
                         <AlertDialogFooter>
                             <AlertDialogCancel render={<Button variant="outline" disabled={busy} />}>

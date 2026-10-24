@@ -31,7 +31,7 @@ export function DeleteAction({ referenceGroup }: { referenceGroup: ReferenceGrou
             onSuccess: () => {
                 setOpen(false);
                 gooeyToast.success('Berhasil', {
-                    description: `${referenceGroup.name} berhasil dihapus.`,
+                    description: `${referenceGroup.name} berhasil dipindahkan ke arsip.`,
                 });
             },
             onError: () => {
@@ -70,9 +70,8 @@ export function DeleteAction({ referenceGroup }: { referenceGroup: ReferenceGrou
             <AlertDialogContent>
                 <AlertDialogTitle>Hapus Grup Referensi?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Apakah Anda yakin ingin menghapus <strong>{referenceGroup.name}</strong>?{' '}
-                    {referenceGroup.items_count} item dalam grup ini juga akan terhapus. Data yang dihapus tidak dapat
-                    dikembalikan.
+                    Apakah Anda yakin ingin menghapus <strong>{referenceGroup.name}</strong>? Grup beserta{' '}
+                    {referenceGroup.items_count} item akan dipindahkan ke arsip dan dapat dipulihkan.
                 </AlertDialogDescription>
                 <AlertDialogFooter>
                     <AlertDialogCancel render={<Button variant="outline" disabled={processing} />}>
