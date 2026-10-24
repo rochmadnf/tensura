@@ -1,2 +1,19 @@
 [tools]
 php = "8.4"
+postgres = "18"
+
+[env]
+PGDATA = "{{config_root}}/.pgdata"
+PGPORT = "5433"
+PGHOST = "127.0.0.1"
+PGUSER = "postgres"
+
+[tasks."db:start"]
+run = 'pg_ctl -D "$PGDATA" -l "$PGDATA/server.log" start'
+
+[tasks."db:stop"]
+run = 'pg_ctl -D "$PGDATA" stop'
+
+[tasks."db:status"]
+run = 'pg_ctl -D "$PGDATA" status'
+

@@ -36,3 +36,4 @@ pnpm-lock.yaml
 .agents
 .github
 .ai
+.pgdata
