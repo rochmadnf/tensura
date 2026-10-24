@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1–5 selesai, tahap 6–10 belum selesai.
+Status: tahap 1–10 selesai; verifikasi akhir SQLite, MySQL, PostgreSQL, konkurensi, dan alur layar telah dijalankan.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -186,8 +186,10 @@ Satu baris mewakili satu data asal yang belum dipulihkan atau dihapus permanen. 
 - Endpoint `archives.restore` sejak tahap 5 menerima `action: restore`, kelima mode restore, dan `confirmation_token`. `record_uuids` wajib berisi tepat satu UUID untuk `child` atau minimal satu untuk `children_selected`; mode lainnya tidak menerima pilihan record. `target_group_uuid` opsional memilih grup aktif untuk penggabungan/pemulihan. Token harus berasal dari pratinjau pengguna, mode, pilihan, dan tujuan yang sama.
 - Respons restore dibungkus `data`: `archive_uuid`, `mode`, `target` (`uuid`, `name`), `counts` (`requested`, `restored`, `conflicted`, `remaining`), `archive_exists`, dan `conflicts`. Jumlah restored mencakup induk yang diselesaikan melalui restore atau merge; remaining menghitung seluruh record yang masih diarsipkan, termasuk record di luar pilihan. Payload dan daftar kandidat dari request tidak digunakan untuk menulis data aktif.
 - Endpoint `archives.reference-group.update` menerima hanya nama baru yang mengikuti validasi nama grup aktif. Respons `data` memuat `archive_uuid`, `group` (`record_uuid`, `uuid`, `name`, `description`), dan `revision`. Rename mengubah nama snapshot, label record/paket, serta label konteks induk secara atomik, tanpa mengubah ID/UUID, deskripsi, timestamps asli, atau children. Revision bertambah dan pratinjau lama tidak dapat dikonfirmasi lagi.
+- Sejak tahap 8, `parent` pada pratinjau juga memuat `items: [{record_uuid, label}]` untuk seluruh children arsip tersisa sebagai bahan perbandingan grup. Daftar ini tidak memperluas kandidat operasi; `parent_only` tetap hanya memproses induk.
 - Gunakan halaman Inertia di `resources/js/pages/archive`. Daftar memakai props `resources`, `filters`, dan konteks modul; detail memuat children berpaginasi.
 - Gunakan `useHttp` untuk pratinjau dan eksekusi JSON, serta navigasi Inertia untuk perpindahan halaman. Definisikan tipe TypeScript untuk mode, resource, konflik, pratinjau, dan hasil.
+- Sejak tahap 8, detail menyediakan prop opsional Inertia `target_groups` yang hanya dimuat melalui partial reload saat pemilih tujuan dibuka. Parameter `target_keyword` mencari nama/deskripsi grup aktif dan `target_page` memaginasi hasil secara terpisah dari children. Resource tujuan memakai kontrak Reference existing (`id` berisi UUID, `name`, `description`, `items_count`), tanpa memuat seluruh item aktif.
 
 ## 11. Navigasi dan antarmuka
 
@@ -369,32 +371,36 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 ### Tracker tahap
 
-| Tahap                        | Status        | Commit message rencana                                                 |
-| ---------------------------- | ------------- | ---------------------------------------------------------------------- |
-| 1. Fondasi                   | Selesai       | `feat(archive): add shared archive storage and snapshot contracts`     |
-| 2. Pengarsipan Reference     | Selesai       | `feat(reference): archive groups and items on deletion`                |
-| 3. Pratinjau/token           | Selesai       | `feat(archive): add conflict previews and confirmation tokens`         |
-| 4. Restore induk/paket       | Selesai       | `feat(archive): restore reference parents and packages`                |
-| 5. Children/konflik          | Selesai       | `feat(archive): restore selected children and resolve group conflicts` |
-| 6. Delete Forever backend    | Belum dimulai | `feat(archive): permanently delete archived packages and records`      |
-| 7. Daftar/navigasi           | Belum dimulai | `feat(archive): add archive listings and secondary navigation`         |
-| 8. UI restore                | Belum dimulai | `feat(archive): add restore selection and conflict resolution flows`   |
-| 9. UI Delete Forever         | Belum dimulai | `feat(archive): add permanent deletion confirmation flows`             |
-| 10. Verifikasi lintas engine | Belum dimulai | `test(archive): verify cross-database behavior and concurrency`        |
+| Tahap                        | Status  | Commit message rencana                                                 |
+| ---------------------------- | ------- | ---------------------------------------------------------------------- |
+| 1. Fondasi                   | Selesai | `feat(archive): add shared archive storage and snapshot contracts`     |
+| 2. Pengarsipan Reference     | Selesai | `feat(reference): archive groups and items on deletion`                |
+| 3. Pratinjau/token           | Selesai | `feat(archive): add conflict previews and confirmation tokens`         |
+| 4. Restore induk/paket       | Selesai | `feat(archive): restore reference parents and packages`                |
+| 5. Children/konflik          | Selesai | `feat(archive): restore selected children and resolve group conflicts` |
+| 6. Delete Forever backend    | Selesai | `feat(archive): permanently delete archived packages and records`      |
+| 7. Daftar/navigasi           | Selesai | `feat(archive): add archive listings and secondary navigation`         |
+| 8. UI restore                | Selesai | `feat(archive): add restore selection and conflict resolution flows`   |
+| 9. UI Delete Forever         | Selesai | `feat(archive): add permanent deletion confirmation flows`             |
+| 10. Verifikasi lintas engine | Selesai | `test(archive): verify cross-database behavior and concurrency`        |
 
 ### Format checkpoint
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 5 selesai; berikutnya tahap 6.
-- **Status:** kelima mode restore, penggabungan, dan rename grup arsip tersedia melalui backend. Eksekusi Delete Forever dan halaman/menu Archive belum diimplementasikan.
-- **Commit terakhir yang relevan:** tahap 4 `d7ab21f`; commit tahap ini menggunakan `feat(archive): restore selected children and resolve group conflicts`.
-- **File/kontrak penting:** `RestoreReference::restore` kini menangani kelima mode dan tujuan eksplisit; `RenameArchivedReferenceGroup::rename` mengubah nama; request/controller/resource baru memakai route `archives.reference-group.update`. Kontrak terbaru tercatat di bagian 10.
-- **Pekerjaan selesai:** tahap 1–4 ditambah restore semua/satu/children terpilih, append sesuai urutan relatif arsip, remap FK ke induk aktif sambil mempertahankan identitas/timestamps item, merge tanpa menimpa metadata grup aktif, tujuan retry tersimpan, serta rename transaksional dengan invalidasi token lama.
-- **Verifikasi:** 24 tes baru children/merge/rename dengan 217 assertions lulus; regresi Archive/Reference 205 tes/1219 assertions lulus di SQLite. Tes tahap 4 diperbarui karena mode children/merge sekarang didukung. Pint dijalankan. Frontend tidak berubah sehingga TypeScript/build tidak diulang.
-- **Keputusan baru:** tujuan eksplisit ikut dikunci sebelum verifikasi dan append. Mode children saja tidak menyelesaikan snapshot induk yang tidak dipilih; target tersimpan dipakai untuk children berikutnya. Mode induk biasa tanpa tujuan eksplisit tetap memulihkan identitas induk asal, bukan otomatis menggabungkan ke target children sebelumnya. Rename hanya boleh selama snapshot induk didukung dan belum diselesaikan; keunikan nama diperiksa terhadap tabel aktif, bukan terhadap arsip lain.
-- **Pekerjaan tersisa/kendala:** tahap 6–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL dan pembuktian konkurensi nyata tetap di tahap 10. Tidak ada migration baru pada tahap 5.
-- **Langkah berikutnya:** tahap 6, implementasikan eksekusi Delete Forever untuk paket, satu record, dan children terpilih dengan token/kunci/transaksi yang sama. Pastikan data aktif dan snapshot induk yang belum selesai tidak ikut terhapus ketika hanya children dipilih.
+- **Tahap aktif:** tahap 10 selesai.
+- **Status:** seluruh tahap 1–10 selesai. Perbaikan portability pencarian Archive dan Reference sudah dicommit di `28f5ec2`. Pengujian lintas engine dan konkurensi dijalankan pada instance MySQL/PostgreSQL sementara dengan data directory dan socket sendiri di `/tmp`; database aplikasi tidak digunakan atau dimigrasi.
+- **Commit terakhir yang relevan:** tahap 9 `3f2a4cf`; perbaikan tahap 10 `28f5ec2`; commit ini menyimpan pengujian/checkpoint akhir dengan `test(archive): verify cross-database behavior and concurrency`.
+- **File/kontrak penting:** `phpunit.archive.xml` menjalankan suite Archive/Reference; `tests/archive-bootstrap.php` mewajibkan `ARCHIVE_TEST_DRIVER=mysql|pgsql` dan nama database `tensura_archive_test_*`, menolak config cache, mengunci konfigurasi koneksi, dan tidak mengambil fallback database/kredensial dari `.env` aplikasi. `ArchiveDatabaseCompatibilityTest` menambah cakupan collation, JSON dan pencarian; `ArchiveConcurrencyTest` memakai proses/koneksi terpisah, barrier socket, dan transaksi yang menahan kunci aplikasi sampai operasi pesaing terbukti menunggu.
+- **Pekerjaan selesai:** uji case, aksen, dan trailing space pada konflik nama/konten; pemulihan sebagian mengikuti collation engine; JSON Unicode/null/list kosong dan key bersarang tetap mendukung token setelah round trip/penataan ulang JSON. Suite existing juga memverifikasi constraint UUID/identitas asal, rollback, snapshot tidak didukung, kelima mode, merge/rename, dan tiga cakupan Delete Forever. Sebelas skenario konkurensi mencakup restore vs purge dalam kedua urutan, konfirmasi restore/purge berulang, perubahan tambah/edit/reorder/hapus item dan edit/hapus grup aktif saat restore menunggu, serta append aktif setelah restore tanpa urutan duplikat.
+- **Perbaikan yang ditemukan:** escape backslash dalam SQL pencarian lama menghasilkan 500 pada MySQL; pencarian Reference lama melewatkan hasil beda kapitalisasi pada PostgreSQL. Daftar Archive, pemilih tujuan, dan daftar Reference kini memakai escape `!` dengan binding dan pencarian huruf kecil; `%`, `_`, `!`, backslash, serta teks menyerupai SQL tetap literal. Tambah regresi marker escape dan pencarian beda kapitalisasi. Koreksi satu assertion konteks JSON agar tidak bergantung urutan key yang dinormalisasi MySQL.
+- **Verifikasi backend:** SQLite **635 lulus / 4418 assertions**, dengan **11 tes konkurensi dilewati secara sengaja** pada runner default (646 kasus total). MySQL **8.4.13**, charset `utf8mb4`, collation `utf8mb4_unicode_ci`: **273 lulus / 2183 assertions**, tanpa skip. PostgreSQL **18.6**, UTF-8 locale `C`: **273 lulus / 2186 assertions**, tanpa skip. Sebelas tes konkurensi termasuk di dalam masing-masing 273 tes. Bootstrap tanpa konfigurasi integrasi menolak berjalan sebelum mengakses database.
+- **Verifikasi frontend/tooling:** seluruh **244 tes frontend / 15 file** lulus, TypeScript lulus, build produksi exit 0, dan Pint untuk PHP terdampak lulus. Build masih memberi peringatan chunk app **743,55 kB**, batas peringatan 500 kB; tidak ada dependency atau migration baru.
+- **Verifikasi browser:** Firefox headless **158.0.1** memakai build produksi, login/sesi aplikasi, route/controller/useHttp asli, dan database PostgreSQL `tensura_archive_test_browser` yang terpisah dari suite integrasi. Lulus: induk saja; pilihan dua halaman (item 1 dan 6); satu child; seluruh children; induk + children dengan merge dan hasil parsial; konflik nama; rename; pemilih grup aktif; batal konfirmasi hapus; hapus satu item; hapus pilihan; hapus paket; redirect sesuai konteks saat paket habis; serta `archive_changed` setelah rename melalui request terpisah ketika dialog hapus terbuka. Kondisi berubah mempertahankan arsip sampai klik konfirmasi berikutnya. Pemeriksaan database akhir menunjukkan 0 paket/record arsip, sementara grup aktif hasil restore tetap berisi 4 dan 2 item. Dialog diperiksa pada desktop 1440×1000 dan viewport sempit 500×844 (batas minimum jendela Firefox sesi ini); tahap 9 sebelumnya juga memeriksa 390×844.
+- **Cara menjalankan ulang:** sediakan database disposable terisolasi, lalu jalankan `ARCHIVE_TEST_DRIVER=mysql ARCHIVE_TEST_DATABASE=tensura_archive_test_mysql vendor/bin/phpunit -c phpunit.archive.xml` dan padanannya dengan `ARCHIVE_TEST_DRIVER=pgsql`. Atur `ARCHIVE_TEST_HOST`, `ARCHIVE_TEST_PORT`, `ARCHIVE_TEST_USERNAME`, `ARCHIVE_TEST_PASSWORD`, dan/atau `ARCHIVE_TEST_SOCKET` untuk server pengujian sendiri; jangan gunakan database aplikasi. Runner memerlukan ekstensi `pcntl` dan `posix` untuk konkurensi dan gagal bila tes integrasi dilewati. Runner default tetap SQLite melalui `php artisan test --compact`.
+- **Batas verifikasi:** hasil engine berlaku untuk versi/collation yang disebutkan; bukan klaim seluruh variasi collation atau versi database. Instance, fixture, server HTTP, dan Firefox hanya dipakai untuk pengujian sementara. Alur tidak diuji terhadap database aplikasi atau layanan produksi.
+- **Pekerjaan tersisa/kendala:** tidak ada pekerjaan tahap 10 yang tertunda. Peringatan ukuran chunk frontend merupakan kondisi existing yang tidak menghalangi build.
+- **Langkah berikutnya:** penerapan mengikuti proses rilis proyek.
 
 ## 15. Pengujian dan kriteria penerimaan
 

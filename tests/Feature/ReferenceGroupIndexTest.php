@@ -71,7 +71,7 @@ class ReferenceGroupIndexTest extends TestCase
     /** @return array<string, array{string}> */
     public static function literalKeywords(): array
     {
-        return ['percent' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'sql' => ["' OR 1=1 --"]];
+        return ['percent' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'escape marker' => ['A!_%'], 'sql' => ["' OR 1=1 --"]];
     }
 
     public function test_short_keyword_is_ignored_and_groups_are_ordered_by_name(): void

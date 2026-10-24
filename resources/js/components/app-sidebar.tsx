@@ -20,6 +20,7 @@ import {
     FolderDetailsReferenceIcon,
     BookUserIcon,
     UserDollarIcon,
+    Archive01Icon,
 } from '@hugeicons/core-free-icons';
 import { usePage } from '@inertiajs/react';
 import { NavMain } from './nav-main';
@@ -29,6 +30,8 @@ import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
 import jt from '@/routes/jt';
 import empl from '@/routes/empl';
+import { index as archiveIndex } from '@/routes/archives';
+import { NavSecondary } from './nav-secondary';
 
 const navigations = {
     navMain: [
@@ -45,7 +48,14 @@ const navigations = {
             icon: <HugeiconsIcon icon={MailsIcon} strokeWidth={2} />,
         },
     ],
-    navSecondary: [],
+    navSecondary: [
+        {
+            id: 'archive',
+            title: 'Archive',
+            url: archiveIndex().url,
+            icon: <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} />,
+        },
+    ],
     masterData: {
         name: 'Data Master',
         items: [
@@ -106,6 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavMain items={navigations.navMain} />
                 <NavGroups items={navigations.masterData.items} groupName={navigations.masterData.name} />
                 <NavGroups items={navigations.employee.items} groupName={navigations.employee.name} />
+                <NavSecondary items={navigations.navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={auth.user} />
