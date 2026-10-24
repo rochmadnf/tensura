@@ -22,19 +22,21 @@ class LetterNumberController extends Controller
             ? $request->integer('per_page')
             : 10;
 
-        $keyword = trim($request->string('keyword')->toString());
+        $keyword = $request->query('keyword');
+        $keyword = is_string($keyword) ? trim($keyword) : '';
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
         $records = LetterNumber::query()
-            ->when($keyword !== '', function (Builder $query) use ($keyword) {
-                $term = '%' . addcslashes($keyword, '\\%_') . '%';
+            ->when($keyword !== '', function (Builder $query) use ($keyword): void {
+                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
 
                 $query->where(
-                    fn(Builder $q) => $q
-                        ->where('classification_name', 'like', $term)
-                        ->orWhere('classification_code', 'like', $term),
+                    fn(Builder $q): Builder => $q
+                        ->whereRaw("LOWER(classification_name) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(classification_code) LIKE ? ESCAPE '!'", [$term]),
                 );
             })
+            ->orderBy('classification_code')
             ->paginate($perPage)
             ->withQueryString();
 

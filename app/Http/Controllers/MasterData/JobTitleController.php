@@ -24,7 +24,8 @@ class JobTitleController extends Controller
             ? $request->integer('per_page')
             : 10;
 
-        $keyword = trim($request->string('keyword')->toString());
+        $keyword = $request->query('keyword');
+        $keyword = is_string($keyword) ? trim($keyword) : '';
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
         $filter = $request->query('filter');
@@ -42,12 +43,13 @@ class JobTitleController extends Controller
         $records = JobTitle::query()
             ->when($groups !== [], fn(Builder $query): Builder => $query->whereIn('group', $groups))
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
 
-                $query->whereRaw("name LIKE ? ESCAPE '\\'", [$term]);
+                $query->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term]);
             })
             ->orderBy('group')
             ->orderBy('name')
+            ->orderBy('id')
             ->paginate($perPage)
             ->withQueryString();
 

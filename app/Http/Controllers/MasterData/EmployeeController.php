@@ -60,33 +60,30 @@ class EmployeeController extends Controller
         }
 
         $today = today();
+        /** Keep derived join dates in positive calendar years, even for extreme filter input. */
+        $maximumRepresentableTenure = $today->year - 1;
         $records = Employee::query()
             ->with('jobTitle:id,uuid,name,group')
             ->when(
-                $jobGroups !== [],
+                $jobGroups !== [] || $jobTitles !== [],
                 fn(Builder $query): Builder => $query->whereHas(
                     'jobTitle',
-                    fn(Builder $jobTitle): Builder => $jobTitle->whereIn('group', $jobGroups),
+                    fn(Builder $jobTitle): Builder => $jobTitle
+                        ->when($jobGroups !== [], fn(Builder $query): Builder => $query->whereIn('group', $jobGroups))
+                        ->when($jobTitles !== [], fn(Builder $query): Builder => $query->whereIn('uuid', $jobTitles)),
                 ),
             )
             ->when($genders !== [], fn(Builder $query): Builder => $query->whereIn('gender', $genders))
-            ->when(
-                $jobTitles !== [],
-                fn(Builder $query): Builder => $query->whereHas(
-                    'jobTitle',
-                    fn(Builder $jobTitle): Builder => $jobTitle->whereIn('uuid', $jobTitles),
-                ),
-            )
             ->when(
                 $contractStatuses !== [],
                 fn(Builder $query): Builder => $query->whereIn('contract_status', $contractStatuses),
             )
             ->when($statuses !== [], fn(Builder $query): Builder => $query->whereIn('status', $statuses))
-            ->when($tenureMin !== null, function (Builder $query) use ($tenureMin, $today): void {
-                if ($tenureMin >= $today->year) {
+            ->when($tenureMin !== null, function (Builder $query) use ($tenureMin, $today, $maximumRepresentableTenure): void {
+                if ($tenureMin > $maximumRepresentableTenure) {
                     $query->whereRaw('1 = 0');
                 } else {
-                    $query->whereDate(
+                    $query->where(
                         'join_date',
                         '<=',
                         $today->copy()->subYearsNoOverflow($tenureMin)->toDateString(),
@@ -94,8 +91,8 @@ class EmployeeController extends Controller
                 }
             })
             ->when(
-                $tenureMax !== null && $tenureMax < $today->year - 1,
-                fn(Builder $query): Builder => $query->whereDate(
+                $tenureMax !== null && $tenureMax < $maximumRepresentableTenure,
+                fn(Builder $query): Builder => $query->where(
                     'join_date',
                     '>',
                     $today
@@ -105,10 +102,10 @@ class EmployeeController extends Controller
                 ),
             )
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
                 $query->where(function (Builder $search) use ($term): void {
                     foreach (['name', 'nik', 'nip', 'email'] as $column) {
-                        $search->orWhereRaw("{$column} LIKE ? ESCAPE '\\'", [$term]);
+                        $search->orWhereRaw("LOWER({$column}) LIKE ? ESCAPE '!'", [$term]);
                     }
                 });
             })

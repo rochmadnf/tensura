@@ -23,7 +23,8 @@ class ReferenceGroupController extends Controller
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
             ? $request->integer('per_page')
             : 10;
-        $keyword = trim($request->string('keyword')->toString());
+        $keyword = $request->query('keyword');
+        $keyword = is_string($keyword) ? trim($keyword) : '';
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
         $records = ReferenceGroup::query()
