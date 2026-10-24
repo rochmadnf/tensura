@@ -21,11 +21,18 @@ class EmployeeStoreTest extends TestCase
     public function test_create_page_provides_uuid_job_options_and_existing_enums(): void
     {
         $jobTitle = JobTitle::factory()->create();
-        $this->actingAs(UserFactory::new()->create())->withoutVite()->get(route('empl.create'))
-            ->assertOk()->assertInertia(fn(Assert $page) => $page->component('employee/create')
-            ->where('page.id', 'a30c21b9-15ef-4dc0-97ef-524ead13be55')
-            ->where('jobTitles', [['id' => $jobTitle->uuid, 'label' => $jobTitle->name]])
-            ->where('contractStatuses', ContractStatusEnum::options())->where('statuses', AsnStatusEnum::options()));
+        $this->actingAs(UserFactory::new()->create())
+            ->withoutVite()
+            ->get(route('empl.create'))
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->component('employee/create')
+                    ->where('page.id', 'a30c21b9-15ef-4dc0-97ef-524ead13be55')
+                    ->where('jobTitles', [['id' => $jobTitle->uuid, 'label' => $jobTitle->name]])
+                    ->where('contractStatuses', ContractStatusEnum::options())
+                    ->where('statuses', AsnStatusEnum::options()),
+            );
     }
 
     public function test_store_preserves_identity_strings_maps_job_uuid_and_ignores_system_fields(): void
@@ -33,9 +40,10 @@ class EmployeeStoreTest extends TestCase
         $this->travelTo(now()->setDate(2026, 10, 24)->startOfDay());
         $data = $this->payload();
         $uuid = (string) Str::uuid();
-        $this->actingAs(UserFactory::new()->create())->post(route('empl.store'), [
-            ...$data, 'id' => 999, 'uuid' => $uuid, 'created_at' => '2000-01-01',
-        ])->assertRedirectToRoute('empl.index')->assertSessionHasNoErrors();
+        $this->actingAs(UserFactory::new()->create())
+            ->post(route('empl.store'), [...$data, 'id' => 999, 'uuid' => $uuid, 'created_at' => '2000-01-01'])
+            ->assertRedirectToRoute('empl.index')
+            ->assertSessionHasNoErrors();
 
         $employee = Employee::query()->sole();
         $this->assertSame($data['nik'], $employee->nik);
@@ -53,22 +61,44 @@ class EmployeeStoreTest extends TestCase
 
     public function test_optional_empty_fields_are_saved_as_null_and_can_be_repeated(): void
     {
-        $data = [...$this->payload(), 'nip' => '', 'email' => '', 'front_title' => '', 'back_title' => '', 'rank' => '', 'grade' => ''];
+        $data = [
+            ...$this->payload(),
+            'nip' => '',
+            'email' => '',
+            'front_title' => '',
+            'back_title' => '',
+            'rank' => '',
+            'grade' => '',
+        ];
         $this->actingAs(UserFactory::new()->create());
         $this->post(route('empl.store'), $data)->assertSessionHasNoErrors();
         $this->post(route('empl.store'), [...$data, 'nik' => '0000000000000002'])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('employees', 2);
-        $this->assertDatabaseHas('employees', ['nik' => $data['nik'], 'nip' => null, 'email' => null, 'front_title' => null, 'back_title' => null, 'rank' => null, 'grade' => null]);
+        $this->assertDatabaseHas('employees', [
+            'nik' => $data['nik'],
+            'nip' => null,
+            'email' => null,
+            'front_title' => null,
+            'back_title' => null,
+            'rank' => null,
+            'grade' => null,
+        ]);
     }
 
     public function test_join_date_uses_the_application_day_at_the_utc_day_boundary(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-10-23 16:30:00', 'UTC'));
         $data = [...$this->payload(), 'join_date' => '2026-10-24'];
-        $this->actingAs(UserFactory::new()->create())->post(route('empl.store'), $data)
-            ->assertRedirectToRoute('empl.index')->assertSessionHasNoErrors();
+        $this->actingAs(UserFactory::new()->create())
+            ->post(route('empl.store'), $data)
+            ->assertRedirectToRoute('empl.index')
+            ->assertSessionHasNoErrors();
         $this->post(route('empl.store'), [
-            ...$data, 'nik' => '0000000000000002', 'nip' => null, 'email' => null, 'join_date' => '2026-10-25',
+            ...$data,
+            'nik' => '0000000000000002',
+            'nip' => null,
+            'email' => null,
+            'join_date' => '2026-10-25',
         ])->assertInvalid(['join_date' => 'Tanggal Bergabung maksimal tanggal hari ini.']);
         $this->assertDatabaseCount('employees', 1);
     }
@@ -79,7 +109,8 @@ class EmployeeStoreTest extends TestCase
     {
         $this->travelTo(now()->setDate(2026, 10, 24)->startOfDay());
         $data = $this->payload();
-        $this->actingAs(UserFactory::new()->create())->post(route('empl.store'), [...$data, ...$invalid])
+        $this->actingAs(UserFactory::new()->create())
+            ->post(route('empl.store'), [...$data, ...$invalid])
             ->assertInvalid([$field]);
         $this->assertDatabaseCount('employees', 0);
     }
@@ -133,7 +164,9 @@ class EmployeeStoreTest extends TestCase
     {
         $other = Employee::factory()->create();
         $data = $this->payload();
-        $this->actingAs(UserFactory::new()->create())->post(route('empl.store'), [...$data, $field => $other->$field])->assertInvalid([$field]);
+        $this->actingAs(UserFactory::new()->create())
+            ->post(route('empl.store'), [...$data, $field => $other->$field])
+            ->assertInvalid([$field]);
         $this->assertDatabaseCount('employees', 1);
     }
 
@@ -145,8 +178,16 @@ class EmployeeStoreTest extends TestCase
 
     public function test_required_messages_use_indonesian_labels(): void
     {
-        $this->actingAs(UserFactory::new()->create())->post(route('empl.store'), [])
-            ->assertInvalid(['nik' => 'NIK wajib diisi.', 'name' => 'Nama wajib diisi.', 'job_title_id' => 'Jabatan wajib diisi.', 'join_date' => 'Tanggal Bergabung wajib diisi.', 'contract_status' => 'Status Kontrak wajib diisi.', 'status' => 'Status Pegawai wajib diisi.']);
+        $this->actingAs(UserFactory::new()->create())
+            ->post(route('empl.store'), [])
+            ->assertInvalid([
+                'nik' => 'NIK wajib diisi.',
+                'name' => 'Nama wajib diisi.',
+                'job_title_id' => 'Jabatan wajib diisi.',
+                'join_date' => 'Tanggal Bergabung wajib diisi.',
+                'contract_status' => 'Status Kontrak wajib diisi.',
+                'status' => 'Status Pegawai wajib diisi.',
+            ]);
     }
 
     public function test_guests_cannot_create_employees(): void
@@ -159,6 +200,19 @@ class EmployeeStoreTest extends TestCase
     /** @return array<string, mixed> */
     private function payload(): array
     {
-        return ['nik' => '0000000000000001', 'nip' => '000000000000000001', 'name' => 'Siti Aminah', 'front_title' => 'dr.', 'back_title' => 'M.Kes.', 'job_title_id' => JobTitle::factory()->create()->uuid, 'rank' => 'Penata', 'grade' => 'III/c', 'join_date' => today()->toDateString(), 'email' => 'siti@example.test', 'contract_status' => 1, 'status' => 1];
+        return [
+            'nik' => '0000000000000001',
+            'nip' => '000000000000000001',
+            'name' => 'Siti Aminah',
+            'front_title' => 'dr.',
+            'back_title' => 'M.Kes.',
+            'job_title_id' => JobTitle::factory()->create()->uuid,
+            'rank' => 'Penata',
+            'grade' => 'III/c',
+            'join_date' => today()->toDateString(),
+            'email' => 'siti@example.test',
+            'contract_status' => 1,
+            'status' => 1,
+        ];
     }
 }

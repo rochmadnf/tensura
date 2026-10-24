@@ -18,7 +18,8 @@ class ReferenceItemFactory extends Factory
             'reference_group_id' => ReferenceGroup::factory(),
             'content' => fake()->unique()->numerify('Item ########'),
             'sort_order' => fn(array $attributes): int => (int) ReferenceItem::query()
-                ->where('reference_group_id', $attributes['reference_group_id'])->max('sort_order') + 1,
+                ->where('reference_group_id', $attributes['reference_group_id'])
+                ->max('sort_order') + 1,
         ];
     }
 }

@@ -26,14 +26,16 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['filter' => 'group:1,2', 'keyword' => 'Jabatan']))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', [1, 2])
-                ->where('filters.keyword', 'Jabatan')
-                ->where('resources.meta.total', 2)
-                ->where('resources.data.0.id', $doctor->uuid)
-                ->where('resources.data.1.id', $nurse->uuid)
-                ->has('groups', 11)
-                ->where('groups.0', ['id' => 1, 'label' => 'Dokter']));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.groups', [1, 2])
+                    ->where('filters.keyword', 'Jabatan')
+                    ->where('resources.meta.total', 2)
+                    ->where('resources.data.0.id', $doctor->uuid)
+                    ->where('resources.data.1.id', $nurse->uuid)
+                    ->has('groups', 11)
+                    ->where('groups.0', ['id' => 1, 'label' => 'Dokter']),
+            );
     }
 
     public function test_normalizes_group_choices_and_filters_a_single_group(): void
@@ -45,10 +47,12 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['groups' => ['1', '1', '999', 'invalid', ['2'], '1 OR 1=1', '1.5']]))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', [1])
-                ->has('resources.data', 1)
-                ->where('resources.data.0.id', $doctor->uuid));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.groups', [1])
+                    ->has('resources.data', 1)
+                    ->where('resources.data.0.id', $doctor->uuid),
+            );
     }
 
     #[DataProvider('emptyGroupFilters')]
@@ -61,9 +65,7 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['groups' => $groups]))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', [])
-                ->where('resources.meta.total', 2));
+            ->assertInertia(fn(Assert $page) => $page->where('filters.groups', [])->where('resources.meta.total', 2));
     }
 
     /** @return array<string, array{mixed}> */
@@ -84,15 +86,19 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['groups' => ['2']]))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', [2])
-                ->has('resources.data', 0)
-                ->where('resources.meta.total', 0));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.groups', [2])
+                    ->has('resources.data', 0)
+                    ->where('resources.meta.total', 0),
+            );
     }
 
     public function test_group_filter_is_applied_before_pagination_and_kept_on_the_next_page(): void
     {
-        JobTitle::factory()->count(6)->create(['group' => JobTitleGroupEnum::DOKTER]);
+        JobTitle::factory()
+            ->count(6)
+            ->create(['group' => JobTitleGroupEnum::DOKTER]);
         JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
         JobTitle::factory()->create(['group' => JobTitleGroupEnum::BIDAN]);
 
@@ -100,24 +106,34 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['filter' => 'group:1,2|year:2034', 'per_page' => 5]));
 
-        $response->assertOk()->assertInertia(fn(Assert $page) => $page
-            ->has('resources.data', 5)
-            ->where('resources.meta.total', 7)
-            ->where('resources.links.next', fn(string $url): bool => str_contains(urldecode($url), 'filter=group:1,2|year:2034')));
-
-        $this->get($response->inertiaProps('resources.links.next'))
+        $response
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->has('resources.data', 5)
+                    ->where('resources.meta.total', 7)
+                    ->where(
+                        'resources.links.next',
+                        fn(string $url): bool => str_contains(urldecode($url), 'filter=group:1,2|year:2034'),
+                    ),
+            );
+
+        $this->get($response->inertiaProps('resources.links.next'))->assertOk()->assertInertia(
+            fn(Assert $page) => $page
                 ->where('filters.groups', [1, 2])
                 ->has('resources.data', 2)
                 ->where('resources.meta.current_page', 2)
                 ->where('resources.meta.per_page', 5)
-                ->where('resources.meta.total', 7));
+                ->where('resources.meta.total', 7),
+        );
     }
 
     #[DataProvider('compactGroupFilters')]
-    public function test_normalizes_compact_group_filters(mixed $filter, array $expectedGroups, int $expectedTotal): void
-    {
+    public function test_normalizes_compact_group_filters(
+        mixed $filter,
+        array $expectedGroups,
+        int $expectedTotal,
+    ): void {
         JobTitle::factory()->create(['group' => JobTitleGroupEnum::DOKTER]);
         JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
         JobTitle::factory()->create(['group' => null]);
@@ -126,9 +142,11 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['filter' => $filter]))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', $expectedGroups)
-                ->where('resources.meta.total', $expectedTotal));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.groups', $expectedGroups)
+                    ->where('resources.meta.total', $expectedTotal),
+            );
     }
 
     /** @return array<string, array{mixed, list<int>, int}> */
@@ -158,10 +176,12 @@ class JobTitleIndexTest extends TestCase
             ->withoutVite()
             ->get(route('jt.index', ['filter' => 'group:2', 'groups' => ['1']]))
             ->assertOk()
-            ->assertInertia(fn(Assert $page) => $page
-                ->where('filters.groups', [2])
-                ->has('resources.data', 1)
-                ->where('resources.data.0.id', $nurse->uuid));
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('filters.groups', [2])
+                    ->has('resources.data', 1)
+                    ->where('resources.data.0.id', $nurse->uuid),
+            );
     }
 
     public function test_guests_are_redirected_to_login(): void

@@ -32,7 +32,15 @@ class UpdateReferenceItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['bail', 'required', 'string', 'max:255', Rule::unique('reference_items', 'content')->where('reference_group_id', $this->route('referenceGroup')->id)->ignore($this->route('item'))],
+            'content' => [
+                'bail',
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('reference_items', 'content')
+                    ->where('reference_group_id', $this->route('referenceGroup')->id)
+                    ->ignore($this->route('item')),
+            ],
         ];
     }
 }

@@ -19,19 +19,25 @@ class ReferenceGroupController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
-            ? $request->integer('per_page') : 10;
+            ? $request->integer('per_page')
+            : 10;
         $keyword = trim($request->string('keyword')->toString());
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
-        $records = ReferenceGroup::query()->withCount('items')
+        $records = ReferenceGroup::query()
+            ->withCount('items')
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
                 $term = '%' . addcslashes($keyword, '\\%_') . '%';
                 $query->where(function (Builder $query) use ($term): void {
-                    $query->whereRaw("name LIKE ? ESCAPE '\\'", [$term])
+                    $query
+                        ->whereRaw("name LIKE ? ESCAPE '\\'", [$term])
                         ->orWhereRaw("description LIKE ? ESCAPE '\\'", [$term]);
                 });
             })
-            ->orderBy('name')->orderBy('id')->paginate($perPage)->withQueryString();
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return inertia('reference/index', [
             'page' => ['id' => $this->pageId],

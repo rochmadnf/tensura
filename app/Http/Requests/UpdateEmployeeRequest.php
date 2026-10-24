@@ -19,8 +19,20 @@ class UpdateEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nik' => ['bail', 'required', 'string', 'regex:/^[0-9]{16}$/D', Rule::unique('employees', 'nik')->ignore($this->route('employee'))],
-            'nip' => ['bail', 'nullable', 'string', 'regex:/^[0-9]{18}$/D', Rule::unique('employees', 'nip')->ignore($this->route('employee'))],
+            'nik' => [
+                'bail',
+                'required',
+                'string',
+                'regex:/^[0-9]{16}$/D',
+                Rule::unique('employees', 'nik')->ignore($this->route('employee')),
+            ],
+            'nip' => [
+                'bail',
+                'nullable',
+                'string',
+                'regex:/^[0-9]{18}$/D',
+                Rule::unique('employees', 'nip')->ignore($this->route('employee')),
+            ],
             'name' => ['bail', 'required', 'string', 'max:100'],
             'front_title' => ['bail', 'nullable', 'string', 'max:50'],
             'back_title' => ['bail', 'nullable', 'string', 'max:50'],
@@ -28,7 +40,14 @@ class UpdateEmployeeRequest extends FormRequest
             'rank' => ['bail', 'nullable', 'string', 'max:50'],
             'grade' => ['bail', 'nullable', 'string', 'max:50'],
             'join_date' => ['bail', 'required', 'date_format:Y-m-d', 'before_or_equal:today'],
-            'email' => ['bail', 'nullable', 'string', 'email', 'max:100', Rule::unique('employees', 'email')->ignore($this->route('employee'))],
+            'email' => [
+                'bail',
+                'nullable',
+                'string',
+                'email',
+                'max:100',
+                Rule::unique('employees', 'email')->ignore($this->route('employee')),
+            ],
             'contract_status' => ['bail', 'required', Rule::enum(ContractStatusEnum::class)],
             'status' => ['bail', 'required', Rule::enum(AsnStatusEnum::class)],
         ];

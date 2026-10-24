@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\MasterData\ReferenceGroup;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration {
             $table->id();
             $table->uuid('uuid')->index();
             $table
-                ->foreignIdFor(\App\Models\MasterData\ReferenceGroup::class, 'reference_group_id')
+                ->foreignIdFor(ReferenceGroup::class, 'reference_group_id')
                 ->constrained('reference_groups')
                 ->onDelete('cascade');
             $table->string('content', 255);

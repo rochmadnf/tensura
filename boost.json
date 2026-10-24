@@ -14,6 +14,7 @@
         "tailwindcss-development",
         "code-review",
         "codebase-design",
+        "design-taste-frontend",
         "getting-started",
         "goey-toast",
         "grill-me",
@@ -24,7 +25,6 @@
         "migrate-v8-to-v9",
         "table-state",
         "shadcn",
-        "design-taste-frontend",
         "typescript-advanced-types",
         "ui-styling",
         "ui-ux-pro-max"

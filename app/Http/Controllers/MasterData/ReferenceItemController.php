@@ -19,17 +19,22 @@ class ReferenceItemController extends Controller
     {
         DB::transaction(function () use ($request, $referenceGroup): void {
             ReferenceGroup::query()->lockForUpdate()->findOrFail($referenceGroup->id);
-            $referenceGroup->items()->create([
-                ...$request->safe()->only(['content']),
-                'sort_order' => (int) $referenceGroup->items()->max('sort_order') + 1,
-            ]);
+            $referenceGroup
+                ->items()
+                ->create([
+                    ...$request->safe()->only(['content']),
+                    'sort_order' => (int) $referenceGroup->items()->max('sort_order') + 1,
+                ]);
         }, 5);
 
         return back();
     }
 
-    public function update(UpdateReferenceItemRequest $request, ReferenceGroup $referenceGroup, ReferenceItem $item): RedirectResponse
-    {
+    public function update(
+        UpdateReferenceItemRequest $request,
+        ReferenceGroup $referenceGroup,
+        ReferenceItem $item,
+    ): RedirectResponse {
         $item->update($request->safe()->only(['content']));
 
         return back();
@@ -52,7 +57,10 @@ class ReferenceItemController extends Controller
             $request->assertCurrentItems();
 
             foreach ($request->validated('ids') as $index => $uuid) {
-                $referenceGroup->items()->where('uuid', $uuid)->update(['sort_order' => $index + 1]);
+                $referenceGroup
+                    ->items()
+                    ->where('uuid', $uuid)
+                    ->update(['sort_order' => $index + 1]);
             }
         }, 5);
 

@@ -17,11 +17,19 @@ class ReferenceItemDeleteTest extends TestCase
     public function test_delete_removes_only_selected_item_preserving_other_positions(): void
     {
         $group = ReferenceGroup::factory()->create();
-        $first = ReferenceItem::factory()->for($group, 'group')->create(['sort_order' => 1]);
-        $selected = ReferenceItem::factory()->for($group, 'group')->create(['sort_order' => 2]);
-        $last = ReferenceItem::factory()->for($group, 'group')->create(['sort_order' => 5]);
+        $first = ReferenceItem::factory()
+            ->for($group, 'group')
+            ->create(['sort_order' => 1]);
+        $selected = ReferenceItem::factory()
+            ->for($group, 'group')
+            ->create(['sort_order' => 2]);
+        $last = ReferenceItem::factory()
+            ->for($group, 'group')
+            ->create(['sort_order' => 5]);
         $other = ReferenceItem::factory()->create();
-        $this->actingAs(UserFactory::new()->create())->from(route('ref.edit', $group->uuid))->delete(route('ref.item.destroy', [$group->uuid, $selected->uuid]))
+        $this->actingAs(UserFactory::new()->create())
+            ->from(route('ref.edit', $group->uuid))
+            ->delete(route('ref.item.destroy', [$group->uuid, $selected->uuid]))
             ->assertRedirectToRoute('ref.edit', $group->uuid);
         $this->assertModelMissing($selected);
         $this->assertModelExists($other);
@@ -36,11 +44,21 @@ class ReferenceItemDeleteTest extends TestCase
     {
         $item = ReferenceItem::factory()->create();
         $other = ReferenceItem::factory()->create();
-        $parent = $kind === 'numeric group' ? $item->reference_group_id : ($kind === 'unknown group' ? (string) Str::uuid() : $item->group->uuid);
+        $parent =
+            $kind === 'numeric group'
+                ? $item->reference_group_id
+                : ($kind === 'unknown group'
+                    ? (string) Str::uuid()
+                    : $item->group->uuid);
         $id = match ($kind) {
-            'foreign' => $other->uuid, 'unknown' => (string) Str::uuid(), 'numeric' => $item->id, default => $item->uuid
+            'foreign' => $other->uuid,
+            'unknown' => (string) Str::uuid(),
+            'numeric' => $item->id,
+            default => $item->uuid,
         };
-        $this->actingAs(UserFactory::new()->create())->delete(route('ref.item.destroy', [$parent, $id]))->assertNotFound();
+        $this->actingAs(UserFactory::new()->create())
+            ->delete(route('ref.item.destroy', [$parent, $id]))
+            ->assertNotFound();
         $this->assertModelExists($item);
         $this->assertModelExists($other);
     }
@@ -48,13 +66,21 @@ class ReferenceItemDeleteTest extends TestCase
     /** @return array<string, array{string}> */
     public static function invalidIdentifiers(): array
     {
-        return ['foreign' => ['foreign'], 'unknown' => ['unknown'], 'numeric' => ['numeric'], 'numeric group' => ['numeric group'], 'unknown group' => ['unknown group']];
+        return [
+            'foreign' => ['foreign'],
+            'unknown' => ['unknown'],
+            'numeric' => ['numeric'],
+            'numeric group' => ['numeric group'],
+            'unknown group' => ['unknown group'],
+        ];
     }
 
     public function test_guest_cannot_delete_item(): void
     {
         $item = ReferenceItem::factory()->create();
-        $this->delete(route('ref.item.destroy', [$item->group->uuid, $item->uuid]))->assertRedirectToRoute('login.index');
+        $this->delete(route('ref.item.destroy', [$item->group->uuid, $item->uuid]))->assertRedirectToRoute(
+            'login.index',
+        );
         $this->assertModelExists($item);
     }
 }

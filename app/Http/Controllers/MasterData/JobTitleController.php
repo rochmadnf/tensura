@@ -28,9 +28,8 @@ class JobTitleController extends Controller
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
 
         $filter = $request->query('filter');
-        $requestedGroups = $filter === null
-            ? $request->query('groups', [])
-            : (FilterQuery::parse($filter)['group'] ?? []);
+        $requestedGroups =
+            $filter === null ? $request->query('groups', []) : FilterQuery::parse($filter)['group'] ?? [];
 
         $groups = collect(is_array($requestedGroups) ? $requestedGroups : [])
             ->filter(fn(mixed $value): bool => is_int($value) || (is_string($value) && ctype_digit($value)))

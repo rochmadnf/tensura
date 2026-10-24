@@ -19,7 +19,9 @@ class ReferenceGroupDeleteTest extends TestCase
         $group = ReferenceGroup::factory()->create();
         $items = ReferenceItem::factory()->count(2)->for($group, 'group')->create();
         $other = ReferenceItem::factory()->create();
-        $this->actingAs(UserFactory::new()->create())->delete(route('ref.destroy', $group->uuid))->assertRedirectToRoute('ref.index');
+        $this->actingAs(UserFactory::new()->create())
+            ->delete(route('ref.destroy', $group->uuid))
+            ->assertRedirectToRoute('ref.index');
         $this->assertModelMissing($group);
         foreach ($items as $item) {
             $this->assertModelMissing($item);
@@ -33,7 +35,9 @@ class ReferenceGroupDeleteTest extends TestCase
     public function test_delete_rejects_unknown_uuid_and_numeric_id(bool $numeric): void
     {
         $group = ReferenceGroup::factory()->create();
-        $this->actingAs(UserFactory::new()->create())->delete(route('ref.destroy', $numeric ? $group->id : (string) Str::uuid()))->assertNotFound();
+        $this->actingAs(UserFactory::new()->create())
+            ->delete(route('ref.destroy', $numeric ? $group->id : (string) Str::uuid()))
+            ->assertNotFound();
         $this->assertModelExists($group);
     }
 

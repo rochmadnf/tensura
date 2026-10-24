@@ -32,13 +32,15 @@ class ReorderReferenceItemsRequest extends FormRequest
     /** @return list<\Closure> */
     public function after(): array
     {
-        return [function (Validator $validator): void {
-            if (!$validator->errors()->isEmpty()) {
-                return;
-            }
+        return [
+            function (Validator $validator): void {
+                if (!$validator->errors()->isEmpty()) {
+                    return;
+                }
 
-            $this->assertCurrentItems();
-        }];
+                $this->assertCurrentItems();
+            },
+        ];
     }
 
     public function assertCurrentItems(): void

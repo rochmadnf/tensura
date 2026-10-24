@@ -35,7 +35,14 @@ class UpdateReferenceGroupRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['bail', 'required', 'string', 'min:3', 'max:100', Rule::unique('reference_groups')->ignore($this->route('referenceGroup'))],
+            'name' => [
+                'bail',
+                'required',
+                'string',
+                'min:3',
+                'max:100',
+                Rule::unique('reference_groups')->ignore($this->route('referenceGroup')),
+            ],
             'description' => ['bail', 'nullable', 'string', 'max:255'],
         ];
     }

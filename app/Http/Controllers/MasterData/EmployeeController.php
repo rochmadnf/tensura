@@ -25,14 +25,16 @@ class EmployeeController extends Controller
     public function index(Request $request): InertiaResponse
     {
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
-            ? $request->integer('per_page') : 10;
+            ? $request->integer('per_page')
+            : 10;
         $keyword = $request->query('keyword');
         $keyword = is_string($keyword) ? trim($keyword) : '';
         $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
         $parsed = FilterQuery::parse($request->query('filter'));
         $jobTitles = JobTitle::query()
             ->whereIn('uuid', array_filter($parsed['job_title'] ?? [], fn(string $value): bool => Str::isUuid($value)))
-            ->pluck('uuid')->all();
+            ->pluck('uuid')
+            ->all();
         $contractStatuses = $this->enumValues($parsed['contract_status'] ?? [], ContractStatusEnum::class);
         $statuses = $this->enumValues($parsed['status'] ?? [], AsnStatusEnum::class);
         $tenureMin = $this->tenureBound($parsed['tenure_min'] ?? []);
@@ -45,20 +47,40 @@ class EmployeeController extends Controller
         $today = today();
         $records = Employee::query()
             ->with('jobTitle:id,uuid,name')
-            ->when($jobTitles !== [], fn(Builder $query): Builder => $query->whereHas(
-                'jobTitle', fn(Builder $jobTitle): Builder => $jobTitle->whereIn('uuid', $jobTitles),
-            ))
-            ->when($contractStatuses !== [], fn(Builder $query): Builder => $query->whereIn('contract_status', $contractStatuses))
+            ->when(
+                $jobTitles !== [],
+                fn(Builder $query): Builder => $query->whereHas(
+                    'jobTitle',
+                    fn(Builder $jobTitle): Builder => $jobTitle->whereIn('uuid', $jobTitles),
+                ),
+            )
+            ->when(
+                $contractStatuses !== [],
+                fn(Builder $query): Builder => $query->whereIn('contract_status', $contractStatuses),
+            )
             ->when($statuses !== [], fn(Builder $query): Builder => $query->whereIn('status', $statuses))
             ->when($tenureMin !== null, function (Builder $query) use ($tenureMin, $today): void {
                 if ($tenureMin >= $today->year) {
                     $query->whereRaw('1 = 0');
                 } else {
-                    $query->whereDate('join_date', '<=', $today->copy()->subYearsNoOverflow($tenureMin)->toDateString());
+                    $query->whereDate(
+                        'join_date',
+                        '<=',
+                        $today->copy()->subYearsNoOverflow($tenureMin)->toDateString(),
+                    );
                 }
             })
-            ->when($tenureMax !== null && $tenureMax < $today->year - 1, fn(Builder $query): Builder => $query
-                ->whereDate('join_date', '>', $today->copy()->subYearsNoOverflow($tenureMax + 1)->toDateString()))
+            ->when(
+                $tenureMax !== null && $tenureMax < $today->year - 1,
+                fn(Builder $query): Builder => $query->whereDate(
+                    'join_date',
+                    '>',
+                    $today
+                        ->copy()
+                        ->subYearsNoOverflow($tenureMax + 1)
+                        ->toDateString(),
+                ),
+            )
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
                 $term = '%' . addcslashes($keyword, '\\%_') . '%';
                 $query->where(function (Builder $search) use ($term): void {
@@ -68,8 +90,11 @@ class EmployeeController extends Controller
                 });
             })
             ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [AsnStatusEnum::AKTIF->value])
-            ->orderBy('join_date')->orderBy('name')->orderBy('id')
-            ->paginate($perPage)->withQueryString();
+            ->orderBy('join_date')
+            ->orderBy('name')
+            ->orderBy('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
         return inertia('employee/index', [
             'page' => ['id' => $this->pageId],
@@ -140,8 +165,11 @@ class EmployeeController extends Controller
     private function formOptions(): array
     {
         return [
-            'jobTitles' => JobTitle::query()->orderBy('name')->get(['uuid', 'name'])
-                ->map(fn(JobTitle $jobTitle): array => ['id' => $jobTitle->uuid, 'label' => $jobTitle->name])->all(),
+            'jobTitles' => JobTitle::query()
+                ->orderBy('name')
+                ->get(['uuid', 'name'])
+                ->map(fn(JobTitle $jobTitle): array => ['id' => $jobTitle->uuid, 'label' => $jobTitle->name])
+                ->all(),
             'contractStatuses' => ContractStatusEnum::options(),
             'statuses' => AsnStatusEnum::options(),
             'today' => today()->toDateString(),
@@ -157,7 +185,10 @@ class EmployeeController extends Controller
         return collect($values)
             ->filter(fn(string $value): bool => ctype_digit($value) && strlen($value) < 10)
             ->map(fn(string $value): ?int => $enum::tryFrom((int) $value)?->value)
-            ->filter(fn(?int $value): bool => $value !== null)->unique()->values()->all();
+            ->filter(fn(?int $value): bool => $value !== null)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /** @param list<string> $values */

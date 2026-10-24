@@ -32,7 +32,16 @@ class StoreReferenceItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'content' => ['bail', 'required', 'string', 'max:255', Rule::unique('reference_items', 'content')->where('reference_group_id', $this->route('referenceGroup')->id)],
+            'content' => [
+                'bail',
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('reference_items', 'content')->where(
+                    'reference_group_id',
+                    $this->route('referenceGroup')->id,
+                ),
+            ],
         ];
     }
 }

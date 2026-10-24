@@ -16,7 +16,9 @@ class EmployeeDeleteTest extends TestCase
     {
         $employee = Employee::factory()->create();
         $other = Employee::factory()->create();
-        $this->actingAs(UserFactory::new()->create())->delete(route('empl.destroy', $employee->uuid))->assertRedirectToRoute('empl.index');
+        $this->actingAs(UserFactory::new()->create())
+            ->delete(route('empl.destroy', $employee->uuid))
+            ->assertRedirectToRoute('empl.index');
         $this->assertDatabaseMissing('employees', ['id' => $employee->id]);
         $this->assertDatabaseHas('employees', ['id' => $other->id]);
         $this->assertDatabaseHas('job_titles', ['id' => $employee->job_title_id]);

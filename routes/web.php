@@ -28,8 +28,9 @@ Route::middleware('auth')->group(function () {
         ->scoped(['referenceGroup' => 'uuid'])
         ->names('ref');
 
-    Route::patch('reference/{referenceGroup:uuid}/items/reorder', [ReferenceItemController::class, 'reorder'])
-        ->name('ref.item.reorder');
+    Route::patch('reference/{referenceGroup:uuid}/items/reorder', [ReferenceItemController::class, 'reorder'])->name(
+        'ref.item.reorder',
+    );
 
     Route::resource('reference.items', ReferenceItemController::class)
         ->only(['store', 'update', 'destroy'])

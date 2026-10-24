@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\MasterData\ReferenceGroup;
 use Illuminate\Database\Seeder;
 
 class ReferenceGroupSeeder extends Seeder
@@ -38,7 +38,7 @@ class ReferenceGroupSeeder extends Seeder
                 'description' => null,
             ],
         ])->each(function ($item) {
-            $model = \App\Models\MasterData\ReferenceGroup::firstOrNew([
+            $model = ReferenceGroup::firstOrNew([
                 'id' => $item['id'],
             ]);
 

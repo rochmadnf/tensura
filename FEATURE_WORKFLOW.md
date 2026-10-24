@@ -66,22 +66,22 @@ Setelah wawancara, tulis tabel ringkas: nama fitur, `pageId`, nama halaman, name
 
 Contoh memakai JobTitle (`job-title`, alias `jt`).
 
-| Item          | Pola                                                                                                                                                                         | Contoh                                                                       |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Model         | `App\Models\{Domain}\{Nama}`; `HasUuids` dengan `uniqueIds()` → `['uuid']`; `$fillable`; `casts()` protected untuk enum. Tambahkan `HasFactory` dan `#[UseFactory]`          | `App\Models\MasterData\JobTitle`                                             |
-| Factory       | `Database\Factories\{Nama}Factory`; set `$model` bila model ada di sub-namespace                                                                                             | `JobTitleFactory`                                                            |
-| Migration     | tabel plural snake_case; `id()`, `uuid('uuid')->index()`, `timestamps()`                                                                                                      | `create_job_titles_table`                                                    |
-| Controller    | `App\Http\Controllers\{Domain}\{Nama}Controller`; `protected string $pageId`                                                                                                  | `JobTitleController`                                                         |
-| Request       | `Store{Nama}Request`, `Update{Nama}Request`; `authorize()` → `$this->user() !== null`; `attributes()` berbahasa Indonesia; aturan memakai `bail`                              | `StoreJobTitleRequest`                                                       |
-| Resource      | `App\Http\Resources\{Domain}\{Nama}Resource` dengan `@mixin`; `id` = `uuid`                                                                                                   | `JobTitleResource`                                                           |
-| Enum          | `App\Enums\{Nama}{Atribut}Enum`, `int`, `label()`, `options()`                                                                                                                | `JobTitleGroupEnum`                                                          |
-| Route         | `Route::resource('job-title', X::class)->except('show')->parameters(['job-title' => 'jobTitle'])->scoped(['jobTitle' => 'uuid'])->names('jt')`; nama route `jt.index`, `jt.create`, `jt.store`, `jt.edit`, `jt.update`, `jt.destroy` | `routes/web.php`                                                             |
-| Halaman       | `resources/js/pages/{slug}/{index,create,edit}.tsx`                                                                                                                           | `pages/job-title/index.tsx`                                                  |
-| Komponen tabel | `resources/js/pages/{slug}/components/data-table/{index,column,delete-action}.tsx`                                                                                           | `JobTitleDataTable`, `columns`, `DeleteAction`                               |
-| Schema        | `resources/js/schemas/{slug}.ts` memakai `defineRequest` dengan label Indonesia                                                                                               | `createJobTitleSchema(groups)`                                               |
-| Route helper  | impor `@/routes/{alias}` (Wayfinder, `actions: false`); jangan menulis URL manual                                                                                              | `import jt from '@/routes/jt'`                                               |
-| Test          | `{Nama}IndexTest`, `{Nama}StoreTest`, `{Nama}EditTest`, `{Nama}DeleteTest` di `tests/Feature`                                                                                  | `JobTitleStoreTest`                                                          |
-| Judul halaman | index = nama menu sidebar; `Tambah {nama}`; `Ubah {nama}`. Tombol tambah: `{nama} Baru`                                                                                        | `Jabatan`, `Tambah Jabatan`, `Ubah Jabatan`, `Jabatan Baru`                  |
+| Item           | Pola                                                                                                                                                                                                                                 | Contoh                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Model          | `App\Models\{Domain}\{Nama}`; `HasUuids` dengan `uniqueIds()` → `['uuid']`; `$fillable`; `casts()` protected untuk enum. Tambahkan `HasFactory` dan `#[UseFactory]`                                                                  | `App\Models\MasterData\JobTitle`                            |
+| Factory        | `Database\Factories\{Nama}Factory`; set `$model` bila model ada di sub-namespace                                                                                                                                                     | `JobTitleFactory`                                           |
+| Migration      | tabel plural snake_case; `id()`, `uuid('uuid')->index()`, `timestamps()`                                                                                                                                                             | `create_job_titles_table`                                   |
+| Controller     | `App\Http\Controllers\{Domain}\{Nama}Controller`; `protected string $pageId`                                                                                                                                                         | `JobTitleController`                                        |
+| Request        | `Store{Nama}Request`, `Update{Nama}Request`; `authorize()` → `$this->user() !== null`; `attributes()` berbahasa Indonesia; aturan memakai `bail`                                                                                     | `StoreJobTitleRequest`                                      |
+| Resource       | `App\Http\Resources\{Domain}\{Nama}Resource` dengan `@mixin`; `id` = `uuid`                                                                                                                                                          | `JobTitleResource`                                          |
+| Enum           | `App\Enums\{Nama}{Atribut}Enum`, `int`, `label()`, `options()`                                                                                                                                                                       | `JobTitleGroupEnum`                                         |
+| Route          | `Route::resource('job-title', X::class)->except('show')->parameters(['job-title' => 'jobTitle'])->scoped(['jobTitle' => 'uuid'])->names('jt')`; nama route `jt.index`, `jt.create`, `jt.store`, `jt.edit`, `jt.update`, `jt.destroy` | `routes/web.php`                                            |
+| Halaman        | `resources/js/pages/{slug}/{index,create,edit}.tsx`                                                                                                                                                                                  | `pages/job-title/index.tsx`                                 |
+| Komponen tabel | `resources/js/pages/{slug}/components/data-table/{index,column,delete-action}.tsx`                                                                                                                                                   | `JobTitleDataTable`, `columns`, `DeleteAction`              |
+| Schema         | `resources/js/schemas/{slug}.ts` memakai `defineRequest` dengan label Indonesia                                                                                                                                                      | `createJobTitleSchema(groups)`                              |
+| Route helper   | impor `@/routes/{alias}` (Wayfinder, `actions: false`); jangan menulis URL manual                                                                                                                                                    | `import jt from '@/routes/jt'`                              |
+| Test           | `{Nama}IndexTest`, `{Nama}StoreTest`, `{Nama}EditTest`, `{Nama}DeleteTest` di `tests/Feature`                                                                                                                                        | `JobTitleStoreTest`                                         |
+| Judul halaman  | index = nama menu sidebar; `Tambah {nama}`; `Ubah {nama}`. Tombol tambah: `{nama} Baru`                                                                                                                                              | `Jabatan`, `Tambah Jabatan`, `Ubah Jabatan`, `Jabatan Baru` |
 
 Semua teks yang tampil ke pengguna (label, pesan, toast, placeholder) berbahasa Indonesia. Toast: sukses `Berhasil`, galat `Galat`.
 
@@ -117,19 +117,19 @@ Semua teks yang tampil ke pengguna (label, pesan, toast, placeholder) berbahasa 
 
 ## 5. Pemetaan skill (`boost.json`)
 
-| Fase                                    | Skill                                                                            |
-| --------------------------------------- | -------------------------------------------------------------------------------- |
-| Wawancara                               | `grill-me`, `grill-with-docs`, `infer-conventions` (bila pola belum jelas)       |
-| Backend                                 | `laravel-best-practices`, `laravel-patterns`                                     |
-| Route dan helper frontend               | `wayfinder-development`                                                          |
-| Halaman Inertia, form, navigasi         | `inertia-react-development`                                                      |
-| Tabel                                   | `getting-started`, `table-state` (TanStack Table v9)                             |
-| Komponen dan gaya                       | `shadcn`, `ui-styling`, `tailwindcss-development`, `hugeicons`, `goey-toast`     |
-| Tipe TypeScript rumit                   | `typescript-advanced-types`                                                      |
-| Test                                    | `testing-best-practices`                                                         |
-| Sebelum selesai                         | `code-review`                                                                    |
-| Hanya bila diminta                      | `codebase-design`, `improve-codebase-architecture`, `ui-ux-pro-max`              |
-| Hanya untuk kode TanStack Table lama v8 | `migrate-v8-to-v9`                                                               |
+| Fase                                    | Skill                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------- |
+| Wawancara                               | `grill-me`, `grill-with-docs`, `infer-conventions` (bila pola belum jelas)   |
+| Backend                                 | `laravel-best-practices`, `laravel-patterns`                                 |
+| Route dan helper frontend               | `wayfinder-development`                                                      |
+| Halaman Inertia, form, navigasi         | `inertia-react-development`                                                  |
+| Tabel                                   | `getting-started`, `table-state` (TanStack Table v9)                         |
+| Komponen dan gaya                       | `shadcn`, `ui-styling`, `tailwindcss-development`, `hugeicons`, `goey-toast` |
+| Tipe TypeScript rumit                   | `typescript-advanced-types`                                                  |
+| Test                                    | `testing-best-practices`                                                     |
+| Sebelum selesai                         | `code-review`                                                                |
+| Hanya bila diminta                      | `codebase-design`, `improve-codebase-architecture`, `ui-ux-pro-max`          |
+| Hanya untuk kode TanStack Table lama v8 | `migrate-v8-to-v9`                                                           |
 
 Catatan: `composer.json` (`add-skills`) juga memuat `design-taste-frontend`, yang tidak ada di `boost.json`. Jangan mengandalkannya kecuali sudah terpasang.
 
@@ -160,12 +160,12 @@ pnpm run build
 
 ## 8. Konflik pola yang diketahui
 
-| Hal                  | JobTitle (ikuti)                                  | LetterNumber (jangan ditiru)                       |
-| -------------------- | ------------------------------------------------- | -------------------------------------------------- |
-| Namespace model      | `App\Models\MasterData`                           | `App\Models`                                       |
-| Namespace resource   | `App\Http\Resources\MasterData`                   | `App\Http\Resources`                               |
-| Route                | `Route::resource(...)` + `scoped` + `names`       | route eksplisit, termasuk `/store`                 |
-| Query tabel          | `buildListingQuery` + `only: ['resources', 'filters']` | gabung query manual + `only: ['resources']`       |
+| Hal                | JobTitle (ikuti)                                       | LetterNumber (jangan ditiru)                |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------- |
+| Namespace model    | `App\Models\MasterData`                                | `App\Models`                                |
+| Namespace resource | `App\Http\Resources\MasterData`                        | `App\Http\Resources`                        |
+| Route              | `Route::resource(...)` + `scoped` + `names`            | route eksplisit, termasuk `/store`          |
+| Query tabel        | `buildListingQuery` + `only: ['resources', 'filters']` | gabung query manual + `only: ['resources']` |
 
 - `Employee` belum final (mis. `casts()` publik, belum ada factory/`HasFactory`); jangan dijadikan referensi.
 - Kolom `uuid` saat ini `index()` biasa (bukan unique). Ikuti pola ini kecuali pengguna meminta unique.
