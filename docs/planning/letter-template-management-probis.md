@@ -1,8 +1,22 @@
 # Templat Surat MVP 1 — Proses Bisnis
 
-Status: rekap proses bisnis yang disetujui melalui diskusi. Belum diimplementasikan.
+Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Fitur Templat Surat belum diimplementasikan.
 
-Dokumen ini mencatat keputusan terbaru khusus fitur Templat Surat. Jika berbeda dengan `letter-template-mvp1.md`, keputusan dalam dokumen ini menjadi acuan untuk fitur Templat Surat. Rancangan fondasi database ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md).
+Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi database dan tujuh tahap implementasi beserta aturan test/commit ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md). Pola implementasi mengikuti [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) dan [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) yang sudah diperbarui.
+
+## 0. Kondisi fitur saat ini
+
+| Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
+| --- | --- | --- |
+| Menu | Templat Surat di Data Master dengan UUID existing; tujuan masih `#` | Route, halaman daftar/tambah/kelola, dan penggantian tujuan menu |
+| Domain templat | Belum ada tabel, model, controller, konfigurasi, atau test fitur | Identitas, empat tahap pengelolaan, versi, audit, validasi/uji DOCX, publikasi, dan nonaktifkan |
+| Master pendukung | Penomoran Surat, Pegawai/Jabatan, dan Daftar Referensi | Pengambilan opsi, validasi relasi, serta perlindungan master yang dirujuk templat |
+| Arsip | Arsip pusat serta arsip/pemulihan grup dan item Reference | Perlindungan arsip grup yang dirujuk; arsip draft templat dikelola sebagai status versi |
+| Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Komposisi halaman serta konfigurasi dan operasi khusus templat |
+| DOCX | PHPWord sudah terpasang pada commit yang dipin | Seluruh alur upload, validasi, generate uji, pemeriksaan visual, dan cleanup |
+| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Test perilaku templat dan konkurensi yang relevan |
+
+Kondisi ini diperiksa melalui kode aplikasi, `route:list`, skema database aktif, dan dependency terpasang. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
 ## 1. Tujuan dan akses
 
@@ -25,6 +39,15 @@ Dokumen ini mencatat keputusan terbaru khusus fitur Templat Surat. Jika berbeda 
 - Klasifikasi dipilih dari master `LetterNumber` sebagai rujukan penomoran saat surat dibuat.
 - Pada fitur Templat Surat belum ada alokasi nomor.
 
+### DOCX contoh dan panduan untuk pergantian admin
+
+- Setelah identitas templat baru disimpan, halaman kelola menyediakan aksi **Unduh DOCX Contoh**. Panduan tetap dapat diunduh kembali oleh admin berikutnya, bukan hanya ditampilkan sekali setelah pembuatan.
+- DOCX contoh dibuat berdasarkan konfigurasi versi yang sedang dikelola dan memuat nama templat, nomor versi, daftar variabel beserta label/jenis/wajib atau opsional, sumber pilihan, serta petunjuk penggunaan placeholder.
+- Sertakan contoh penempatan placeholder dalam paragraf, satu baris contoh untuk setiap tabel berulang beserta pemetaan kolomnya, dan placeholder slot penandatangan yang diaktifkan. Gunakan data fiktif untuk penjelasan; tidak perlu menyertakan data pribadi pegawai.
+- Jika draft awal belum memiliki konfigurasi variabel/penandatangan, berkas berisi identitas dan petunjuk melengkapi konfigurasi. Setelah konfigurasi disimpan, unduhan berikutnya mengikuti konfigurasi terbaru versi itu. Panduan versi historis menggunakan konfigurasi versi historis yang dipilih.
+- Panduan menjelaskan cara menyesuaikan tata letak, mengunggah DOCX sumber, menjalankan validasi, generate uji, dan pemeriksaan visual sebelum publikasi. Nama variabel dalam bagian penjelasan ditulis tanpa sintaks placeholder agar tidak dianggap sebagai isian tambahan, terutama pada tabel berulang.
+- DOCX contoh berfungsi sebagai dokumentasi dan bahan awal penyusunan DOCX sumber. Mengunduhnya tidak menggantikan proses validasi, hasil uji, konfirmasi visual, atau publikasi.
+
 ## 3. Variabel
 
 Admin mengatur nama placeholder, label, jenis, dan apakah wajib diisi.
@@ -39,8 +62,10 @@ Admin mengatur nama placeholder, label, jenis, dan apakah wajib diisi.
 
 Combobox tunggal maupun multiple dapat menggunakan sumber:
 
-- Referensi: seluruh grup/item yang masih tersedia. MVP 1 tidak menambah status aktif pada master referensi.
-- Pegawai aktif.
+- Referensi: grup/item di tabel aktif. Data yang sudah dipindahkan ke Arsip tidak ditawarkan; pemulihan mengikuti fitur Reference yang sudah ada. MVP 1 tidak menambah status aktif pada master referensi.
+- Pegawai aktif berdasarkan `AsnStatusEnum::AKTIF`, bukan status kontrak atau kelengkapan STR/SIP.
+
+Pilihan referensi mengikuti urutan master `sort_order`, lalu `id`. UUID digunakan sebagai nilai publik pilihan; relasi database tetap menggunakan id numerik. Format teks hasil combobox tunggal dan urutan baris dari pilihan multiple masih perlu dirinci sebelum implementasi generate.
 
 ### Tabel berulang
 
@@ -50,6 +75,8 @@ Admin memilih kolom dan nama placeholder berdasarkan data existing.
 | --- | --- |
 | Pegawai | Nomor urut, nama beserta gelar, NIP, jabatan |
 | Referensi | Nomor urut dan isi item |
+
+Nama pegawai beserta gelar mengikuti susunan `front_title`, `name`, dan `back_title` seperti Resource Pegawai saat ini; jabatan berasal dari relasi `jobTitle`. NIP dan jabatan dapat kosong pada data existing, sehingga aturan keluaran kosong perlu ditetapkan sebelum generate. Data jenis kelamin, STR, dan SIP yang sudah tersedia di fitur Pegawai tidak otomatis memperluas daftar kolom templat yang disepakati.
 
 Contoh Surat Tugas Perjalanan:
 
@@ -66,7 +93,10 @@ Contoh Surat Tugas Perjalanan:
 ## 4. Penandatangan
 
 - Form menyediakan satu slot secara default; admin dapat menonaktifkannya jika tidak diperlukan.
-- Kandidat berasal dari pegawai aktif.
+- Kandidat dan penandatangan yang digunakan untuk pengujian atau surat baru wajib berasal dari pegawai dengan status `AsnStatusEnum::AKTIF`.
+- Jika kandidat yang sudah dikonfigurasi berubah menjadi tidak aktif, tampilkan peringatan kepada admin pada halaman kelola templat, termasuk nama pegawai dan slot terkait, dengan arahan untuk mengganti atau menghapus kandidat tersebut dari konfigurasi.
+- Publikasi ditolak selama masih ada kandidat tidak aktif dalam konfigurasi. Kandidat tidak aktif tidak dapat dipilih atau digunakan untuk generate uji maupun surat baru, meskipun sebelumnya aktif atau masih tersimpan pada formulir lama. Status harus diperiksa kembali di backend saat operasi dijalankan.
+- Jangan menghapus kandidat secara otomatis atau menimpa konfigurasi versi historis. Perbaikan oleh admin mengikuti aturan versi: edit versi yang belum digunakan atau buat draft versi baru jika versi asal sudah digunakan.
 - Templat dapat memiliki beberapa slot, masing-masing dengan kandidat.
 - Saat digunakan, setiap slot harus diisi orang berbeda.
 - Satu slot menggunakan `${penandatangan}`.
@@ -80,6 +110,7 @@ Contoh Surat Tugas Perjalanan:
 - DOCX boleh menggunakan sebagian variabel yang dikonfigurasi.
 - Placeholder slot penandatangan aktif tetap wajib ditemukan.
 - Dukungan pengulangan tabel, paragraf, header/footer, teks panjang, serta placeholder terpecah antar text run harus diuji pada versi PHPWord yang dipin.
+- PHPWord yang sudah terpasang belum membuktikan kemampuan tersebut. Alur upload/generate dan fixture pengujiannya belum dibuat.
 - Struktur berbahaya atau tidak didukung harus ditolak dengan keterangan jelas.
 - Publikasi memerlukan hasil uji generate dan konfirmasi pemeriksaan visual admin setelah membuka DOCX.
 - Perubahan konfigurasi draft mempertahankan DOCX existing, tetapi membatalkan hasil validasi/uji dan konfirmasi visual terkait.
@@ -100,11 +131,18 @@ Seluruh versi tetap terhubung ke satu identitas templat. Timeline versi ditampil
 - Hanya satu versi terbit aktif untuk pembuatan surat baru.
 - DOCX dan konfigurasi versi yang sudah digunakan tetap tersedia untuk generate ulang surat historis.
 - Konfigurasi historis mencakup variabel, pemetaan tabel, klasifikasi, serta penandatangan.
-- Draft dapat diarsipkan.
+- Draft dapat diarsipkan dengan status Diarsipkan pada versi templat; baris versi dan konfigurasinya tetap disimpan dalam domain templat.
 - Templat dapat dinonaktifkan tanpa menghapus riwayat.
 - Tidak ada hapus permanen.
 - Operasi penting dicatat dalam audit.
 - Master klasifikasi, grup referensi, dan pegawai kandidat tidak dapat dihapus selama masih dirujuk, termasuk oleh versi historis atau arsip.
+
+### Hubungan dengan Arsip dan perubahan master
+
+- Arsip pusat saat ini menyimpan snapshot grup/item Reference, lalu menghapus record dari tabel aktif. Mengarsipkan grup yang dirujuk versi templat harus ditolak dengan pesan jelas dan tanpa meninggalkan paket arsip baru. Perlindungan ini belum ada karena relasi templat belum dibuat.
+- Penghapusan klasifikasi dan pegawai saat ini permanen; pemblokiran ketika dirujuk templat masih perlu ditambahkan. Record lain yang tidak dirujuk tetap mengikuti perilaku fitur masing-masing.
+- Status Diarsipkan pada versi templat berbeda dari snapshot Arsip pusat. Rencana ini belum mencakup pemindahan templat ke Arsip pusat, pemulihan melalui halaman Arsip, atau hapus permanen templat.
+- Menyimpan konfigurasi dan DOCX versi asal belum membekukan isi master. Nama/gelar/jabatan pegawai, isi referensi, dan nama/kode klasifikasi masih dapat berubah. Agar generate ulang surat historis mempertahankan data asal, kontrak snapshot nilai terpilih harus dirinci pada fitur Surat nanti.
 
 ## 7. Konfigurasi terpusat
 
@@ -134,16 +172,28 @@ letter-templates/
 - Path berkas ditentukan aplikasi, bukan input admin.
 - DOCX sumber historis tidak ikut cleanup hasil uji atau berkas sementara.
 - Nilai batas selain ukuran upload 10 MB belum ditetapkan; jangan menganggapnya sebagai keputusan final.
+- File config, direktori fitur, dan proses cleanup di atas belum tersedia sebagai implementasi fitur templat.
 - Pengaturan dokumen fitur Surat akan dibahas pada fitur tersebut.
 
 ## 8. Halaman daftar dan kelola
 
 - Kolom daftar: Nama, Klasifikasi, Versi Aktif, Status Aktif/Nonaktif, penanda Ada Draft, dan Aksi.
-- Pencarian berdasarkan nama templat serta kode/nama klasifikasi.
-- Urutan default nama A–Z.
+- Pencarian berdasarkan nama templat serta kode/nama klasifikasi pada versi yang ditampilkan. Aturan versi rujukan untuk templat tanpa versi aktif masih perlu dirinci agar kolom, pencarian, dan filter konsisten.
+- Pencarian mengikuti perilaku bersama: trim, minimum dua karakter, tanpa membedakan kapital, dan memperlakukan karakter khusus sebagai teks literal.
+- Urutan default nama A–Z dengan id sebagai penentu akhir agar pagination stabil.
 - Filter status dan klasifikasi, masing-masing pilihan tunggal.
-- Paginasi mengikuti pola repository.
+- Paginasi server mengikuti pola repository: default 10, pilihan 5/10/15/20/50/100, serta mempertahankan keyword dan filter.
 - Halaman kelola memuat empat tahap pengelolaan serta timeline versi.
+
+### Komponen dan interaksi yang digunakan kembali
+
+- Daftar memakai `SectionData`, `ResourceDataTable`, dan kolom khusus fitur berbasis TanStack Table v9. Filter memakai `DataFilterDialog` dan `OptionSelect`; keputusan filter tunggal tetap berlaku meskipun komponen mendukung pilihan ganda.
+- Gunakan pencarian bersama melalui `SectionData`/`useListingSearch` dengan debounce 500 ms, submit/reset, retry, dan sinkronisasi Back/Forward. Perubahan keyword/filter kembali ke halaman pertama; reset filter mempertahankan keyword dan ukuran halaman.
+- Pembaruan daftar memakai `buildListingQuery`, partial reload `resources`/`filters`, serta loading tabel tanpa overlay modal yang mengambil fokus pencarian.
+- Form memakai `FormCard`, `FormActions`, `useValibotForm`, dan schema `defineRequest`, dengan Form Request backend sebagai validasi utama. `OptionSelect` melayani pilihan tunggal/multiple; `DatePickerInput` melayani tanggal contoh dengan tampilan Indonesia dan nilai ISO.
+- Gunakan `TableActionButton` untuk aksi ikon, feedback melalui wrapper `gooeyToast`, dan route helper Wayfinder dari `@/routes/lt`. Route helper baru tersedia setelah route dibuat dan digenerate; konfigurasi Vite saat ini tidak menghasilkan helper controller `@/actions` atau `.form()`.
+- Operasi publikasi, arsip draft, dan nonaktifkan memerlukan aturan serta konfirmasi domain sendiri. Jangan memakai alur hapus permanen CRUD untuk menggantikannya.
+- Jangan menampilkan tautan Arsip pusat melalui `archiveUrl` hanya karena versi templat memiliki status Diarsipkan. Tujuan arsip templat belum diimplementasikan.
 
 ## 9. Ketentuan implementasi
 
@@ -154,11 +204,27 @@ letter-templates/
 | Binding / alias route | `letterTemplate` menggunakan UUID / `lt` |
 | Nama halaman | Templat Surat, Tambah Templat Surat, Ubah Templat Surat |
 | Menu / pageId | UUID existing `a3063dc3-7414-4385-bf3f-0cf0742e3980` |
-| Database aplikasi / test | PostgreSQL 18 / SQLite |
-| Acuan implementasi | JobTitle dan `FEATURE_WORKFLOW.md`; kontrak backend mengikuti `LARAVEL_PATTERNS.md` |
+| Database aplikasi / test | PostgreSQL 18 / PostgreSQL dengan database disposable; SQLite bukan target test |
+| Acuan implementasi | JobTitle untuk CRUD, Reference untuk simpan identitas lalu kelola, Employee untuk relasi/filter, serta komponen bersama; kontrak mengikuti `FEATURE_WORKFLOW.md` dan `LARAVEL_PATTERNS.md` |
 | Seeder | Tidak diperlukan |
 | Changelog | Ditambahkan dalam bahasa Indonesia saat fitur diimplementasikan |
 | Penyimpanan konfigurasi versi | Tabel relasional terpisah, bukan JSON untuk variabel, kolom, slot, dan kandidat |
 | PHPWord | Sudah terpasang; ikuti pin `dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` pada `composer.json` |
+
+Route `lt.*`, binding `letterTemplate`, model, dan halaman pada tabel di atas merupakan keputusan rencana, belum artefak yang tersedia. Semua operasi direncanakan berada di bawah autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
+
+## 10. Verifikasi dan rincian yang masih terbuka
+
+Implementasi dibagi menjadi tujuh tahap teknis: fondasi database/domain; identitas/daftar; variabel/penandatangan; upload/validasi DOCX; generate/konfirmasi; publikasi/versi; serta cleanup/integrasi. Setiap tahap diselesaikan dan di-commit setelah test PHPUnit tahap tersebut beserta regresi yang terdampak lulus. Test browser dan pemeriksaan visual dilakukan setelah seluruh tahap implementasi selesai, menggunakan Chromium yang sudah disediakan pengguna. Rincian cakupan, kriteria kelulusan, dan pencatatan commit mengikuti rencana teknis. Konfirmasi visual DOCX oleh admin tetap merupakan persyaratan proses publikasi, terpisah dari jadwal pengujian browser/visual oleh pengembang.
+
+Implementasi perlu membuktikan alur empat tahap, invalidasi hasil uji, keunikan dan isolasi versi, penolakan penghapusan/arsip master yang dirujuk, UUID dan autentikasi, serta pencarian/filter/pagination. Verifikasi juga peringatan kandidat tidak aktif, penolakan publikasi, dan penolakan penggunaan penandatangan yang menjadi tidak aktif setelah formulir dibuka. Jalankan test database melalui runner PostgreSQL terisolasi; uji konkurensi antarkoneksi secara khusus dan laporkan bila belum dijalankan. Belum ada hasil test fitur Templat Surat untuk dilaporkan.
+
+Sebelum pekerjaan terkait dimulai, rincikan:
+
+- Endpoint operasi, props/payload/error, serta field dan validasi tiap tahap.
+- Nilai batas config selain upload 10 MB dan aturan DOCX yang didukung/ditolak.
+- Teks keluaran combobox tunggal/penandatangan, urutan hasil multiple, dan data pegawai yang kosong.
+- Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji; termasuk pemilihan klasifikasi untuk daftar templat tanpa versi aktif. Aturan kandidat tidak aktif sudah ditetapkan pada bagian Penandatangan.
+- Snapshot nilai surat historis pada fitur Surat, tanpa menambahkan tabel Surat pada tahap ini.
 
 Alokasi nomor, pembuatan surat sebenarnya, revisi surat, dan penyerahan kepada pemohon belum masuk pekerjaan ini. Rincian teknis yang belum diputuskan tetap harus dirinci sebelum implementasi terkait.
