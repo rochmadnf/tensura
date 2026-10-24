@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\MasterData\ReferenceItem;
 use Illuminate\Database\Seeder;
 
 class ReferenceItemSeeder extends Seeder
@@ -126,9 +126,13 @@ class ReferenceItemSeeder extends Seeder
                 'sort_order' => 6,
             ],
         ])->each(function ($item) {
-            $model = \App\Models\MasterData\ReferenceItem::firstOrNew([
+            $model = ReferenceItem::firstOrNew([
                 'id' => $item['id'],
             ]);
+
+            if ($model->exists) {
+                unset($item['sort_order']);
+            }
 
             $model->forceFill($item)->save();
         });

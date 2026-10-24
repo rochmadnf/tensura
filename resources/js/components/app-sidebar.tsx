@@ -1,3 +1,4 @@
+import ref from '@/routes/ref';
 import * as React from 'react';
 
 import {
@@ -63,7 +64,7 @@ const navigations = {
             {
                 id: 'a3063dcc-2750-45e0-8ea7-c859c50bd3fb',
                 name: 'Daftar Referensi',
-                url: '#',
+                url: ref.index().url,
                 icon: <HugeiconsIcon icon={FolderDetailsReferenceIcon} strokeWidth={2} />,
             },
         ],

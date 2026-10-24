@@ -33,7 +33,7 @@ export function PageLoadingOverlay() {
         const offStart = router.on('start', (event) => {
             const visit = event.detail.visit;
 
-            if (visit.prefetch) {
+            if (visit.prefetch || !visit.showProgress) {
                 return;
             }
 

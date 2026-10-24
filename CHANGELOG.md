@@ -4,6 +4,11 @@
 
 ### Ditambahkan
 
+- Fitur Daftar Referensi untuk mengelola grup dan item dalam satu halaman kerja, dengan pencarian, jumlah item, paginasi, edit item langsung, dan konfirmasi hapus permanen.
+- Pengurutan item melalui tombol atas/bawah serta drag dengan mouse, sentuh, dan keyboard; penyimpanan urutan atomik, pembaruan optimistis, dan pemulihan saat gagal.
+- Factory dan pengujian referensi untuk UUID, validasi, isolasi item per grup, cascade delete, urutan, dan seeder yang mempertahankan urutan pengguna.
+- Constraint unik nama grup dan konten per grup, serta indeks urutan item melalui migration baru.
+
 - Fitur Pegawai dengan halaman daftar, tambah, detail, ubah, dan hapus permanen; pencarian nama/NIK/NIP/email; filter jabatan, status kontrak, status pegawai, dan rentang masa kerja. Pegawai aktif ditampilkan terlebih dahulu dengan urutan masa kerja terlama.
 - Validasi identitas unik, jabatan wajib, dan tanggal bergabung maksimal hari berjalan; tombol detail berikon Info dengan varian `info` biru muda.
 
@@ -13,6 +18,8 @@
 - Pengujian Jabatan untuk autentikasi, pencarian literal, paginasi, validasi, persistensi, kontrak Resource, seeder, serta penolakan id numerik dan UUID yang tidak dikenal.
 
 ### Diubah
+
+- Penyimpanan grup referensi membuka halaman edit untuk melanjutkan pengelolaan item. Overlay pemuatan menghormati opsi kunjungan `showProgress: false` agar aksi item dapat menjaga fokus.
 
 - Resource Jabatan mengekspos UUID sebagai `id` menggantikan id numerik, dengan informasi kelompok yang aman saat bernilai null.
 - Kelompok Jabatan wajib diisi pada formulir dan validasi, sementara kolom database tetap nullable. Penghapusan Jabatan bersifat permanen dan terpusat pada satu pemanggilan `delete()` di controller, tanpa arsip atau SoftDeletes.
