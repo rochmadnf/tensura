@@ -109,7 +109,7 @@ class ArchiveShowTest extends TestCase
     /** @return array<string, array{string}> */
     public static function targetKeywords(): array
     {
-        return ['word' => ['khusus'], 'wildcard' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'injection' => ["' OR 1=1 --"]];
+        return ['word' => ['khusus'], 'wildcard' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'escape marker' => ['A!_%'], 'injection' => ["' OR 1=1 --"]];
     }
 
     public function test_target_search_rejects_invalid_query_inputs(): void

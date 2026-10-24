@@ -34,10 +34,10 @@ class ArchiveController extends Controller
             ->when($module !== '', fn(Builder $query) => $query->where('module', $module))
             ->when($kind !== '', fn(Builder $query) => $query->where('kind', $kind))
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
                 $query->where(function (Builder $query) use ($term): void {
-                    $query->whereRaw("label LIKE ? ESCAPE '\\'", [$term])
-                        ->orWhereHas('records', fn(Builder $records) => $records->whereRaw("label LIKE ? ESCAPE '\\'", [$term]));
+                    $query->whereRaw("LOWER(label) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereHas('records', fn(Builder $records) => $records->whereRaw("LOWER(label) LIKE ? ESCAPE '!'", [$term]));
                 });
             })
             ->orderByDesc('archived_at')->orderByDesc('id')
@@ -76,10 +76,10 @@ class ArchiveController extends Controller
                 $groups = ReferenceGroup::query()
                     ->when($archive->module !== 'reference', fn(Builder $query) => $query->whereKey(-1))
                     ->when(mb_strlen($keyword) >= 2, function (Builder $query) use ($keyword): void {
-                        $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                        $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
                         $query->where(function (Builder $query) use ($term): void {
-                            $query->whereRaw("name LIKE ? ESCAPE '\\'", [$term])
-                                ->orWhereRaw("description LIKE ? ESCAPE '\\'", [$term]);
+                            $query->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term])
+                                ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$term]);
                         });
                     })
                     ->withCount('items')->orderBy('name')->orderBy('id')

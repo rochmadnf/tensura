@@ -29,11 +29,11 @@ class ReferenceGroupController extends Controller
         $records = ReferenceGroup::query()
             ->withCount('items')
             ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
                 $query->where(function (Builder $query) use ($term): void {
                     $query
-                        ->whereRaw("name LIKE ? ESCAPE '\\'", [$term])
-                        ->orWhereRaw("description LIKE ? ESCAPE '\\'", [$term]);
+                        ->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term])
+                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$term]);
                 });
             })
             ->orderBy('name')

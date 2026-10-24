@@ -58,7 +58,7 @@ class ArchiveIndexTest extends TestCase
 
     public static function literalKeywords(): array
     {
-        return ['percent' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'sql' => ["' OR 1=1 --"]];
+        return ['percent' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'escape marker' => ['A!_%'], 'sql' => ["' OR 1=1 --"]];
     }
 
     public function test_module_kind_and_keyword_filters_combine_and_remain_in_pagination(): void
