@@ -4,6 +4,9 @@
 
 ### Ditambahkan
 
+- Fondasi Templat Surat dengan tujuh tabel relasional, UUID unik, enum status/jenis/sumber pilihan, metadata DOCX dan bukti pemeriksaan per versi, serta factory konfigurasi.
+- Audit templat mempertahankan nama dan UUID pelaku setelah akun dihapus; foreign key membatasi penghapusan konfigurasi/master historis dan memastikan versi aktif milik templat yang sama.
+
 - Formulir Pegawai mendukung jenis kelamin (1: Laki-laki, 2: Perempuan), STR, dan SIP dengan validasi kelengkapan per kelompok, keunikan nomor, serta urutan tanggal SIP.
 - Pemilih tanggal bersama dengan kalender berbahasa Indonesia dan input manual `hh-bb-tttt`; nilai yang dikirim tetap menggunakan format ISO.
 - Filter kelompok jabatan dan jenis kelamin; seluruh filter kategori Pegawai memakai combobox pilihan ganda, dengan opsi jabatan mengikuti kelompok yang dipilih.

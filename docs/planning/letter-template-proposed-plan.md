@@ -1,6 +1,6 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: rencana implementasi bertahap; belum diimplementasikan. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: implementasi bertahap; tahap 1 selesai, tahap 2 dikerjakan. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
@@ -74,7 +74,7 @@ Ketentuan:
 
 ## 4. Tahap implementasi dan commit
 
-Pembagian di bawah adalah tahap pengerjaan teknis, berbeda dari empat tahap pengelolaan yang dilihat admin. Semua tahap masih berstatus **Belum dimulai**. Penyusunan rencana ini belum menjalankan implementasi, test fitur, atau commit tahap.
+Pembagian di bawah adalah tahap pengerjaan teknis, berbeda dari empat tahap pengelolaan yang dilihat admin. Status pelaksanaan tercatat pada tabel progres di bawah. Penyusunan rencana ini belum menjalankan implementasi, test fitur, atau commit tahap.
 
 ### Aturan penyelesaian setiap tahap
 
@@ -192,7 +192,7 @@ Isi hasil hanya setelah pekerjaan dan test dilaksanakan. Nama commit di atas mer
 
 | Tahap | Status | Perintah dan hasil PHPUnit | Hash commit |
 | --- | --- | --- | --- |
-| 1. Fondasi database/domain | Belum dimulai | — | — |
+| 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | Dicatat setelah commit |
 | 2. Identitas/daftar | Belum dimulai | — | — |
 | 3. Variabel/penandatangan | Belum dimulai | — | — |
 | 4. Upload/validasi DOCX | Belum dimulai | — | — |
@@ -232,6 +232,15 @@ Jalankan PHPUnit langsung untuk tahap implementasi, misalnya `vendor/bin/phpunit
 Kasus konkurensi PostgreSQL perlu membuktikan pembuatan draft bersamaan, publikasi, perubahan versi, serta penghapusan/arsip master yang bersaing dengan penyimpanan konfigurasi. Test transaksi biasa belum membuktikan perilaku antarkoneksi. Runner arsip `phpunit.archive.xml` tetap khusus integrasi arsip; test konkurensi templat perlu cakupan dan cara eksekusi tersendiri yang dirinci saat implementasi. Catat kasus yang dilewati atau belum dijalankan.
 
 Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test fitur Templat Surat belum tersedia; bagian ini bukan laporan test yang sudah lulus.
+
+### Kontrak fondasi yang diterapkan pada tahap 1
+
+- Migration `create_letter_template_tables` menetapkan kolom, panjang, default, nullability, dan indeks. Identitas aktif secara default; versi dimulai dengan status Draft. DOCX, bukti validasi/uji/visual, publikasi, dan pemakaian pertama nullable sampai operasinya tersedia.
+- Metadata sumber memakai `source_disk/path/original_name/size/sha256`. Bukti validasi memakai `validated_source_sha256`, `validated_configuration_sha256`, `validated_at`, dan `validation_result` JSONB. Konfigurasi variabel/kolom/penandatangan tetap relasional.
+- Bukti uji memakai `tested_source_sha256`, `tested_configuration_sha256`, `test_disk/path`, `tested_at`, dan `test_expires_at`. Pemeriksaan visual memakai waktu serta id akun nullable dan salinan UUID/nama. Detail pengikatan bukti saat konfirmasi diselesaikan tahap 5.
+- Audit mencatat `actor_id` nullable dengan `nullOnDelete`, salinan `actor_uuid`/`actor_name`, `occurred_at`, `operation`, dan `description`. Layanan pencatatan menolak versi milik templat lain.
+- Foreign key gabungan pointer aktif memastikan kepemilikan versi pada database; penyimpanan model juga menolak pointer ke versi yang belum Terbit. Transaksi publikasi dan penguncian status mengikuti tahap 6.
+- Penghapusan master terikat diblokir database, termasuk untuk versi Diarsipkan. Pesan penolakan aplikasi dan rollback arsip grup mengikuti tahap 3.
 
 ## 6. Kelanjutan perencanaan
 
