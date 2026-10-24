@@ -77,7 +77,7 @@
             "@php artisan boost:add-skill https://github.com/affaan-m/ecc --skill=laravel-patterns",
             "@php artisan boost:add-skill https://github.com/wshobson/agents --skill=typescript-advanced-types",
             "@php artisan boost:add-skill https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill=ui-ux-pro-max --skill=ui-styling",
-            "@php artisan boost:add-skill https://github.com/leonxlnx/taste-skill --skill=design-taste-frontend",
+            "@php artisan boost:add-skill https://github.com/leonxlnx/taste-skill --skill=taste-skill",
             "@php artisan boost:add-skill https://github.com/hugeicons/hugeicons --skill=hugeicons",
             "@php artisan boost:add-skill https://github.com/shadcn-ui/ui.git --skill=shadcn",
             "@php artisan boost:add-skill https://github.com/mattpocock/skills.git --skill=code-review --skill=codebase-design --skill=grill-with-docs --skill=improve-codebase-architecture --skill=grill-me"
