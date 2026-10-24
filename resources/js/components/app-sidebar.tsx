@@ -51,7 +51,7 @@ const navigations = {
     navSecondary: [
         {
             id: 'archive',
-            title: 'Archive',
+            title: 'Arsip',
             url: archiveIndex().url,
             icon: <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} />,
         },

@@ -107,4 +107,4 @@ export default function ArchiveIndex({ resources, filters, context, modules }: A
         </>
     );
 }
-ArchiveIndex.layout = { pageName: 'Archive' };
+ArchiveIndex.layout = { pageName: 'Arsip' };
