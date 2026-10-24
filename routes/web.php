@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\AccountAvatarController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\JobTitleController;
@@ -10,6 +13,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::patch('account/profile', [AccountController::class, 'update'])->name('account.profile.update');
+    Route::put('account/password', [AccountPasswordController::class, 'update'])->name('account.password.update');
+    Route::post('account/avatar', [AccountAvatarController::class, 'store'])->name('account.avatar.store');
+    Route::delete('account/avatar', [AccountAvatarController::class, 'destroy'])->name('account.avatar.destroy');
 
     Route::resource('employees', EmployeeController::class)
         ->parameters(['employees' => 'employee'])

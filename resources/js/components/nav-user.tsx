@@ -13,8 +13,9 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { MoreVerticalCircle01Icon, UserCircle02Icon, Logout01Icon } from '@hugeicons/core-free-icons';
 import { User } from '@/types/auth';
 import { getInitialName } from '@/lib/utils';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { logout } from '@/routes';
+import { edit } from '@/routes/account';
 
 export function NavUser({ user }: { user: User }) {
     const { isMobile } = useSidebar();
@@ -44,7 +45,9 @@ export function NavUser({ user }: { user: User }) {
                                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                     <Avatar className="size-8">
                                         <AvatarImage src={user.avatar} alt={user.name} />
-                                        <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                        <AvatarFallback className="rounded-lg">
+                                            {getInitialName(user.name)}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
                                         <span className="truncate font-medium">{user.name}</span>
@@ -55,7 +58,7 @@ export function NavUser({ user }: { user: User }) {
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem render={<Link href={edit().url} />}>
                                 <HugeiconsIcon icon={UserCircle02Icon} strokeWidth={2} />
                                 Akun
                             </DropdownMenuItem>

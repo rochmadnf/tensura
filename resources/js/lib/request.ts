@@ -7,6 +7,9 @@ import {
     maxLength,
     email,
     length,
+    file,
+    mimeType,
+    maxSize,
     type GenericSchema,
     type InferInput,
     type InferOutput,
@@ -15,6 +18,9 @@ import {
 setSpecificMessage(string, ':attribute harus berupa teks.');
 setSpecificMessage(nonEmpty, ':attribute wajib diisi.');
 setSpecificMessage(email, ':attribute harus berupa email yang valid.');
+setSpecificMessage(file, ':attribute harus berupa berkas.');
+setSpecificMessage(mimeType, ':attribute harus berformat JPG, JPEG, PNG, atau WebP.');
+setSpecificMessage(maxSize, (issue) => `:attribute maksimal ${issue.requirement / 1024 / 1024} MB.`);
 setSpecificMessage(minLength, (issue) => `:attribute minimal ${issue.requirement} karakter.`);
 setSpecificMessage(length, (issue) => `:attribute harus ${issue.requirement} karakter.`);
 setSpecificMessage(maxLength, (issue) => `:attribute maksimal ${issue.requirement} karakter.`);
