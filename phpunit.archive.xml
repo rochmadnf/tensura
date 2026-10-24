@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/archive-bootstrap.php"
+         colors="true"
+         failOnSkipped="true"
+>
+    <testsuites>
+        <testsuite name="ArchiveDatabase">
+            <file>tests/Feature/ArchiveChildrenRestoreTest.php</file>
+            <file>tests/Feature/ArchiveConcurrencyTest.php</file>
+            <file>tests/Feature/ArchiveConfirmationTest.php</file>
+            <file>tests/Feature/ArchiveDatabaseCompatibilityTest.php</file>
+            <file>tests/Feature/ArchiveDeleteTest.php</file>
+            <file>tests/Feature/ArchiveIndexTest.php</file>
+            <file>tests/Feature/ArchiveParentRestoreTest.php</file>
+            <file>tests/Feature/ArchivePreviewTest.php</file>
+            <file>tests/Feature/ArchiveShowTest.php</file>
+            <file>tests/Feature/ArchiveStorageTest.php</file>
+            <file>tests/Feature/ArchivedReferenceGroupUpdateTest.php</file>
+            <file>tests/Feature/ReferenceArchiveTest.php</file>
+            <file>tests/Feature/ReferenceGroupDeleteTest.php</file>
+            <file>tests/Feature/ReferenceGroupEditTest.php</file>
+            <file>tests/Feature/ReferenceGroupIndexTest.php</file>
+            <file>tests/Feature/ReferenceGroupStoreTest.php</file>
+            <file>tests/Feature/ReferenceItemDeleteTest.php</file>
+            <file>tests/Feature/ReferenceItemReorderTest.php</file>
+            <file>tests/Feature/ReferenceItemStoreTest.php</file>
+            <file>tests/Feature/ReferenceItemUpdateTest.php</file>
+            <file>tests/Feature/ReferenceSeederTest.php</file>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="BROADCAST_CONNECTION" value="null" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="NIGHTWATCH_ENABLED" value="false" force="true"/>
+    </php>
+</phpunit>

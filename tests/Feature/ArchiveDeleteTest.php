@@ -8,6 +8,7 @@ use App\Models\MasterData\ReferenceGroup;
 use App\Models\MasterData\ReferenceItem;
 use App\Models\MasterData\User;
 use App\Services\Archive\ArchiveReference;
+use App\Services\Archive\PreviewArchive;
 use App\Services\Archive\ReferenceSnapshot;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,7 +56,7 @@ class ArchiveDeleteTest extends TestCase
         $this->assertModelMissing($children[0]);
         $this->assertModelMissing($children[2]);
         $this->assertModelExists($children[1]);
-        $this->assertSame($context, $archive->fresh()->context);
+        $this->assertSame(PreviewArchive::canonicalJson($context), PreviewArchive::canonicalJson($archive->fresh()->context));
         $this->assertSame(2, $archive->fresh()->revision);
         $this->deleteJson(route('archives.destroy', $archive->uuid), $input)->assertConflict()->assertJsonPath('code', 'archive_changed');
         $this->assertDatabaseCount('archive_records', 2);
