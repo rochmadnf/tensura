@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class ArchiveSelection
 {
+    public const array PARENT_MODES = ['parent_only', 'parent_with_children'];
+
     public const array RESTORE_MODES = ['parent_only', 'parent_with_children', 'children_all', 'child', 'children_selected'];
 
     public const array DELETE_MODES = ['package', 'child', 'children_selected'];

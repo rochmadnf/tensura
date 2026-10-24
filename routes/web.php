@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountAvatarController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
 use App\Http\Controllers\ArchivePreviewController;
+use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\JobTitleController;
@@ -16,6 +17,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::post('archives/{archive:uuid}/preview', ArchivePreviewController::class)->name('archives.preview');
+    Route::post('archives/{archive:uuid}/restore', ArchiveRestoreController::class)->name('archives.restore');
 
     Route::get('account', [AccountController::class, 'edit'])->name('account.edit');
     Route::patch('account/profile', [AccountController::class, 'update'])->name('account.profile.update');

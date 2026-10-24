@@ -71,6 +71,8 @@ class ReferenceArchiveConflicts
         if ($restoringParent) {
             if (!$rootSupported) {
                 $parentReasons[] = $this->reason('unsupported_snapshot', 'Snapshot induk atau versi skemanya belum didukung.');
+            } elseif ($root->source_uuid !== $parentUuid || $root->source_key !== ($archive->context['parent']['source_key'] ?? null)) {
+                $parentReasons[] = $this->reason('parent_mismatch', 'Identitas induk snapshot tidak sesuai konteks paket arsip.');
             } elseif ($selection['target_group_uuid'] === null) {
                 if ($identityGroups->isNotEmpty()) {
                     $parentReasons[] = $this->reason('identity_conflict', 'ID atau UUID induk sudah digunakan data aktif.');

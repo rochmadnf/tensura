@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1–3 selesai, tahap 4–10 belum selesai.
+Status: implementasi bertahap; tahap 1–4 selesai, tahap 5–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -182,6 +182,8 @@ Satu baris mewakili satu data asal yang belum dipulihkan atau dihapus permanen. 
 - Respons `archives.preview` dibungkus resource `data`: `archive_uuid`, `action`, `mode`, `parent`, `target`, `matching_groups`, `candidates`, `conflicts`, `counts` (`total`, `ready`, `conflicted`), `can_confirm`, dan `confirmation_token`. State internal serta fingerprint tidak diekspos. Token bernilai null jika tidak ada kandidat aman.
 - Kandidat berisi `record_uuid`, `entity`, `label`, `operation` (`restore`, `merge`, atau `delete_forever`), `status` (`ready` atau `conflict`), dan daftar konflik `{code, message}`. Kode konflik tahap 3: `unsupported_snapshot`, `identity_conflict`, `name_conflict`, `parent_blocked`, `parent_missing`, `parent_mismatch`, dan `content_conflict`.
 - Hasil eksekusi memuat jumlah berhasil, tersisa, serta apakah paket masih tersedia.
+- Endpoint `archives.restore` pada tahap 4 menerima `action: restore`, `mode: parent_only|parent_with_children`, dan `confirmation_token`. Mode children terpisah, pilihan record, serta tujuan penggabungan belum diterima untuk eksekusi. Token harus berasal dari pratinjau pengguna dan mode yang sama.
+- Respons restore dibungkus `data`: `archive_uuid`, `mode`, `target` (`uuid`, `name`), `counts` (`requested`, `restored`, `conflicted`, `remaining`), `archive_exists`, dan `conflicts`. Jumlah restored mencakup induk; remaining menghitung seluruh record yang masih diarsipkan, termasuk children yang tidak diminta pada mode induk saja. Payload dan daftar kandidat dari request tidak digunakan untuk menulis data aktif.
 - Gunakan halaman Inertia di `resources/js/pages/archive`. Daftar memakai props `resources`, `filters`, dan konteks modul; detail memuat children berpaginasi.
 - Gunakan `useHttp` untuk pratinjau dan eksekusi JSON, serta navigasi Inertia untuk perpindahan halaman. Definisikan tipe TypeScript untuk mode, resource, konflik, pratinjau, dan hasil.
 
@@ -370,7 +372,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 | 1. Fondasi                   | Selesai       | `feat(archive): add shared archive storage and snapshot contracts`     |
 | 2. Pengarsipan Reference     | Selesai       | `feat(reference): archive groups and items on deletion`                |
 | 3. Pratinjau/token           | Selesai       | `feat(archive): add conflict previews and confirmation tokens`         |
-| 4. Restore induk/paket       | Belum dimulai | `feat(archive): restore reference parents and packages`                |
+| 4. Restore induk/paket       | Selesai       | `feat(archive): restore reference parents and packages`                |
 | 5. Children/konflik          | Belum dimulai | `feat(archive): restore selected children and resolve group conflicts` |
 | 6. Delete Forever backend    | Belum dimulai | `feat(archive): permanently delete archived packages and records`      |
 | 7. Daftar/navigasi           | Belum dimulai | `feat(archive): add archive listings and secondary navigation`         |
@@ -382,15 +384,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 3 selesai; berikutnya tahap 4.
-- **Status:** fondasi, pengarsipan Reference, dan pratinjau/token selesai. Belum ada endpoint eksekusi restore/purge atau halaman/menu Archive.
-- **Commit terakhir yang relevan:** tahap 1 `a4262ea`, tahap 2 `41f496d`; commit tahap ini menggunakan `feat(archive): add conflict previews and confirmation tokens`.
-- **File/kontrak penting:** `ArchiveSelection` menormalisasi cakupan; `PreviewArchive` menghitung rencana; `ReferenceArchiveConflicts` memeriksa data aktif; `ArchiveConfirmation` menerbitkan/memverifikasi token; endpoint `archives.preview` memakai resource eksplisit. Kontrak HTTP tercatat di bagian 10. Konteks paket tetap memakai `parent` (`entity`, `source_key`, `source_uuid`, `label`), `target` (`entity`, `uuid`), dan `parent_resolved`.
-- **Pekerjaan selesai:** dua tabel/model/factory, snapshot versi 1 dan registry, UUID unik, pengarsipan transaksional, koordinasi penguncian operasi aktif, pratinjau lima mode restore/tiga cakupan purge, perbandingan grup, deteksi konflik mengikuti database, fingerprint kanonis, serta token terenkripsi terikat konteks.
-- **Verifikasi:** 55 tes pratinjau/token dengan 197 assertions lulus; seluruh suite aplikasi 529 tes/3164 assertions lulus di SQLite. TypeScript, Pint, dan format frontend yang berubah lulus. Regenerasi route Wayfinder melengkapi hasil generasi lokal yang diabaikan Git.
-- **Keputusan baru:** konflik yang sudah terlihat tetap mengizinkan konfirmasi subset aman; perubahan kondisi menghasilkan `ArchiveChangedException` dengan HTTP 409/kode `archive_changed`; token invalid atau salah konteks menghasilkan validasi 422. Fingerprint menggunakan context/payload yang sudah didekode agar urutan key JSON tidak mengubah hasil. Tidak ada seeder arsip fiktif; arsip berasal dari operasi hapus.
-- **Pekerjaan tersisa/kendala:** tahap 4–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL serta konkurensi nyata tetap di tahap 10. Belum dilakukan build UI Archive karena halamannya belum masuk cakupan tahap ini.
-- **Langkah berikutnya:** tahap 4, implementasikan `parent_only`/`parent_with_children` dan endpoint restore. Panggil `ArchiveConfirmation::verify` di dalam transaksi setelah kunci paket dan grup aktif relevan dipegang, lalu pertahankan kunci hingga penulisan selesai. Verifier tahap 3 bersifat baca ulang/validasi dan tidak menjalankan pemulihan.
+- **Tahap aktif:** tahap 4 selesai; berikutnya tahap 5.
+- **Status:** endpoint restore induk/paket tersedia. Restore children terpisah, penggabungan, eksekusi Delete Forever, dan halaman/menu Archive belum diimplementasikan.
+- **Commit terakhir yang relevan:** tahap 1 `a4262ea`, tahap 2 `41f496d`, tahap 3 `d720669`; commit tahap ini menggunakan `feat(archive): restore reference parents and packages`.
+- **File/kontrak penting:** `RestoreReference::restore`, `RestoreArchiveRequest`, `ArchiveRestoreController`, dan `ArchiveRestoreResource`; tetap menggunakan `ArchiveConfirmation::verify` serta pemeriksa konflik existing. Kontrak HTTP terbaru tercatat di bagian 10. `ArchiveSelection::PARENT_MODES` membatasi eksekusi tahap 4.
+- **Pekerjaan selesai:** tahap 1–3 ditambah restore `parent_only`/`parent_with_children`, insert identitas/timestamps asli tanpa upsert, pemulihan subset aman, pembersihan snapshot berhasil, penyimpanan target/revision untuk children tersisa, dan penanganan benturan unik saat penulisan dengan rollback/409.
+- **Verifikasi:** 29 tes restore tahap 4/274 assertions lulus di SQLite; regresi Archive/Reference 185 tes/1034 assertions lulus. Pint dijalankan. Tahap ini hanya mengubah backend dan dokumentasi; pemeriksaan TypeScript/build tidak diulang karena frontend tidak berubah.
+- **Keputusan baru:** urutan kunci adalah paket arsip, record arsip berdasarkan ID, grup aktif berdasarkan ID, lalu item aktif berdasarkan ID; verifikasi token dan penulisan berada dalam satu transaksi yang menahan kunci sampai selesai. Ketiadaan baris konflik tidak dianggap sebagai jaminan: constraint unik tetap menolak benturan saat insert dan seluruh transaksi dibatalkan. Ketidakcocokan identitas induk snapshot dengan konteks paket menghasilkan `parent_mismatch`. Snapshot anak tidak dipulihkan jika induk ditahan.
+- **Pekerjaan tersisa/kendala:** tahap 5–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL dan pembuktian konkurensi nyata tetap di tahap 10. Tidak ada migration baru pada tahap 4.
+- **Langkah berikutnya:** tahap 5, lengkapi tiga mode children, rename grup arsip, dan penggabungan eksplisit. Perluas validasi endpoint dan koordinasi kunci sesuai tujuan baru; pertahankan kontrak token, rollback, dan konteks paket yang sudah diuji pada tahap 4.
 
 ## 15. Pengujian dan kriteria penerimaan
 
