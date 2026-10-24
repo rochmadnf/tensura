@@ -34,6 +34,7 @@ export function TargetGroupPicker({
                 only: ['target_groups'],
                 preserveState: true,
                 preserveScroll: true,
+                showProgress: false,
                 replace: true,
                 onError: () => setError('Pencarian grup belum berhasil. Periksa kata kunci dan coba kembali.'),
                 onNetworkError: () => {

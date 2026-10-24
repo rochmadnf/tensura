@@ -1,16 +1,11 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { createContext, useContext, useRef } from 'react';
-import {
-    DataTable,
-    DataTableFooter,
-    createDataTableColumnHelper,
-    useDataTable,
-    type PaginationParams,
-} from '@/components/data-table';
+import { createDataTableColumnHelper } from '@/components/data-table';
+import { ResourceDataTable } from '@/components/resource-data-table';
+import { TableActionButton } from '@/components/table-action-button';
+import { InfoIcon, DataRecoveryIcon, ShredderIcon } from '@hugeicons/core-free-icons';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useTableLoading } from '@/hooks/use-table-loading';
-import { buildListingQuery } from '@/lib/listing-query';
 import { index, show } from '@/routes/archives';
 import { index as referenceArchiveIndex } from '@/routes/ref/archive';
 import type { ArchiveContext, ArchivePage, ArchiveResource } from '@/types/archive';
@@ -26,15 +21,14 @@ const DeleteContext = createContext<{ busy: boolean; begin: (archive: ArchiveRes
 function DeletePackageAction({ archive }: { archive: ArchiveResource }) {
     const deletion = useContext(DeleteContext);
     return (
-        <Button
+        <TableActionButton
             variant="destructive"
-            size="sm"
+            icon={ShredderIcon}
+            tooltip="Hapus Permanen"
             disabled={deletion.busy}
-            aria-label={`Hapus permanen ${archive.label}`}
+            label={`Hapus permanen ${archive.label}`}
             onClick={() => deletion.begin(archive)}
-        >
-            Hapus Permanen
-        </Button>
+        />
     );
 }
 
@@ -94,15 +88,13 @@ function ArchiveLink({
     const href = show(archive.uuid, { query: { context } });
     if (action || restoreAction) {
         return (
-            <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={<Link href={restoreAction ? `${href.url}#restore` : href} />}
-                aria-label={`${restoreAction ? 'Pulihkan' : 'Detail'} ${archive.label}`}
-            >
-                {restoreAction ? 'Pulihkan' : 'Detail'}
-            </Button>
+            <TableActionButton
+                variant={restoreAction ? 'approve' : 'info'}
+                icon={restoreAction ? DataRecoveryIcon : InfoIcon}
+                tooltip={restoreAction ? 'Pulihkan' : 'Detail'}
+                href={restoreAction ? `${href.url}#restore` : href}
+                label={`${restoreAction ? 'Pulihkan' : 'Detail'} ${archive.label}`}
+            />
         );
     }
     return (
@@ -115,6 +107,8 @@ function ArchiveLink({
     );
 }
 
+const getRowId = (row: ArchiveResource) => row.uuid;
+
 export function ArchiveTable({
     resources,
     context,
@@ -125,39 +119,19 @@ export function ArchiveTable({
     const loading = useTableLoading();
     const operationLock = useRef(false);
     const deletion = useArchiveDelete({ context, location: 'index', operationLock });
-    const table = useDataTable({
-        data: resources.data,
-        columns,
-        getRowId: (row) => row.uuid,
-        manualPagination: true,
-        rowCount: resources.meta.total,
-        state: {
-            pagination: { pageIndex: resources.meta.current_page - 1, pageSize: resources.meta.per_page },
-            columnVisibility: { module: context === null },
-        },
-    });
-    function visit(params: PaginationParams) {
-        router.get(
-            context === 'reference' ? referenceArchiveIndex().url : index().url,
-            buildListingQuery(window.location.search, params),
-            { preserveState: true, preserveScroll: true, only: ['resources', 'filters'] },
-        );
-    }
     return (
         <DeleteContext
             value={{ busy: deletion.busy || loading, begin: (archive) => deletion.begin(archive, 'package') }}
         >
-            <DataTable
-                table={table}
-                isLoading={loading}
+            <ResourceDataTable
+                data={resources.data}
+                columns={columns}
+                getRowId={getRowId}
+                meta={resources.meta}
+                url={context === 'reference' ? referenceArchiveIndex().url : index().url}
+                columnVisibility={{ module: context === null }}
+                disabled={deletion.busy}
                 emptyMessage="Tidak ada arsip yang sesuai."
-                footer={
-                    <DataTableFooter
-                        meta={resources.meta}
-                        onPaginationChange={visit}
-                        disabled={loading || deletion.busy}
-                    />
-                }
             />
             <DeleteArchiveDialog flow={deletion} />
         </DeleteContext>

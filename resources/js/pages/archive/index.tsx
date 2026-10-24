@@ -1,8 +1,10 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
+import { Head, router } from '@inertiajs/react';
+import { SectionData } from '@/components/section-data';
+import { DataFilterDialog } from '@/components/data-filter-dialog';
+import { OptionSelect } from '@/components/option-select';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTableLoading } from '@/hooks/use-table-loading';
+import { buildListingQuery } from '@/lib/listing-query';
 import { index } from '@/routes/archives';
 import { index as referenceArchiveIndex } from '@/routes/ref/archive';
 import type { ArchiveContext, ArchiveFilters, ArchivePage, ArchiveResource } from '@/types/archive';
@@ -16,42 +18,29 @@ interface ArchiveIndexProps {
     modules: string[];
 }
 
-function FilterSelect({
-    name,
-    label,
-    value,
-    items,
-    disabled,
-}: {
-    name: string;
-    label: string;
-    value: string;
-    items: { value: string; label: string }[];
-    disabled: boolean;
-}) {
-    return (
-        <Field className="w-full sm:w-44">
-            <FieldLabel htmlFor={`archive-${name}`}>{label}</FieldLabel>
-            <Select name={name} defaultValue={value} items={items} disabled={disabled}>
-                <SelectTrigger id={`archive-${name}`} className="w-full">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectGroup>
-                        {items.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                            </SelectItem>
-                        ))}
-                    </SelectGroup>
-                </SelectContent>
-            </Select>
-        </Field>
-    );
-}
-
 export default function ArchiveIndex({ resources, filters, context, modules }: ArchiveIndexProps) {
     const list = context === 'reference' ? referenceArchiveIndex : index;
+    const loading = useTableLoading();
+    const draft = { module: context === 'reference' ? '' : filters.module, kind: filters.kind as string };
+    const emptyValue = { module: '', kind: '' };
+
+    function applyFilters(value: typeof draft) {
+        router.get(
+            list().url,
+            buildListingQuery(window.location.search, {
+                page: null,
+                module: context === 'reference' ? null : value.module || null,
+                kind: value.kind || null,
+            }),
+            {
+                preserveState: true,
+                preserveScroll: true,
+                showProgress: false,
+                only: ['resources', 'filters'],
+            },
+        );
+    }
+
     return (
         <>
             <Head title={context === 'reference' ? 'Arsip Reference' : 'Archive'} />
@@ -61,66 +50,59 @@ export default function ArchiveIndex({ resources, filters, context, modules }: A
                         ? 'Grup dan item Reference yang diarsipkan.'
                         : 'Data yang diarsipkan dari seluruh modul.'}
                 </p>
-                <Form
-                    key={JSON.stringify(filters)}
-                    action={list().url}
-                    method="get"
-                    options={{ preserveState: true, preserveScroll: true, only: ['resources', 'filters'] }}
-                >
-                    {({ processing }) => (
-                        <FieldGroup className="flex flex-col items-end gap-4 sm:flex-row sm:flex-wrap">
-                            <Field className="w-full min-w-0 sm:min-w-64 sm:flex-1">
-                                <FieldLabel htmlFor="archive-keyword">Cari nama atau konten</FieldLabel>
-                                <Input
-                                    id="archive-keyword"
-                                    name="keyword"
-                                    defaultValue={filters.keyword}
-                                    placeholder="Masukkan minimal 2 karakter"
-                                    maxLength={255}
-                                    disabled={processing}
-                                />
-                            </Field>
-                            {context === null && (
-                                <FilterSelect
-                                    name="module"
-                                    label="Modul"
-                                    value={filters.module}
-                                    items={[
-                                        { value: '', label: 'Semua modul' },
-                                        ...modules.map((module) => ({ value: module, label: moduleLabel(module) })),
-                                    ]}
-                                    disabled={processing}
-                                />
+                <SectionData
+                    searchUrl={list().url}
+                    defaultKeyword={filters.keyword}
+                    filterAction={
+                        <DataFilterDialog
+                            value={draft}
+                            emptyValue={emptyValue}
+                            onApply={applyFilters}
+                            activeCount={Number(draft.module !== '') + Number(draft.kind !== '')}
+                            disabled={loading}
+                        >
+                            {({ value, onValueChange, disabled }) => (
+                                <FieldGroup>
+                                    {context === null && (
+                                        <Field>
+                                            <FieldLabel htmlFor="archive-module">Modul</FieldLabel>
+                                            <OptionSelect
+                                                id="archive-module"
+                                                name="module"
+                                                items={modules.map((module) => ({
+                                                    value: module,
+                                                    label: moduleLabel(module),
+                                                }))}
+                                                value={value.module}
+                                                onValueChange={(module) => onValueChange({ ...value, module })}
+                                                placeholder="Semua modul"
+                                                resetLabel="Reset modul"
+                                                disabled={disabled}
+                                            />
+                                        </Field>
+                                    )}
+                                    <Field>
+                                        <FieldLabel htmlFor="archive-kind">Jenis</FieldLabel>
+                                        <OptionSelect
+                                            id="archive-kind"
+                                            name="kind"
+                                            items={[
+                                                { value: 'package', label: 'Grup' },
+                                                { value: 'record', label: 'Item' },
+                                            ]}
+                                            value={value.kind}
+                                            onValueChange={(kind) => onValueChange({ ...value, kind })}
+                                            placeholder="Semua jenis"
+                                            resetLabel="Reset jenis"
+                                            disabled={disabled}
+                                        />
+                                    </Field>
+                                </FieldGroup>
                             )}
-                            <FilterSelect
-                                name="kind"
-                                label="Jenis"
-                                value={filters.kind}
-                                items={[
-                                    { value: '', label: 'Semua jenis' },
-                                    { value: 'package', label: 'Grup' },
-                                    { value: 'record', label: 'Item' },
-                                ]}
-                                disabled={processing}
-                            />
-                            <input type="hidden" name="per_page" value={resources.meta.per_page} />
-                            <div className="flex items-center gap-2">
-                                <Button type="submit" disabled={processing}>
-                                    Cari
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    nativeButton={false}
-                                    disabled={processing}
-                                    render={<Link href={list({ query: { per_page: resources.meta.per_page } })} />}
-                                >
-                                    Reset filter
-                                </Button>
-                            </div>
-                        </FieldGroup>
-                    )}
-                </Form>
-                <ArchiveTable resources={resources} context={context} />
+                        </DataFilterDialog>
+                    }
+                    dataTable={<ArchiveTable resources={resources} context={context} />}
+                />
             </div>
         </>
     );

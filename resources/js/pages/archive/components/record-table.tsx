@@ -179,6 +179,7 @@ export function RecordTable({
         router.get(show(archiveUuid).url, buildListingQuery(window.location.search, params), {
             preserveState: true,
             preserveScroll: true,
+            showProgress: false,
             only: ['resources'],
         });
     }

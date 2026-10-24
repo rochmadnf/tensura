@@ -60,17 +60,19 @@ describe('Archive read screens', () => {
         expect(markup).toContain('Detail');
         expect(markup).toContain(`/archives/${archive.uuid}${context ? '?context=reference' : ''}`);
         expect(markup.includes('>Modul</th>')).toBe(context === null);
-        expect(markup).toContain(`action="${context ? '/reference/archive' : '/archives'}"`);
+        expect(markup).toContain('aria-label="Cari data"');
+        expect(markup).toContain('aria-haspopup="dialog"');
+        expect(markup).not.toContain('Tambah Data');
         expect(markup).toContain('>Masih diarsipkan<');
         expect(markup).toContain(`#restore`);
-        expect(markup).toContain('Pulihkan…');
+        expect(markup).toContain('aria-label="Pulihkan &lt;script&gt;Nama grup&lt;/script&gt;"');
         expect(markup).not.toContain('Konfirmasi pemulihan');
-        expect(markup).toContain('Hapus Permanen…');
+        expect(markup).toContain('aria-label="Hapus permanen &lt;script&gt;Nama grup&lt;/script&gt;"');
         expect(markup).not.toContain('role="alertdialog"');
         expect(markup).not.toContain('type="checkbox"');
     });
 
-    it('renders an empty archive with a filter reset and zero totals', () => {
+    it('renders an empty archive with a search reset, filter dialog, and zero totals', () => {
         const markup = render(ArchiveIndex, {
             resources: { data: [], meta: { ...meta, current_page: 1, total: 0, from: null, to: null } },
             filters: { keyword: 'kosong', module: '', kind: '' },
@@ -78,7 +80,8 @@ describe('Archive read screens', () => {
             modules: [],
         });
         expect(markup).toContain('Tidak ada arsip yang sesuai.');
-        expect(markup).toContain('Reset filter');
+        expect(markup).toContain('aria-label="Hapus pencarian"');
+        expect(markup).toContain('>Filter</button>');
         expect(markup).toContain('value="kosong"');
     });
 
