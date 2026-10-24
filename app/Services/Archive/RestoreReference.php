@@ -2,7 +2,6 @@
 
 namespace App\Services\Archive;
 
-use App\Enums\ArchiveKindEnum;
 use App\Exceptions\ArchiveChangedException;
 use App\Models\Archive;
 use App\Models\ArchiveRecord;
@@ -29,11 +28,8 @@ class RestoreReference
     public function restore(Archive $archive, User $actor, string $token, array $input): array
     {
         $selection = ArchiveSelection::normalize($input);
-        if ($selection['action'] !== 'restore' || !in_array($selection['mode'], ArchiveSelection::PARENT_MODES, true)) {
-            throw ValidationException::withMessages(['mode' => 'Mode pemulihan ini belum tersedia.']);
-        }
-        if ($selection['target_group_uuid'] !== null) {
-            throw ValidationException::withMessages(['target_group_uuid' => 'Penggabungan grup belum tersedia pada tahap ini.']);
+        if ($selection['action'] !== 'restore') {
+            throw ValidationException::withMessages(['action' => 'Aksi ini bukan pemulihan arsip.']);
         }
 
         try {
@@ -42,28 +38,45 @@ class RestoreReference
                 if ($current === null) {
                     throw new ArchiveChangedException();
                 }
-                if ($current->module !== 'reference' || $current->kind !== ArchiveKindEnum::PACKAGE || $current->entity !== ReferenceSnapshot::GROUP) {
-                    throw ValidationException::withMessages(['mode' => 'Arsip ini bukan paket grup Reference.']);
+                if ($current->module !== 'reference' || !in_array($current->entity, [ReferenceSnapshot::GROUP, ReferenceSnapshot::ITEM], true)) {
+                    throw ValidationException::withMessages(['mode' => 'Jenis arsip Reference ini belum didukung.']);
                 }
 
                 $records = $current->records()->orderBy('id')->lockForUpdate()->get();
-                $this->lockActiveRecords($current, $records);
+                $this->lockActiveRecords($current, $records, $selection['target_group_uuid']);
                 $plan = $this->confirmation->verify($token, $current, $actor, $selection);
-                $parent = $records->firstWhere('uuid', $plan['parent']['record_uuid'] ?? null);
-                $parentCandidate = collect($plan['candidates'])->firstWhere('record_uuid', $parent?->uuid);
-                if ($parent === null || ($parentCandidate['status'] ?? null) !== 'ready') {
-                    throw new ArchiveChangedException();
+                $restoringParent = in_array($selection['mode'], ArchiveSelection::PARENT_MODES, true);
+                $append = !$restoringParent || $selection['target_group_uuid'] !== null;
+                $restored = 0;
+                if ($restoringParent) {
+                    $parent = $records->firstWhere('uuid', $plan['parent']['record_uuid'] ?? null);
+                    $parentCandidate = collect($plan['candidates'])->firstWhere('record_uuid', $parent?->uuid);
+                    if ($parent === null || ($parentCandidate['status'] ?? null) !== 'ready') {
+                        throw new ArchiveChangedException();
+                    }
+                    if ($selection['target_group_uuid'] === null) {
+                        $group = new ReferenceGroup();
+                        $this->insertSnapshot($group, $parent);
+                    } else {
+                        $group = $this->activeTarget($plan);
+                    }
+                    $this->removeRecord($parent);
+                    $restored++;
+                } else {
+                    $group = $this->activeTarget($plan);
                 }
 
-                $group = new ReferenceGroup();
-                $this->insertSnapshot($group, $parent);
-                $this->removeRecord($parent);
-
-                $restored = 1;
+                $nextOrder = $append ? (int) $group->items()->max('sort_order') : 0;
                 $readyIds = collect($plan['candidates'])->where('status', 'ready')->pluck('record_uuid')->all();
-                foreach ($records->where('entity', ReferenceSnapshot::ITEM)->whereIn('uuid', $readyIds)->chunk(200) as $chunk) {
+                $readyChildren = $records->where('entity', ReferenceSnapshot::ITEM)->whereIn('uuid', $readyIds)
+                    ->sortBy(['payload.sort_order', 'payload.id']);
+                foreach ($readyChildren->chunk(200) as $chunk) {
                     foreach ($chunk as $record) {
-                        $this->insertSnapshot(new ReferenceItem(), $record);
+                        $overrides = ['reference_group_id' => $group->id];
+                        if ($append) {
+                            $overrides['sort_order'] = ++$nextOrder;
+                        }
+                        $this->insertSnapshot(new ReferenceItem(), $record, $overrides);
                         $this->removeRecord($record);
                         $restored++;
                     }
@@ -78,7 +91,7 @@ class RestoreReference
                     'context' => [
                         ...$current->context,
                         'target' => ['entity' => ReferenceSnapshot::GROUP, 'uuid' => $group->uuid],
-                        'parent_resolved' => true,
+                        'parent_resolved' => $restoringParent || ($current->context['parent_resolved'] ?? false),
                     ],
                     'revision' => $current->revision + 1,
                 ])) {
@@ -100,7 +113,7 @@ class RestoreReference
     }
 
     /** @param Collection<int, ArchiveRecord> $records */
-    private function lockActiveRecords(Archive $archive, Collection $records): void
+    private function lockActiveRecords(Archive $archive, Collection $records, ?string $targetUuid): void
     {
         $supported = $records->filter(fn(ArchiveRecord $record): bool => $this->snapshot->supports($record));
         $parent = $supported->firstWhere('entity', ReferenceSnapshot::GROUP);
@@ -111,6 +124,7 @@ class RestoreReference
             $archive->context['parent']['source_uuid'] ?? null,
             $archive->context['target']['uuid'] ?? null,
             $parent?->source_uuid,
+            $targetUuid,
         ], fn(mixed $uuid): bool => is_string($uuid) && Str::isUuid($uuid)));
 
         $groups = ReferenceGroup::query()->where(function (Builder $query) use ($parent, $parentUuids, $ids, $uuids): void {
@@ -128,10 +142,11 @@ class RestoreReference
         })->orderBy('id')->lockForUpdate()->get(['id']);
     }
 
-    private function insertSnapshot(Model $model, ArchiveRecord $record): void
+    /** @param array{reference_group_id?: int, sort_order?: int} $overrides */
+    private function insertSnapshot(Model $model, ArchiveRecord $record, array $overrides = []): void
     {
         $model->timestamps = false;
-        $model->setRawAttributes($record->payload);
+        $model->setRawAttributes([...$record->payload, ...$overrides]);
         if (!$model->save()) {
             throw new RuntimeException('Penyimpanan data pemulihan gagal.');
         }
@@ -142,5 +157,16 @@ class RestoreReference
         if (!$record->delete()) {
             throw new RuntimeException('Pembersihan record arsip gagal.');
         }
+    }
+
+    /** @param array<string, mixed> $plan */
+    private function activeTarget(array $plan): ReferenceGroup
+    {
+        $group = ReferenceGroup::query()->where('uuid', $plan['target']['uuid'] ?? null)->first();
+        if ($group === null) {
+            throw new ArchiveChangedException();
+        }
+
+        return $group;
     }
 }

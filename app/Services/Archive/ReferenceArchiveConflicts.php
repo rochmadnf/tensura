@@ -26,7 +26,7 @@ class ReferenceArchiveConflicts
         $root = $records->firstWhere('entity', ReferenceSnapshot::GROUP);
         $restoringParent = in_array($selection['mode'], ['parent_only', 'parent_with_children'], true);
         $parentUuid = $archive->context['parent']['source_uuid'] ?? null;
-        $targetUuid = $selection['target_group_uuid'] ?? $archive->context['target']['uuid'] ?? $parentUuid;
+        $targetUuid = $selection['target_group_uuid'] ?? ($restoringParent ? $parentUuid : ($archive->context['target']['uuid'] ?? $parentUuid));
         $target = is_string($targetUuid) ? ReferenceGroup::query()->where('uuid', $targetUuid)->first() : null;
         if ($selection['target_group_uuid'] !== null && $target === null) {
             throw ValidationException::withMessages(['target_group_uuid' => 'Grup tujuan tidak tersedia.']);

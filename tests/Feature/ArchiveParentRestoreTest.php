@@ -306,7 +306,7 @@ class ArchiveParentRestoreTest extends TestCase
     }
 
     #[DataProvider('unsupportedInputs')]
-    public function test_future_modes_merge_and_delete_are_not_exposed(array $changes, string $field): void
+    public function test_invalid_restore_request_shapes_are_rejected(array $changes, string $field): void
     {
         [$archive, $actor, $group] = $this->package();
         $input = $this->confirmation($archive, $actor, 'parent_only');
@@ -320,10 +320,6 @@ class ArchiveParentRestoreTest extends TestCase
     public static function unsupportedInputs(): array
     {
         return [
-            'all children' => [['mode' => 'children_all'], 'mode'],
-            'single child' => [['mode' => 'child'], 'mode'],
-            'selected children' => [['mode' => 'children_selected'], 'mode'],
-            'merge' => [['target_group_uuid' => '018e6fa0-9382-7f17-a13c-33b147f24961'], 'target_group_uuid'],
             'delete' => [['action' => 'delete_forever'], 'action'],
             'record selection' => [['record_uuids' => ['018e6fa0-9382-7f17-a13c-33b147f24961']], 'record_uuids'],
             'missing token' => [['confirmation_token' => null], 'confirmation_token'],

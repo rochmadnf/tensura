@@ -20,9 +20,7 @@ class RestoreArchiveRequest extends FormRequest
         return [
             ...ArchiveSelection::rules('restore'),
             'action' => ['required', Rule::in(['restore'])],
-            'mode' => ['required', Rule::in(ArchiveSelection::PARENT_MODES)],
-            'record_uuids' => ['prohibited'],
-            'target_group_uuid' => ['prohibited'],
+            'mode' => ['required', Rule::in(ArchiveSelection::RESTORE_MODES)],
             'confirmation_token' => ['required', 'string'],
         ];
     }
