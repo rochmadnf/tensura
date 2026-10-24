@@ -62,7 +62,8 @@ class ReferenceSnapshot implements SnapshotHandler
         }
         if (array_diff(array_keys($payload), array_keys($rules)) !== []
             || (string) $payload['id'] !== $record->source_key
-            || $payload['uuid'] !== $record->source_uuid) {
+            || $payload['uuid'] !== $record->source_uuid
+            || $record->label !== ($payload[$record->entity === self::GROUP ? 'name' : 'content'])) {
             return false;
         }
 

@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: implementasi bertahap; tahap 1–2 selesai, tahap 3–10 belum selesai.
+Status: implementasi bertahap; tahap 1–3 selesai, tahap 4–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -178,6 +178,9 @@ Satu baris mewakili satu data asal yang belum dipulihkan atau dihapus permanen. 
 - Pratinjau menerima aksi, mode, UUID baris arsip terpilih, dan tujuan penggabungan bila diperlukan.
 - Konfirmasi menggunakan token yang telah diterbitkan; backend tidak mempercayai daftar kandidat atau status aman dari browser.
 - Kontrak pratinjau memuat induk, tujuan, kandidat, konflik beserta alasan, ringkasan jumlah, dan token konfirmasi.
+- Kontrak tahap 3 menggunakan `action: restore|delete_forever`, `mode`, `record_uuids` untuk pilihan UUID baris arsip, dan `target_group_uuid` opsional untuk tujuan restore eksplisit. Delete Forever menerima mode `package`, `child`, atau `children_selected`; field tujuan tidak berlaku untuk aksi tersebut.
+- Respons `archives.preview` dibungkus resource `data`: `archive_uuid`, `action`, `mode`, `parent`, `target`, `matching_groups`, `candidates`, `conflicts`, `counts` (`total`, `ready`, `conflicted`), `can_confirm`, dan `confirmation_token`. State internal serta fingerprint tidak diekspos. Token bernilai null jika tidak ada kandidat aman.
+- Kandidat berisi `record_uuid`, `entity`, `label`, `operation` (`restore`, `merge`, atau `delete_forever`), `status` (`ready` atau `conflict`), dan daftar konflik `{code, message}`. Kode konflik tahap 3: `unsupported_snapshot`, `identity_conflict`, `name_conflict`, `parent_blocked`, `parent_missing`, `parent_mismatch`, dan `content_conflict`.
 - Hasil eksekusi memuat jumlah berhasil, tersisa, serta apakah paket masih tersedia.
 - Gunakan halaman Inertia di `resources/js/pages/archive`. Daftar memakai props `resources`, `filters`, dan konteks modul; detail memuat children berpaginasi.
 - Gunakan `useHttp` untuk pratinjau dan eksekusi JSON, serta navigasi Inertia untuk perpindahan halaman. Definisikan tipe TypeScript untuk mode, resource, konflik, pratinjau, dan hasil.
@@ -366,7 +369,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 | ---------------------------- | ------------- | ---------------------------------------------------------------------- |
 | 1. Fondasi                   | Selesai       | `feat(archive): add shared archive storage and snapshot contracts`     |
 | 2. Pengarsipan Reference     | Selesai       | `feat(reference): archive groups and items on deletion`                |
-| 3. Pratinjau/token           | Belum dimulai | `feat(archive): add conflict previews and confirmation tokens`         |
+| 3. Pratinjau/token           | Selesai       | `feat(archive): add conflict previews and confirmation tokens`         |
 | 4. Restore induk/paket       | Belum dimulai | `feat(archive): restore reference parents and packages`                |
 | 5. Children/konflik          | Belum dimulai | `feat(archive): restore selected children and resolve group conflicts` |
 | 6. Delete Forever backend    | Belum dimulai | `feat(archive): permanently delete archived packages and records`      |
@@ -379,15 +382,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** tahap 2 selesai; berikutnya tahap 3.
-- **Status:** delete Reference sudah memindahkan data ke arsip; belum tersedia alur restore atau menu Archive.
-- **Commit terakhir yang relevan:** tahap 1 `a4262ea`; commit tahap ini menggunakan `feat(reference): archive groups and items on deletion`.
-- **File/kontrak penting:** `ArchiveReference::group/item`, `ReferenceSnapshot`, dan kedua controller Reference. `context.parent` menyimpan `entity`, `source_key`, `source_uuid`, dan `label`; `context.target` berisi `entity`/`uuid` jika induk aktif; `parent_resolved` membedakan induk yang sudah diselesaikan.
-- **Pekerjaan selesai:** pengarsipan transaksional per grup/item, pembacaan children per 200 record tanpa query induk berulang, penguncian grup pada edit/tambah/hapus/reorder, serta pesan konfirmasi/notifikasi arsip.
-- **Verifikasi:** 5 tes pengarsipan/42 assertions dan regresi Reference 96 tes/543 assertions lulus di SQLite. TypeScript lulus setelah regenerasi route Wayfinder yang diabaikan Git; Pint dan format frontend diperiksa.
-- **Keputusan baru:** tidak ada UI atau endpoint eksekusi restore/purge pada tahap ini. Snapshot induk dan item mandiri tetap dipisahkan. Tidak ada seeder arsip fiktif; arsip berasal dari operasi hapus.
-- **Pekerjaan tersisa/kendala:** tahap 3–10; database aplikasi belum dimigrasikan, integrasi kedua engine tetap di tahap 10.
-- **Langkah berikutnya:** pemeriksa konflik, pratinjau seluruh mode, fingerprint kanonis, dan token terikat konteks pada tahap 3.
+- **Tahap aktif:** tahap 3 selesai; berikutnya tahap 4.
+- **Status:** fondasi, pengarsipan Reference, dan pratinjau/token selesai. Belum ada endpoint eksekusi restore/purge atau halaman/menu Archive.
+- **Commit terakhir yang relevan:** tahap 1 `a4262ea`, tahap 2 `41f496d`; commit tahap ini menggunakan `feat(archive): add conflict previews and confirmation tokens`.
+- **File/kontrak penting:** `ArchiveSelection` menormalisasi cakupan; `PreviewArchive` menghitung rencana; `ReferenceArchiveConflicts` memeriksa data aktif; `ArchiveConfirmation` menerbitkan/memverifikasi token; endpoint `archives.preview` memakai resource eksplisit. Kontrak HTTP tercatat di bagian 10. Konteks paket tetap memakai `parent` (`entity`, `source_key`, `source_uuid`, `label`), `target` (`entity`, `uuid`), dan `parent_resolved`.
+- **Pekerjaan selesai:** dua tabel/model/factory, snapshot versi 1 dan registry, UUID unik, pengarsipan transaksional, koordinasi penguncian operasi aktif, pratinjau lima mode restore/tiga cakupan purge, perbandingan grup, deteksi konflik mengikuti database, fingerprint kanonis, serta token terenkripsi terikat konteks.
+- **Verifikasi:** 55 tes pratinjau/token dengan 197 assertions lulus; seluruh suite aplikasi 529 tes/3164 assertions lulus di SQLite. TypeScript, Pint, dan format frontend yang berubah lulus. Regenerasi route Wayfinder melengkapi hasil generasi lokal yang diabaikan Git.
+- **Keputusan baru:** konflik yang sudah terlihat tetap mengizinkan konfirmasi subset aman; perubahan kondisi menghasilkan `ArchiveChangedException` dengan HTTP 409/kode `archive_changed`; token invalid atau salah konteks menghasilkan validasi 422. Fingerprint menggunakan context/payload yang sudah didekode agar urutan key JSON tidak mengubah hasil. Tidak ada seeder arsip fiktif; arsip berasal dari operasi hapus.
+- **Pekerjaan tersisa/kendala:** tahap 4–10; database aplikasi belum dimigrasikan, integrasi MySQL/PostgreSQL serta konkurensi nyata tetap di tahap 10. Belum dilakukan build UI Archive karena halamannya belum masuk cakupan tahap ini.
+- **Langkah berikutnya:** tahap 4, implementasikan `parent_only`/`parent_with_children` dan endpoint restore. Panggil `ArchiveConfirmation::verify` di dalam transaksi setelah kunci paket dan grup aktif relevan dipegang, lalu pertahankan kunci hingga penulisan selesai. Verifier tahap 3 bersifat baca ulang/validasi dan tidak menjalankan pemulihan.
 
 ## 15. Pengujian dan kriteria penerimaan
 
