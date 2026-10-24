@@ -1,4 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
+import { createContext, useContext, useRef } from 'react';
 import {
     DataTable,
     DataTableFooter,
@@ -14,6 +15,28 @@ import { index, show } from '@/routes/archives';
 import { index as referenceArchiveIndex } from '@/routes/ref/archive';
 import type { ArchiveContext, ArchivePage, ArchiveResource } from '@/types/archive';
 import { archivedDate, moduleLabel, parentStatusLabels } from './presentation';
+import { useArchiveDelete } from './use-archive-delete';
+import { DeleteArchiveDialog } from './delete-dialog';
+
+const DeleteContext = createContext<{ busy: boolean; begin: (archive: ArchiveResource) => void }>({
+    busy: false,
+    begin: () => {},
+});
+
+function DeletePackageAction({ archive }: { archive: ArchiveResource }) {
+    const deletion = useContext(DeleteContext);
+    return (
+        <Button
+            variant="destructive"
+            size="sm"
+            disabled={deletion.busy}
+            aria-label={`Hapus permanen ${archive.label}`}
+            onClick={() => deletion.begin(archive)}
+        >
+            Hapus Permanen…
+        </Button>
+    );
+}
 
 const helper = createDataTableColumnHelper<ArchiveResource>();
 const columns = helper.columns([
@@ -50,6 +73,7 @@ const columns = helper.columns([
             <div className="flex items-center gap-2">
                 <ArchiveLink archive={row.original} action />
                 {row.original.module === 'reference' && <ArchiveLink archive={row.original} restore />}
+                <DeletePackageAction archive={row.original} />
             </div>
         ),
     }),
@@ -97,6 +121,8 @@ export function ArchiveTable({
     context: ArchiveContext;
 }) {
     const loading = useTableLoading();
+    const operationLock = useRef(false);
+    const deletion = useArchiveDelete({ context, location: 'index', operationLock });
     const table = useDataTable({
         data: resources.data,
         columns,
@@ -116,11 +142,22 @@ export function ArchiveTable({
         );
     }
     return (
-        <DataTable
-            table={table}
-            isLoading={loading}
-            emptyMessage="Tidak ada arsip yang sesuai."
-            footer={<DataTableFooter meta={resources.meta} onPaginationChange={visit} disabled={loading} />}
-        />
+        <DeleteContext
+            value={{ busy: deletion.busy || loading, begin: (archive) => deletion.begin(archive, 'package') }}
+        >
+            <DataTable
+                table={table}
+                isLoading={loading}
+                emptyMessage="Tidak ada arsip yang sesuai."
+                footer={
+                    <DataTableFooter
+                        meta={resources.meta}
+                        onPaginationChange={visit}
+                        disabled={loading || deletion.busy}
+                    />
+                }
+            />
+            <DeleteArchiveDialog flow={deletion} />
+        </DeleteContext>
     );
 }

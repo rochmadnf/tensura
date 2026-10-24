@@ -1,5 +1,5 @@
 import { router, useHttp } from '@inertiajs/react';
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef, type RefObject } from 'react';
 import type { RowSelectionState, Updater } from '@tanstack/react-table';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { index, preview, restore, show } from '@/routes/archives';
@@ -22,7 +22,12 @@ import {
     restoreSelection,
 } from './restore-state';
 
-export function useArchiveRestore(archive: ArchiveResource, hasParent: boolean, context: ArchiveContext) {
+export function useArchiveRestore(
+    archive: ArchiveResource,
+    hasParent: boolean,
+    context: ArchiveContext,
+    operationLock: RefObject<boolean>,
+) {
     const [state, dispatch] = useReducer(restoreReducer, undefined, () =>
         initialRestoreState(hasParent, archive.kind === 'record'),
     );
@@ -35,7 +40,7 @@ export function useArchiveRestore(archive: ArchiveResource, hasParent: boolean, 
         { data: ArchiveRestoreResult }
     >({ action: 'restore', mode: 'parent_only', confirmation_token: '' });
     const renameHttp = useHttp<{ name: string }, { data: ArchivedGroupRenameResult }>({ name: '' });
-    const locked = useRef(false);
+    const locked = operationLock;
     const consumedToken = useRef<string | null>(null);
     const mounted = useRef(true);
     const { cancel: cancelPreview } = previewHttp;

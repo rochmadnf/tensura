@@ -124,6 +124,7 @@ export interface ArchiveDeleteResult {
 }
 
 export type ArchiveRestoreSelection = Extract<ArchiveSelection, { action: 'restore' }>;
+export type ArchiveDeleteSelection = Extract<ArchiveSelection, { action: 'delete_forever' }>;
 
 export interface ArchiveTargetGroup {
     id: string;

@@ -65,7 +65,8 @@ describe('Archive read screens', () => {
         expect(markup).toContain(`#restore`);
         expect(markup).toContain('Pulihkan…');
         expect(markup).not.toContain('Konfirmasi pemulihan');
-        expect(markup).not.toContain('Hapus Permanen');
+        expect(markup).toContain('Hapus Permanen…');
+        expect(markup).not.toContain('role="alertdialog"');
         expect(markup).not.toContain('type="checkbox"');
     });
 

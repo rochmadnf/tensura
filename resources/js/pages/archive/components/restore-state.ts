@@ -101,6 +101,7 @@ export type RestoreAction =
     | { type: 'rename-draft'; dirty: boolean }
     | { type: 'renamed' }
     | { type: 'refreshed' }
+    | { type: 'deleted' }
     | { type: 'failed'; message: string };
 
 export function restoreReducer(state: RestoreState, action: RestoreAction): RestoreState {
@@ -162,6 +163,8 @@ export function restoreReducer(state: RestoreState, action: RestoreAction): Rest
             };
         case 'refreshed':
             return { ...state, activity: 'idle' };
+        case 'deleted':
+            return { ...invalidate(state), rowSelection: {}, childUuid: null, result: null };
         case 'failed':
             return { ...invalidate(state), activity: 'idle', notice: action.message };
     }

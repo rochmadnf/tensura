@@ -17,8 +17,16 @@ import { buildListingQuery } from '@/lib/listing-query';
 import { show } from '@/routes/archives';
 import type { ArchivePage, ArchiveRecordResource } from '@/types/archive';
 
-const ActionsContext = createContext<{ disabled: boolean; onRestore: (uuid: string) => void }>({
+const ActionsContext = createContext<{
+    disabled: boolean;
+    deletionDisabled: boolean;
+    restorable: boolean;
+    onRestore: (uuid: string) => void;
+    onDelete?: (uuid: string) => void;
+}>({
     disabled: false,
+    deletionDisabled: false,
+    restorable: true,
     onRestore: () => {},
 });
 
@@ -61,17 +69,32 @@ function SelectionCell({ row }: { row: Row<DataTableFeatures, ArchiveRecordResou
 }
 
 function RestoreItemAction({ record }: { record: ArchiveRecordResource }) {
-    const { disabled, onRestore } = useContext(ActionsContext);
+    const { disabled, deletionDisabled, restorable, onRestore, onDelete } = useContext(ActionsContext);
     return (
-        <Button
-            variant="outline"
-            size="sm"
-            disabled={disabled || !record.supported}
-            aria-label={`Pulihkan ${record.label}`}
-            onClick={() => onRestore(record.uuid)}
-        >
-            Pulihkan
-        </Button>
+        <div className="flex items-center gap-2">
+            {restorable && (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={disabled || !record.supported}
+                    aria-label={`Pulihkan ${record.label}`}
+                    onClick={() => onRestore(record.uuid)}
+                >
+                    Pulihkan
+                </Button>
+            )}
+            {onDelete && record.entity === 'reference_item' && (
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={disabled || deletionDisabled}
+                    aria-label={`Hapus permanen ${record.label}`}
+                    onClick={() => onDelete(record.uuid)}
+                >
+                    Hapus Permanen…
+                </Button>
+            )}
+        </div>
     );
 }
 
@@ -120,18 +143,22 @@ export function RecordTable({
     rowSelection,
     onRowSelectionChange,
     onRestore,
+    onDelete,
     selectable,
     restorable,
     disabled,
+    deletionDisabled = false,
 }: {
     resources: ArchivePage<ArchiveRecordResource>;
     archiveUuid: string;
     rowSelection: RowSelectionState;
     onRowSelectionChange: (update: Updater<RowSelectionState>) => void;
     onRestore: (uuid: string) => void;
+    onDelete?: (uuid: string) => void;
     selectable: boolean;
     restorable: boolean;
     disabled: boolean;
+    deletionDisabled?: boolean;
 }) {
     const loading = useTableLoading();
     const table = useDataTable({
@@ -144,7 +171,7 @@ export function RecordTable({
         state: {
             pagination: { pageIndex: resources.meta.current_page - 1, pageSize: resources.meta.per_page },
             rowSelection,
-            columnVisibility: { selection: selectable, restore: restorable },
+            columnVisibility: { selection: selectable, restore: restorable || !!onDelete },
         },
         onRowSelectionChange,
     });
@@ -156,7 +183,7 @@ export function RecordTable({
         });
     }
     return (
-        <ActionsContext value={{ disabled: disabled || loading, onRestore }}>
+        <ActionsContext value={{ disabled: disabled || loading, deletionDisabled, restorable, onRestore, onDelete }}>
             <DataTable
                 table={table}
                 isLoading={loading}

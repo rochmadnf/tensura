@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { index } from '@/routes/archives';
@@ -15,6 +16,8 @@ import { RecordTable } from './components/record-table';
 import { useArchiveRestore } from './components/use-archive-restore';
 import { RestoreWorkbench } from './components/restore-workbench';
 import { selectedRecordUuids } from './components/restore-state';
+import { useArchiveDelete } from './components/use-archive-delete';
+import { DeleteArchiveDialog } from './components/delete-dialog';
 
 interface ArchiveShowProps {
     resource: { data: ArchiveResource };
@@ -36,7 +39,16 @@ function ArchiveDetail({
     target_groups,
 }: ArchiveShowProps) {
     const parent = parent_record?.data;
-    const flow = useArchiveRestore(archive, !!parent, context);
+    const operationLock = useRef(false);
+    const flow = useArchiveRestore(archive, !!parent, context, operationLock);
+    const deletion = useArchiveDelete({
+        context,
+        location: 'detail',
+        operationLock,
+        onDeleted: () => flow.dispatch({ type: 'deleted' }),
+    });
+    const busy = flow.busy || deletion.busy;
+    const deletionDisabled = busy || flow.state.confirmationOpen;
     const selectedCount = selectedRecordUuids(flow.state.rowSelection).length;
     return (
         <>
@@ -102,7 +114,7 @@ function ArchiveDetail({
                         )}
                     </section>
                 )}
-                <RestoreWorkbench archive={archive} parent={parent} groups={target_groups} flow={flow} />
+                <RestoreWorkbench archive={archive} parent={parent} groups={target_groups} flow={{ ...flow, busy }} />
                 <section aria-labelledby="archived-items" className="flex min-w-0 flex-col gap-4">
                     <h3 id="archived-items" className="font-medium">
                         Item yang diarsipkan
@@ -114,7 +126,7 @@ function ArchiveDetail({
                             </p>
                             <Button
                                 variant="outline"
-                                disabled={flow.busy || selectedCount === 0}
+                                disabled={busy || selectedCount === 0}
                                 onClick={() => {
                                     flow.dispatch({ type: 'mode', mode: 'children_selected' });
                                     document.getElementById('restore')?.focus();
@@ -126,8 +138,21 @@ function ArchiveDetail({
                                 Pulihkan Terpilih
                             </Button>
                             <Button
+                                variant="destructive"
+                                disabled={deletionDisabled || selectedCount === 0}
+                                onClick={() =>
+                                    deletion.begin(
+                                        archive,
+                                        'children_selected',
+                                        selectedRecordUuids(flow.state.rowSelection),
+                                    )
+                                }
+                            >
+                                Hapus Permanen Terpilih…
+                            </Button>
+                            <Button
                                 variant="ghost"
-                                disabled={flow.busy || selectedCount === 0}
+                                disabled={busy || selectedCount === 0}
                                 onClick={() => flow.setRowSelection({})}
                             >
                                 Bersihkan pilihan
@@ -140,11 +165,33 @@ function ArchiveDetail({
                         rowSelection={flow.state.rowSelection}
                         onRowSelectionChange={flow.setRowSelection}
                         onRestore={flow.chooseChild}
+                        onDelete={(uuid) => deletion.begin(archive, 'child', [uuid])}
                         selectable={archive.kind === 'package' && archive.module === 'reference'}
                         restorable={archive.module === 'reference'}
-                        disabled={flow.busy}
+                        disabled={busy}
+                        deletionDisabled={deletionDisabled}
                     />
                 </section>
+                <section
+                    aria-labelledby="delete-archive-heading"
+                    className="flex flex-col items-start gap-3 rounded-lg border p-4"
+                >
+                    <h3 id="delete-archive-heading" className="font-medium">
+                        Penghapusan permanen
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Hapus seluruh data yang masih tersisa di arsip ini. Data tidak dapat dipulihkan setelah dihapus
+                        permanen.
+                    </p>
+                    <Button
+                        variant="destructive"
+                        disabled={deletionDisabled}
+                        onClick={() => deletion.begin(archive, 'package')}
+                    >
+                        Hapus Permanen Arsip…
+                    </Button>
+                </section>
+                <DeleteArchiveDialog flow={deletion} />
             </div>
         </>
     );
