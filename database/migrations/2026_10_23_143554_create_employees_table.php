@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->char('nik', 16)->unique();
             $table->char('nip', 18)->nullable()->unique();
             $table->string('name', 100);
-            $table->boolean('gender')->comment('0: Female, 1: Male');
+            $table->unsignedTinyInteger('gender')->comment('1: Laki-laki, 2: Perempuan');
             $table->string('front_title', 50)->nullable();
             $table->string('back_title', 50)->nullable();
             $table->foreignId('job_title_id')->nullable()->constrained('job_titles')->onDelete('set null');

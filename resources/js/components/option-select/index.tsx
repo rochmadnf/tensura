@@ -26,6 +26,7 @@ type OptionSelectCommonProps = Pick<AriaAttributes, 'aria-invalid' | 'aria-descr
     placeholder: string;
     resetLabel?: string;
     disabled?: boolean;
+    forceCombobox?: boolean;
 };
 
 export type OptionSelectProps = OptionSelectCommonProps &
@@ -51,11 +52,12 @@ function SingleOptionSelect({
     placeholder,
     resetLabel = 'Reset pilihan',
     disabled = false,
+    forceCombobox = false,
     'aria-invalid': ariaInvalid,
     'aria-describedby': ariaDescribedBy,
 }: OptionSelectCommonProps & { value: string; onValueChange: (value: string) => void }) {
     const ariaProps = { 'aria-invalid': ariaInvalid, 'aria-describedby': ariaDescribedBy };
-    if (items.length <= 5) {
+    if (!forceCombobox && items.length <= 5) {
         return (
             <Select
                 name={name}
@@ -125,13 +127,14 @@ function MultipleOptionSelect({
     placeholder,
     resetLabel = 'Reset pilihan',
     disabled = false,
+    forceCombobox = false,
     'aria-invalid': ariaInvalid,
     'aria-describedby': ariaDescribedBy,
 }: OptionSelectCommonProps & { value: string[]; onValueChange: (value: string[]) => void }) {
     const anchor = useComboboxAnchor();
     const selectedItems = items.filter((item) => value.includes(item.value));
 
-    if (items.length <= 5) {
+    if (!forceCombobox && items.length <= 5) {
         return (
             <div
                 id={id}

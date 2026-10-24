@@ -7,7 +7,7 @@ export const LoginSchema = defineRequest(
             string(),
             trim(),
             nonEmpty(),
-            minLength(5),
+            minLength(6),
             regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, ':attribute tidak sesuai format.'),
         ),
         password: pipe(string(), nonEmpty(), minLength(8)),

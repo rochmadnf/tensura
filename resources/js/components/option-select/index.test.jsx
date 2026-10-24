@@ -98,6 +98,35 @@ describe('OptionSelect', () => {
         expect(markup).not.toContain('data-slot="combobox-chip"');
     });
 
+    it('forces chip comboboxes for small multiple lists while preserving the selected label', () => {
+        const markup = renderSelect({ multiple: true, forceCombobox: true, value: ['2'], items: items.slice(0, 2) });
+        expect(markup).toContain('role="combobox"');
+        expect(markup).toContain('data-slot="combobox-chip"');
+        expect(markup).toContain('aria-label="Hapus Perawat"');
+        expect(markup).not.toContain('role="checkbox"');
+    });
+
+    it('keeps an empty forced combobox searchable even when there are no available options', () => {
+        const markup = renderSelect({
+            multiple: true,
+            forceCombobox: true,
+            value: [],
+            items: [],
+            placeholder: 'Semua jabatan',
+        });
+        expect(markup).toContain('role="combobox"');
+        expect(markup).toContain('placeholder="Semua jabatan"');
+        expect(markup).not.toContain('data-slot="combobox-chip"');
+    });
+
+    it('allows clearing a saved optional value when forcing a small single combobox', () => {
+        const markup = renderSelect({ forceCombobox: true, value: '2', items: items.slice(0, 2) });
+        expect(markup).toContain('role="combobox"');
+        expect(markup).toContain('aria-label="Reset kelompok jabatan"');
+        expect(markup).toContain('value="Perawat"');
+        expect(markup).not.toContain('data-slot="select-trigger"');
+    });
+
     it('disables the input, chip removal, and clear button for a disabled multiple combobox', () => {
         const markup = renderSelect({ multiple: true, value: ['1'], disabled: true });
         const controls = markup

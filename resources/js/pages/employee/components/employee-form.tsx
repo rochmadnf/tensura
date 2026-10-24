@@ -1,7 +1,16 @@
+import { DatePickerInput } from '@/components/date-picker-input';
 import { OptionSelect } from '@/components/option-select';
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { Input } from '@/components/ui/input';
 import { useValibotForm } from '@/hooks/use-valibot-form';
@@ -17,23 +26,48 @@ import { LoaderIcon, SaveIcon, XIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@inertiajs/react';
 import { cn } from 'cn';
-import type { SubmitEventHandler } from 'react';
+import type { ComponentProps, SubmitEventHandler } from 'react';
 
 interface EmployeeFormProps extends EmployeeFormOptions {
     employee?: EmployeeResource;
 }
-
-const textFields = [
-    { name: 'nik', maxLength: 16, inputMode: 'numeric', required: true },
-    { name: 'nip', maxLength: 18, inputMode: 'numeric' },
-    { name: 'name', maxLength: 100, required: true },
-    { name: 'front_title', maxLength: 50 },
-    { name: 'back_title', maxLength: 50 },
-    { name: 'rank', maxLength: 50 },
-    { name: 'grade', maxLength: 50 },
-    { name: 'email', maxLength: 100, type: 'email' },
-    { name: 'join_date', type: 'date', required: true },
-] as const;
+type EmployeeField = keyof typeof employeeFieldLabels;
+const requiredFields: EmployeeField[] = [
+    'nik',
+    'name',
+    'gender',
+    'job_title_id',
+    'join_date',
+    'contract_status',
+    'status',
+];
+const dateFields: EmployeeField[] = ['join_date', 'str_published_date', 'sip_published_date', 'sip_expired_date'];
+const inputProps: Partial<Record<EmployeeField, ComponentProps<typeof Input>>> = {
+    nik: { maxLength: 16, inputMode: 'numeric', autoFocus: true },
+    nip: { maxLength: 18, inputMode: 'numeric' },
+    name: { maxLength: 100 },
+    front_title: { maxLength: 50 },
+    back_title: { maxLength: 50 },
+    rank: { maxLength: 50 },
+    grade: { maxLength: 50 },
+    email: { maxLength: 100, type: 'email' },
+    str_number: { maxLength: 16 },
+    sip_number: { maxLength: 30 },
+};
+const sections: { title: string; description?: string; fields: EmployeeField[] }[] = [
+    { title: 'Data Diri', fields: ['nik', 'nip', 'name', 'gender', 'front_title', 'back_title', 'email'] },
+    { title: 'Data Kepegawaian', fields: ['job_title_id', 'rank', 'grade', 'join_date', 'contract_status', 'status'] },
+    {
+        title: 'STR',
+        description: 'Opsional. Isi seluruh data STR atau kosongkan semuanya.',
+        fields: ['str_number', 'str_status', 'str_published_date'],
+    },
+    {
+        title: 'SIP',
+        description: 'Opsional. Isi seluruh data SIP atau kosongkan semuanya.',
+        fields: ['sip_number', 'sip_published_date', 'sip_expired_date'],
+    },
+];
 
 export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
     const pageName = employee ? 'Ubah Pegawai' : 'Tambah Pegawai';
@@ -41,6 +75,7 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
         nik: employee?.nik ?? '',
         nip: employee?.nip ?? '',
         name: employee?.name.raw ?? '',
+        gender: employee?.gender.id == null ? '' : String(employee.gender.id),
         front_title: employee?.name.first ?? '',
         back_title: employee?.name.last ?? '',
         job_title_id: employee?.job_title.id ?? '',
@@ -50,13 +85,24 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
         email: employee?.email ?? '',
         contract_status: employee?.contract_status.id == null ? '' : String(employee.contract_status.id),
         status: employee?.status.id == null ? '' : String(employee.status.id),
+        str_number: employee?.str?.number ?? '',
+        str_status: employee?.str?.status.id == null ? '' : String(employee.str.status.id),
+        str_published_date: employee?.str?.published_date_input ?? '',
+        sip_number: employee?.sip?.number ?? '',
+        sip_published_date: employee?.sip?.published_date_input ?? '',
+        sip_expired_date: employee?.sip?.expired_date_input ?? '',
     });
-    const selections = [
-        { name: 'job_title_id', items: options.jobTitles },
-        { name: 'contract_status', items: options.contractStatuses },
-        { name: 'status', items: options.statuses },
-    ] as const;
-
+    const selections: Partial<Record<EmployeeField, { id: number | string; label: string }[]>> = {
+        gender: options.genders,
+        job_title_id: options.jobTitles,
+        contract_status: options.contractStatuses,
+        status: options.statuses,
+        str_status: options.strStatuses,
+    };
+    function changeValue(name: EmployeeField, value: string) {
+        form.setData(name, value);
+        form.clearErrors(name);
+    }
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
         const action = employee ? empl.update(employee.id) : empl.store();
@@ -71,7 +117,6 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
             gooeyToast.error('Galat', { description: 'Terdapat data yang tidak valid.' });
         }
     };
-
     return (
         <Card className="w-full">
             <CardHeader>
@@ -87,83 +132,107 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
                         aria-label="Tutup"
                         render={<Link href={empl.index().url} />}
                     >
-                        <HugeiconsIcon icon={XIcon} strokeWidth={2} />
+                        <HugeiconsIcon icon={XIcon} />
                     </Button>
                 </CardAction>
             </CardHeader>
             <CardContent>
                 <form noValidate onSubmit={handleSubmit}>
-                    <FieldGroup className="grid gap-6 md:grid-cols-2">
-                        {textFields.map(({ name, ...inputProps }) => (
-                            <Field key={name} data-invalid={!!form.errors[name]} data-disabled={form.processing}>
-                                <FieldLabel htmlFor={name}>
-                                    {employeeFieldLabels[name]}
-                                    {'required' in inputProps && inputProps.required ? (
-                                        <span className="text-red-500">*</span>
-                                    ) : (
-                                        ''
-                                    )}
-                                </FieldLabel>
-                                <Input
-                                    {...inputProps}
-                                    autoFocus={name === 'nik'}
-                                    max={name === 'join_date' ? options.today : undefined}
-                                    disabled={form.processing}
-                                    {...bind(name)}
-                                />
-                                {form.errors[name] && <FieldError>{form.errors[name]}</FieldError>}
-                            </Field>
+                    <FieldGroup>
+                        {sections.map((section) => (
+                            <FieldSet key={section.title}>
+                                <FieldLegend>{section.title}</FieldLegend>
+                                {section.description && <FieldDescription>{section.description}</FieldDescription>}
+                                <FieldGroup className="grid gap-6 md:grid-cols-2">
+                                    {section.fields.map((name) => {
+                                        const items = selections[name];
+                                        const errorId = `${name}-error`;
+                                        const ariaProps = {
+                                            'aria-invalid': !!form.errors[name],
+                                            'aria-describedby': form.errors[name] ? errorId : undefined,
+                                        };
+                                        return (
+                                            <Field
+                                                key={name}
+                                                data-invalid={!!form.errors[name]}
+                                                data-disabled={form.processing}
+                                            >
+                                                <FieldLabel htmlFor={name}>
+                                                    {employeeFieldLabels[name]}
+                                                    {requiredFields.includes(name) && (
+                                                        <span className="text-destructive">*</span>
+                                                    )}
+                                                </FieldLabel>
+                                                {items ? (
+                                                    <OptionSelect
+                                                        forceCombobox={name === 'str_status'}
+                                                        id={name}
+                                                        name={name}
+                                                        items={items.map((item) => ({
+                                                            value: String(item.id),
+                                                            label: item.label,
+                                                        }))}
+                                                        value={form.data[name]}
+                                                        placeholder={`Pilih ${employeeFieldLabels[name].toLowerCase()}`}
+                                                        resetLabel={`Reset ${employeeFieldLabels[name].toLowerCase()}`}
+                                                        disabled={form.processing}
+                                                        {...ariaProps}
+                                                        onValueChange={(value) => changeValue(name, value)}
+                                                    />
+                                                ) : dateFields.includes(name) ? (
+                                                    <DatePickerInput
+                                                        id={name}
+                                                        name={name}
+                                                        value={form.data[name]}
+                                                        onValueChange={(value) => changeValue(name, value)}
+                                                        disabled={form.processing}
+                                                        max={name === 'sip_expired_date' ? undefined : options.today}
+                                                        {...ariaProps}
+                                                    />
+                                                ) : (
+                                                    <Input
+                                                        {...inputProps[name]}
+                                                        required={requiredFields.includes(name)}
+                                                        disabled={form.processing}
+                                                        {...bind(name)}
+                                                        {...ariaProps}
+                                                    />
+                                                )}
+                                                {name === 'job_title_id' && options.jobTitles.length === 0 && (
+                                                    <FieldDescription>
+                                                        Belum ada jabatan.{' '}
+                                                        <Link href={jt.create().url} className="text-primary underline">
+                                                            Tambah Jabatan
+                                                        </Link>{' '}
+                                                        terlebih dahulu.
+                                                    </FieldDescription>
+                                                )}
+                                                {form.errors[name] && (
+                                                    <FieldError id={errorId}>{form.errors[name]}</FieldError>
+                                                )}
+                                            </Field>
+                                        );
+                                    })}
+                                </FieldGroup>
+                            </FieldSet>
                         ))}
-                        {selections.map(({ name, items }) => (
-                            <Field key={name} data-invalid={!!form.errors[name]} data-disabled={form.processing}>
-                                <FieldLabel htmlFor={name}>
-                                    {employeeFieldLabels[name]} <span className="text-red-500">*</span>
-                                </FieldLabel>
-                                <OptionSelect
-                                    id={name}
-                                    name={name}
-                                    items={items.map((item) => ({ value: String(item.id), label: item.label }))}
-                                    value={form.data[name]}
-                                    placeholder={`Pilih ${employeeFieldLabels[name].toLowerCase()}`}
-                                    resetLabel={`Reset ${employeeFieldLabels[name].toLowerCase()}`}
-                                    aria-invalid={!!form.errors[name]}
-                                    disabled={form.processing}
-                                    onValueChange={(value) => {
-                                        form.setData(name, value);
-                                        form.clearErrors(name);
-                                    }}
-                                />
-                                {name === 'job_title_id' && options.jobTitles.length === 0 && (
-                                    <FieldDescription>
-                                        Belum ada jabatan.{' '}
-                                        <Link href={jt.create().url} className="text-primary underline">
-                                            Tambah Jabatan
-                                        </Link>{' '}
-                                        terlebih dahulu.
-                                    </FieldDescription>
-                                )}
-                                {form.errors[name] && <FieldError>{form.errors[name]}</FieldError>}
-                            </Field>
-                        ))}
-                        <Field orientation="responsive" className="md:col-span-2">
+                        <Field orientation="responsive">
                             <Button className="w-full" type="submit" disabled={form.processing}>
                                 <HugeiconsIcon
                                     icon={form.processing ? LoaderIcon : SaveIcon}
-                                    strokeWidth={2}
                                     data-icon="inline-start"
                                     className={cn(form.processing && 'animate-spin')}
                                 />
                                 Simpan
                             </Button>
                             <Button
-                                type="button"
                                 disabled={form.processing}
                                 className="w-full"
                                 nativeButton={false}
                                 variant="destructive"
                                 render={<Link href={empl.index().url} />}
                             >
-                                <HugeiconsIcon icon={XIcon} strokeWidth={2} data-icon="inline-start" />
+                                <HugeiconsIcon icon={XIcon} data-icon="inline-start" />
                                 Batal
                             </Button>
                         </Field>

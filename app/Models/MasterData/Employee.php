@@ -4,6 +4,7 @@ namespace App\Models\MasterData;
 
 use App\Enums\AsnStatusEnum;
 use App\Enums\ContractStatusEnum;
+use App\Enums\StrStatusEnum;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,6 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[UseFactory(EmployeeFactory::class)]
 class Employee extends Model
 {
+    public const int LAKI_LAKI = 1;
+
+    public const int PEREMPUAN = 2;
+
     /** @use HasFactory<EmployeeFactory> */
     use HasFactory, HasUuids;
 
@@ -45,13 +50,24 @@ class Employee extends Model
         return ['uuid'];
     }
 
-    /** @return array{contract_status: class-string<ContractStatusEnum>, status: class-string<AsnStatusEnum>, join_date: string} */
+    /** @return list<array{id: int, label: string}> */
+    public static function genderOptions(): array
+    {
+        return [['id' => self::LAKI_LAKI, 'label' => 'Laki-laki'], ['id' => self::PEREMPUAN, 'label' => 'Perempuan']];
+    }
+
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
             'contract_status' => ContractStatusEnum::class,
             'status' => AsnStatusEnum::class,
             'join_date' => 'date',
+            'gender' => 'integer',
+            'str_status' => StrStatusEnum::class,
+            'str_published_date' => 'date',
+            'sip_published_date' => 'date',
+            'sip_expired_date' => 'date',
         ];
     }
 
