@@ -188,12 +188,12 @@ Usulan commit: `feat: lengkapi cleanup dan regresi integrasi templat surat`.
 
 ### Progres dan bukti tiap tahap
 
-Isi hasil hanya setelah pekerjaan dan test dilaksanakan. Nama commit di atas merupakan usulan, bukan commit yang sudah dibuat.
+Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk commit implementasi tiap tahap yang sudah selesai; nama commit tahap lainnya tetap merupakan usulan.
 
 | Tahap | Status | Perintah dan hasil PHPUnit | Hash commit |
 | --- | --- | --- | --- |
 | 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | `785609f` |
-| 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | Dicatat setelah commit |
+| 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | `f10ef22` |
 | 3. Variabel/penandatangan | Belum dimulai | — | — |
 | 4. Upload/validasi DOCX | Belum dimulai | — | — |
 | 5. Generate/konfirmasi | Belum dimulai | — | — |
