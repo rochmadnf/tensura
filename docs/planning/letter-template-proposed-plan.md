@@ -1,6 +1,6 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: implementasi bertahap; tahap 1 selesai, tahap 2 dikerjakan. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: implementasi bertahap; tahap 1–2 selesai; tahap 3–7 belum dimulai. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
@@ -8,7 +8,7 @@ Acuan proses bisnis: [letter-template-management-probis.md](letter-template-mana
 
 Gunakan tujuh tabel relasional. Identitas templat tetap satu; DOCX dan seluruh konfigurasi berada pada versi masing-masing. Migration menggunakan Schema Builder Laravel dengan target PostgreSQL 18 untuk aplikasi dan pengujian database. SQLite bukan lagi target pengujian repository.
 
-### Fondasi yang sudah tersedia
+### Fondasi saat peninjauan sebelum implementasi
 
 | Bagian | Kondisi saat peninjauan | Dampak pada rencana |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ Gunakan tujuh tabel relasional. Identitas templat tetap satu; DOCX dan seluruh k
 | Infrastruktur bersama | `Searchable`, komponen list/form, Wayfinder, runner PostgreSQL | Gunakan fondasi yang ada; rincian mengikuti [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) dan [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) |
 | PHPWord | Terpasang pada commit `91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` | Tidak perlu memasang dependency baru; kemampuan DOCX tetap perlu dibuktikan dengan test |
 
-Daftar ini menyatakan kondisi kode yang tersedia, bukan hasil pengujian fitur Templat Surat. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
+Daftar ini mempertahankan kondisi sebelum implementasi; hasil tahap 1–2 tercatat pada tabel progres. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
 
 ## 2. Tabel dan relasi
 
@@ -74,7 +74,7 @@ Ketentuan:
 
 ## 4. Tahap implementasi dan commit
 
-Pembagian di bawah adalah tahap pengerjaan teknis, berbeda dari empat tahap pengelolaan yang dilihat admin. Status pelaksanaan tercatat pada tabel progres di bawah. Penyusunan rencana ini belum menjalankan implementasi, test fitur, atau commit tahap.
+Pembagian di bawah adalah tahap pengerjaan teknis, berbeda dari empat tahap pengelolaan yang dilihat admin. Status pelaksanaan tercatat pada tabel progres di bawah. Pencatatan tahap hanya dilakukan setelah implementasi dan test yang diwajibkan lulus.
 
 ### Aturan penyelesaian setiap tahap
 
@@ -192,8 +192,8 @@ Isi hasil hanya setelah pekerjaan dan test dilaksanakan. Nama commit di atas mer
 
 | Tahap | Status | Perintah dan hasil PHPUnit | Hash commit |
 | --- | --- | --- | --- |
-| 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | Dicatat setelah commit |
-| 2. Identitas/daftar | Belum dimulai | — | — |
+| 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | `785609f` |
+| 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | Dicatat setelah commit |
 | 3. Variabel/penandatangan | Belum dimulai | — | — |
 | 4. Upload/validasi DOCX | Belum dimulai | — | — |
 | 5. Generate/konfirmasi | Belum dimulai | — | — |
@@ -231,7 +231,18 @@ Jalankan PHPUnit langsung untuk tahap implementasi, misalnya `vendor/bin/phpunit
 
 Kasus konkurensi PostgreSQL perlu membuktikan pembuatan draft bersamaan, publikasi, perubahan versi, serta penghapusan/arsip master yang bersaing dengan penyimpanan konfigurasi. Test transaksi biasa belum membuktikan perilaku antarkoneksi. Runner arsip `phpunit.archive.xml` tetap khusus integrasi arsip; test konkurensi templat perlu cakupan dan cara eksekusi tersendiri yang dirinci saat implementasi. Catat kasus yang dilewati atau belum dijalankan.
 
-Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test fitur Templat Surat belum tersedia; bagian ini bukan laporan test yang sudah lulus.
+Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test DOCX belum tersedia; pengujian tahap 1–2 belum membuktikan alur DOCX.
+
+### Kontrak identitas dan daftar yang diterapkan pada tahap 2
+
+- Route: `GET /letter-templates` (`lt.index`), `GET /letter-templates/create` (`lt.create`), `POST /letter-templates` (`lt.store`), `GET /letter-templates/{letterTemplate:uuid}/edit` (`lt.edit`), serta `PUT/PATCH /letter-templates/{letterTemplate:uuid}` (`lt.update`). Semuanya memerlukan login; tidak ada route hapus permanen.
+- Payload store/update hanya `name` (teks unik 3–100 karakter) dan `letter_number` (UUID klasifikasi existing). Backend menerjemahkan UUID menjadi foreign key internal dalam transaksi. Field sistem dan counter diabaikan. Galat memakai field formulir dan pesan bahasa Indonesia.
+- Store membuat identitas aktif, draft versi 1, dan audit, kemudian redirect `lt.edit`. Update mengunci identitas dan draft induknya, hanya menerima draft yang belum digunakan, membatalkan bukti pemeriksaan saat identitas berubah, mempertahankan DOCX sumber, dan redirect ke kelola. Perubahan/pembuatan draft dari versi Terbit tetap tahap 6.
+- Props: `page.id`, `classifications` berupa daftar `{id: UUID, label: kode — nama}`, serta `resources.data/meta/links` pada index atau `resource.data` pada kelola. Resource mengekspos UUID, nama, status aktif, nomor versi aktif nullable, penanda draft, klasifikasi, dan identitas draft nullable. Path privat dan id numerik tidak diekspos.
+- Versi rujukan klasifikasi: versi aktif bila ada; jika tidak, draft berjalan; jika tidak, versi bernomor tertinggi. Pilihan ini merupakan asumsi implementasi yang disampaikan selama pengerjaan. Kolom, pencarian, dan filter memakai relasi `displayVersion` yang sama.
+- Filter format `status:active|classification:UUID` atau `status:inactive`; setiap kategori hanya menerima satu nilai valid. Nilai invalid atau lebih dari satu diabaikan untuk kategori tersebut. Pencarian memakai trait `Searchable`, urutan `name, id`, dan ukuran halaman 5/10/15/20/50/100 dengan default 10.
+- Halaman dasar menggunakan komponen bersama, helper Wayfinder, pageId sidebar existing, schema Valibot, dan toast existing. Kontrol konfigurasi/DOCX/publikasi/timeline menyusul pada tahap terkait.
+- Pemeriksaan statis `pnpm run types:check`, formatter PHP/TSX, dan diff lulus. Browser, pemeriksaan visual, serta test frontend/konkurensi ditunda sesuai jadwal rencana. Migration dijalankan oleh PHPUnit pada database PostgreSQL disposable; database aplikasi belum dimigrasikan.
 
 ### Kontrak fondasi yang diterapkan pada tahap 1
 
@@ -246,8 +257,8 @@ Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header
 
 Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
-- Nama kolom lengkap, nullability/default, indeks, dan kontrak validasi setiap tahap serta operasi versi.
-- Endpoint operasi domain, bentuk props/payload/error, dan pemetaan field formulir. URL dasar serta alias `lt` sudah disepakati, tetapi route belum dibuat.
+- Kontrak validasi konfigurasi dan operasi versi untuk tahap 3–7; fondasi kolom/default/nullability/indeks tahap 1 sudah ditetapkan pada migration.
+- Endpoint operasi konfigurasi/DOCX/publikasi dan kontrak props/payload/error tahap 3–7. Route identitas/daftar `lt.*` serta payload tahap 2 sudah tersedia.
 - Nilai config selain upload 10 MB, aturan struktur DOCX yang didukung/ditolak, timeout, expiry, dan cleanup.
 - Format keluaran combobox tunggal dan penandatangan, urutan pilihan multiple pada hasil, serta penanganan NIP/jabatan kosong.
 - Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji yang sudah ada. Aturan penandatangan tidak aktif sudah ditetapkan pada bagian 3 dan proses bisnis.
@@ -255,4 +266,4 @@ Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
 Jangan menganggap rincian yang belum ditetapkan sebagai keputusan final.
 
-Penyimpanan dokumen ini tidak menjalankan migration, mengubah kode aplikasi, atau mengubah dependency.
+Tahap 1–2 sudah mengubah kode dan menjalankan migration melalui PHPUnit pada PostgreSQL disposable. Dependency tidak berubah; migration database aplikasi belum dijalankan.

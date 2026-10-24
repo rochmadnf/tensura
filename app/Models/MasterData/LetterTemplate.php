@@ -3,20 +3,23 @@
 namespace App\Models\MasterData;
 
 use App\Enums\LetterTemplateVersionStatusEnum;
+use App\Models\Searchable;
 use Database\Factories\LetterTemplateFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Validation\ValidationException;
 
 #[UseFactory(LetterTemplateFactory::class)]
 class LetterTemplate extends Model
 {
     /** @use HasFactory<LetterTemplateFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Searchable;
 
     protected $fillable = ['name', 'is_active', 'active_version_id'];
 
@@ -31,6 +34,39 @@ class LetterTemplate extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['name', 'displayVersion.letterNumber.classification_code', 'displayVersion.letterNumber.classification_name'];
+    }
+
+    public function draftVersion(): HasOne
+    {
+        return $this->hasOne(LetterTemplateVersion::class, 'letter_template_id')
+            ->ofMany(['version_number' => 'max', 'id' => 'max'], function (Builder $query): void {
+                $query->where('status', LetterTemplateVersionStatusEnum::DRAFT);
+            });
+    }
+
+    /** Versi rujukan yang sama untuk kolom daftar, pencarian, dan filter klasifikasi. */
+    public function displayVersion(): HasOne
+    {
+        $selectedVersion = LetterTemplateVersion::query()
+            ->from('letter_template_versions', 'display_versions')
+            ->select('display_versions.id')
+            ->whereColumn('display_versions.letter_template_id', 'letter_template_versions.letter_template_id')
+            ->orderByRaw(
+                'CASE WHEN display_versions.id = (SELECT active_version_id FROM letter_templates WHERE id = display_versions.letter_template_id) THEN 0 WHEN display_versions.status = ? THEN 1 ELSE 2 END',
+                [LetterTemplateVersionStatusEnum::DRAFT->value],
+            )
+            ->orderByDesc('display_versions.version_number')
+            ->orderByDesc('display_versions.id')
+            ->limit(1);
+
+        return $this->hasOne(LetterTemplateVersion::class, 'letter_template_id')
+            ->where('letter_template_versions.id', $selectedVersion);
     }
 
     public function versions(): HasMany

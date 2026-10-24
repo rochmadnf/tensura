@@ -28,6 +28,7 @@ import { NavUser } from './nav-user';
 import { dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
+import lt from '@/routes/lt';
 import jt from '@/routes/jt';
 import empl from '@/routes/empl';
 import { index as archiveIndex } from '@/routes/archives';
@@ -68,7 +69,7 @@ const navigations = {
             {
                 id: 'a3063dc3-7414-4385-bf3f-0cf0742e3980',
                 name: 'Templat Surat',
-                url: '#',
+                url: lt.index().url,
                 icon: <HugeiconsIcon icon={AiMail01Icon} strokeWidth={2} />,
             },
             {

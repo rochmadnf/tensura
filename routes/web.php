@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
+use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,13 @@ Route::middleware('auth')->group(function () {
         ->parameters(['job-title' => 'jobTitle'])
         ->scoped(['jobTitle' => 'uuid'])
         ->names('jt');
+
+    Route::resource('letter-templates', LetterTemplateController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update'])
+        ->parameters(['letter-templates' => 'letterTemplate'])
+        ->scoped(['letterTemplate' => 'uuid'])
+        ->whereUuid('letterTemplate')
+        ->names('lt');
 
     Route::resource('reference', ReferenceGroupController::class)
         ->except('show')

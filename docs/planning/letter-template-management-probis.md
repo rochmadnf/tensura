@@ -1,6 +1,6 @@
 # Templat Surat MVP 1 — Proses Bisnis
 
-Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Fitur Templat Surat belum diimplementasikan.
+Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–2 sudah diimplementasikan; konfigurasi, DOCX, dan publikasi menunggu tahap 3–7.
 
 Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi database dan tujuh tahap implementasi beserta aturan test/commit ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md). Pola implementasi mengikuti [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) dan [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) yang sudah diperbarui.
 
@@ -8,15 +8,15 @@ Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi d
 
 | Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
 | --- | --- | --- |
-| Menu | Templat Surat di Data Master dengan UUID existing; tujuan masih `#` | Route, halaman daftar/tambah/kelola, dan penggantian tujuan menu |
-| Domain templat | Belum ada tabel, model, controller, konfigurasi, atau test fitur | Identitas, empat tahap pengelolaan, versi, audit, validasi/uji DOCX, publikasi, dan nonaktifkan |
+| Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Kontrol pengelolaan tahap berikutnya |
+| Domain templat | Tujuh tabel, model, factory, enum, audit, identitas draft, daftar, dan test tahap 1–2 | Konfigurasi, DOCX, validasi/uji, publikasi, perubahan versi, dan nonaktifkan |
 | Master pendukung | Penomoran Surat, Pegawai/Jabatan, dan Daftar Referensi | Pengambilan opsi, validasi relasi, serta perlindungan master yang dirujuk templat |
 | Arsip | Arsip pusat serta arsip/pemulihan grup dan item Reference | Perlindungan arsip grup yang dirujuk; arsip draft templat dikelola sebagai status versi |
 | Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Komposisi halaman serta konfigurasi dan operasi khusus templat |
 | DOCX | PHPWord sudah terpasang pada commit yang dipin | Seluruh alur upload, validasi, generate uji, pemeriksaan visual, dan cleanup |
 | Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Test perilaku templat dan konkurensi yang relevan |
 
-Kondisi ini diperiksa melalui kode aplikasi, `route:list`, skema database aktif, dan dependency terpasang. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
+Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–2 diverifikasi dengan PHPUnit pada PostgreSQL disposable; migration database aplikasi belum dijalankan. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
 ## 1. Tujuan dan akses
 
@@ -178,7 +178,7 @@ letter-templates/
 ## 8. Halaman daftar dan kelola
 
 - Kolom daftar: Nama, Klasifikasi, Versi Aktif, Status Aktif/Nonaktif, penanda Ada Draft, dan Aksi.
-- Pencarian berdasarkan nama templat serta kode/nama klasifikasi pada versi yang ditampilkan. Aturan versi rujukan untuk templat tanpa versi aktif masih perlu dirinci agar kolom, pencarian, dan filter konsisten.
+- Pencarian berdasarkan nama templat serta kode/nama klasifikasi pada versi yang ditampilkan. Implementasi tahap 2 memilih versi aktif, lalu draft berjalan, lalu versi terbaru bila keduanya tidak ada; aturan yang sama dipakai kolom, pencarian, dan filter.
 - Pencarian mengikuti perilaku bersama: trim, minimum dua karakter, tanpa membedakan kapital, dan memperlakukan karakter khusus sebagai teks literal.
 - Urutan default nama A–Z dengan id sebagai penentu akhir agar pagination stabil.
 - Filter status dan klasifikasi, masing-masing pilihan tunggal.
@@ -211,20 +211,20 @@ letter-templates/
 | Penyimpanan konfigurasi versi | Tabel relasional terpisah, bukan JSON untuk variabel, kolom, slot, dan kandidat |
 | PHPWord | Sudah terpasang; ikuti pin `dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` pada `composer.json` |
 
-Route `lt.*`, binding `letterTemplate`, model, dan halaman pada tabel di atas merupakan keputusan rencana, belum artefak yang tersedia. Semua operasi direncanakan berada di bawah autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
+Route identitas/daftar `lt.*`, binding `letterTemplate`, model, dan halaman dasar sudah tersedia. Semua route tersebut memerlukan autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
 
 ## 10. Verifikasi dan rincian yang masih terbuka
 
 Implementasi dibagi menjadi tujuh tahap teknis: fondasi database/domain; identitas/daftar; variabel/penandatangan; upload/validasi DOCX; generate/konfirmasi; publikasi/versi; serta cleanup/integrasi. Setiap tahap diselesaikan dan di-commit setelah test PHPUnit tahap tersebut beserta regresi yang terdampak lulus. Test browser dan pemeriksaan visual dilakukan setelah seluruh tahap implementasi selesai, menggunakan Chromium yang sudah disediakan pengguna. Rincian cakupan, kriteria kelulusan, dan pencatatan commit mengikuti rencana teknis. Konfirmasi visual DOCX oleh admin tetap merupakan persyaratan proses publikasi, terpisah dari jadwal pengujian browser/visual oleh pengembang.
 
-Implementasi perlu membuktikan alur empat tahap, invalidasi hasil uji, keunikan dan isolasi versi, penolakan penghapusan/arsip master yang dirujuk, UUID dan autentikasi, serta pencarian/filter/pagination. Verifikasi juga peringatan kandidat tidak aktif, penolakan publikasi, dan penolakan penggunaan penandatangan yang menjadi tidak aktif setelah formulir dibuka. Jalankan test database melalui runner PostgreSQL terisolasi; uji konkurensi antarkoneksi secara khusus dan laporkan bila belum dijalankan. Belum ada hasil test fitur Templat Surat untuk dilaporkan.
+Implementasi perlu membuktikan alur empat tahap, invalidasi hasil uji, keunikan dan isolasi versi, penolakan penghapusan/arsip master yang dirujuk, UUID dan autentikasi, serta pencarian/filter/pagination. Verifikasi juga peringatan kandidat tidak aktif, penolakan publikasi, dan penolakan penggunaan penandatangan yang menjadi tidak aktif setelah formulir dibuka. Jalankan test database melalui runner PostgreSQL terisolasi; uji konkurensi antarkoneksi secara khusus dan laporkan bila belum dijalankan. Tahap 1–2 beserta regresi terkait lulus 144 test dan 1.213 assertion. Perintah serta commit dicatat pada tabel progres rencana teknis. Pemeriksaan TypeScript dan formatter lulus; browser/visual serta test frontend/konkurensi belum dijalankan sesuai jadwal.
 
 Sebelum pekerjaan terkait dimulai, rincikan:
 
 - Endpoint operasi, props/payload/error, serta field dan validasi tiap tahap.
 - Nilai batas config selain upload 10 MB dan aturan DOCX yang didukung/ditolak.
 - Teks keluaran combobox tunggal/penandatangan, urutan hasil multiple, dan data pegawai yang kosong.
-- Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji; termasuk pemilihan klasifikasi untuk daftar templat tanpa versi aktif. Aturan kandidat tidak aktif sudah ditetapkan pada bagian Penandatangan.
+- Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji; Pemilihan klasifikasi daftar sudah dirinci pada bagian 8. Aturan kandidat tidak aktif sudah ditetapkan pada bagian Penandatangan.
 - Snapshot nilai surat historis pada fitur Surat, tanpa menambahkan tabel Surat pada tahap ini.
 
 Alokasi nomor, pembuatan surat sebenarnya, revisi surat, dan penyerahan kepada pemohon belum masuk pekerjaan ini. Rincian teknis yang belum diputuskan tetap harus dirinci sebelum implementasi terkait.

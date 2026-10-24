@@ -4,6 +4,10 @@
 
 ### Ditambahkan
 
+- Identitas dan daftar Templat Surat melalui route terautentikasi `lt.*`, halaman tambah/kelola, dan sidebar existing. Draft awal hanya menyimpan nama serta klasifikasi tanpa mengubah counter penomoran.
+- Pencarian literal nama/kode/nama klasifikasi, filter tunggal status/klasifikasi, dan paginasi stabil. Klasifikasi daftar mengikuti versi aktif, lalu draft berjalan, lalu versi terbaru.
+- Perubahan identitas draft membatalkan bukti validasi/uji/pemeriksaan, mempertahankan DOCX sumber serta versi historis, dan mencatat audit; payload sistem dan versi milik templat lain tidak dapat mengubah target.
+
 - Fondasi Templat Surat dengan tujuh tabel relasional, UUID unik, enum status/jenis/sumber pilihan, metadata DOCX dan bukti pemeriksaan per versi, serta factory konfigurasi.
 - Audit templat mempertahankan nama dan UUID pelaku setelah akun dihapus; foreign key membatasi penghapusan konfigurasi/master historis dan memastikan versi aktif milik templat yang sama.
 
