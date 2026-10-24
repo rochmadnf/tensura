@@ -39,8 +39,8 @@ class EmployeeEditTest extends TestCase
 
     public function test_update_changes_all_data_fields_and_ignores_system_fields(): void
     {
-        $employee = Employee::factory()->create();
-        $other = Employee::factory()->withStr()->withSip()->create();
+        $employee = Employee::factory()->create()->refresh();
+        $other = Employee::factory()->withStr()->withSip()->create()->refresh();
         $before = $other->getAttributes();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
@@ -79,7 +79,7 @@ class EmployeeEditTest extends TestCase
 
     public function test_update_accepts_own_unique_values_and_clears_optional_fields(): void
     {
-        $employee = Employee::factory()->withStr()->withSip()->create();
+        $employee = Employee::factory()->withStr()->withSip()->create()->refresh();
         $data = [
             ...$this->payload(),
             'str_number' => $employee->str_number,
@@ -127,8 +127,8 @@ class EmployeeEditTest extends TestCase
     #[DataProvider('uniqueFields')]
     public function test_update_cannot_take_another_employees_unique_value(string $field): void
     {
-        $employee = Employee::factory()->create();
-        $other = Employee::factory()->withStr()->withSip()->create();
+        $employee = Employee::factory()->create()->refresh();
+        $other = Employee::factory()->withStr()->withSip()->create()->refresh();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
             ->patch(route('empl.update', $employee->uuid), [
@@ -163,7 +163,7 @@ class EmployeeEditTest extends TestCase
     public function test_update_rejects_invalid_data_without_changing_record(array $invalid, string $field): void
     {
         $this->travelTo(now()->setDate(2026, 10, 24)->startOfDay());
-        $employee = Employee::factory()->create();
+        $employee = Employee::factory()->create()->refresh();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
             ->patch(route('empl.update', $employee->uuid), [...$data, ...$invalid])
@@ -184,7 +184,7 @@ class EmployeeEditTest extends TestCase
 
     public function test_update_requires_new_job_after_old_job_is_deleted(): void
     {
-        $employee = Employee::factory()->create();
+        $employee = Employee::factory()->create()->refresh();
         $oldJob = $employee->jobTitle;
         $oldJob->delete();
         $data = $this->payload();
@@ -198,7 +198,7 @@ class EmployeeEditTest extends TestCase
 
     public function test_edit_and_update_reject_guests_unknown_uuid_and_numeric_ids(): void
     {
-        $employee = Employee::factory()->create();
+        $employee = Employee::factory()->create()->refresh();
         $data = $this->payload();
         $this->get(route('empl.edit', $employee->uuid))->assertRedirectToRoute('login.index');
         $this->patch(route('empl.update', $employee->uuid), $data)->assertRedirectToRoute('login.index');

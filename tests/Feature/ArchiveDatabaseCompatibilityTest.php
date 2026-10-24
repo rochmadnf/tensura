@@ -28,21 +28,14 @@ class ArchiveDatabaseCompatibilityTest extends TestCase
             'action' => 'restore', 'mode' => 'parent_only',
         ])->assertOk();
 
-        $conflicts = DB::getDriverName() === 'mysql';
-        $preview->assertJsonPath('data.can_confirm', !$conflicts)
-            ->assertJsonPath('data.counts.conflicted', $conflicts ? 1 : 0);
-        if ($conflicts) {
-            $preview->assertJsonPath('data.candidates.0.conflicts.0.code', 'name_conflict');
-            $this->assertModelExists($archive);
-            $this->assertModelMissing($source);
-        } else {
-            $this->postJson(route('archives.restore', $archive->uuid), [
-                'action' => 'restore', 'mode' => 'parent_only',
-                'confirmation_token' => $preview->json('data.confirmation_token'),
-            ])->assertOk()->assertJsonPath('data.counts.restored', 1);
-            $this->assertDatabaseHas('reference_groups', ['uuid' => $source->uuid, 'name' => $archivedName]);
-            $this->assertModelMissing($archive);
-        }
+        $preview->assertJsonPath('data.can_confirm', true)
+            ->assertJsonPath('data.counts.conflicted', 0);
+        $this->postJson(route('archives.restore', $archive->uuid), [
+            'action' => 'restore', 'mode' => 'parent_only',
+            'confirmation_token' => $preview->json('data.confirmation_token'),
+        ])->assertOk()->assertJsonPath('data.counts.restored', 1);
+        $this->assertDatabaseHas('reference_groups', ['uuid' => $source->uuid, 'name' => $archivedName]);
+        $this->assertModelMissing($archive);
         $this->assertDatabaseHas('reference_groups', ['uuid' => $active->uuid, 'name' => $activeName]);
     }
 
@@ -59,17 +52,16 @@ class ArchiveDatabaseCompatibilityTest extends TestCase
         $input = ['action' => 'restore', 'mode' => 'children_all', 'target_group_uuid' => $target->uuid];
 
         $preview = $this->actingAs($actor)->postJson(route('archives.preview', $archive->uuid), $input)->assertOk();
-        $conflicts = DB::getDriverName() === 'mysql';
-        $preview->assertJsonPath('data.counts.conflicted', $conflicts ? 1 : 0);
+        $preview->assertJsonPath('data.counts.conflicted', 0);
         $this->postJson(route('archives.restore', $archive->uuid), [
             ...$input, 'confirmation_token' => $preview->json('data.confirmation_token'),
-        ])->assertOk()->assertJsonPath('data.counts.restored', $conflicts ? 1 : 2)
-            ->assertJsonPath('data.counts.remaining', $conflicts ? 2 : 1);
+        ])->assertOk()->assertJsonPath('data.counts.restored', 2)
+            ->assertJsonPath('data.counts.remaining', 1);
 
         $this->assertDatabaseHas('reference_items', ['uuid' => $active->uuid, 'content' => $activeContent, 'sort_order' => 8]);
-        $this->assertDatabaseHas('reference_items', ['uuid' => $safe->uuid, 'reference_group_id' => $target->id, 'sort_order' => $conflicts ? 9 : 10]);
-        $this->assertDatabaseCount('archive_records', $conflicts ? 2 : 1);
-        $this->assertSame(!$conflicts, ReferenceItem::query()->where('uuid', $item->uuid)->exists());
+        $this->assertDatabaseHas('reference_items', ['uuid' => $safe->uuid, 'reference_group_id' => $target->id, 'sort_order' => 10]);
+        $this->assertDatabaseCount('archive_records', 1);
+        $this->assertSame(true, ReferenceItem::query()->where('uuid', $item->uuid)->exists());
         $this->assertModelExists($archive);
     }
 

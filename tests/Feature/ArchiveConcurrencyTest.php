@@ -26,10 +26,10 @@ class ArchiveConcurrencyTest extends TestCase
         parent::setUp();
 
         if (getenv('ARCHIVE_DATABASE_TESTS') !== '1') {
-            $this->markTestSkipped('Run with phpunit.archive.xml against a disposable MySQL/PostgreSQL database.');
+            $this->markTestSkipped('Run with phpunit.archive.xml against a disposable PostgreSQL database.');
         }
         if (!app()->environment('testing')
-            || !in_array(DB::getDriverName(), ['mysql', 'pgsql'], true)
+            || DB::getDriverName() !== 'pgsql'
             || preg_match('/\Atensura_archive_test_[a-z0-9_]+\z/D', DB::connection()->getDatabaseName()) !== 1) {
             throw new RuntimeException('Concurrency tests require an isolated tensura_archive_test_* database.');
         }
