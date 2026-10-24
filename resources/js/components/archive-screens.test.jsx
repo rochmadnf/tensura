@@ -62,7 +62,9 @@ describe('Archive read screens', () => {
         expect(markup.includes('>Modul</th>')).toBe(context === null);
         expect(markup).toContain(`action="${context ? '/reference/archive' : '/archives'}"`);
         expect(markup).toContain('>Masih diarsipkan<');
-        expect(markup).not.toContain('Pulihkan');
+        expect(markup).toContain(`#restore`);
+        expect(markup).toContain('Pulihkan…');
+        expect(markup).not.toContain('Konfirmasi pemulihan');
         expect(markup).not.toContain('Hapus Permanen');
         expect(markup).not.toContain('type="checkbox"');
     });
@@ -127,7 +129,7 @@ describe('Archive read screens', () => {
         expect(markup).toContain('Snapshot tidak didukung.');
         expect(markup).toContain('Induk: Tidak tersedia');
         expect(markup).not.toContain('type="checkbox"');
-        expect(markup).not.toContain('Pulihkan');
+        expect(markup).toMatch(/<button\b(?=[^>]*aria-label="Pulihkan Item arsip")(?=[^>]*disabled)[^>]*>/);
     });
 
     it.each(['/archives', '/archives?kind=record', `/archives/${archive.uuid}`, '/reference/archive'])(

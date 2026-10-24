@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\ArchiveKindEnum;
 use App\Http\Resources\ArchiveRecordResource;
 use App\Http\Resources\ArchiveResource;
+use App\Http\Resources\MasterData\ReferenceGroupResource;
 use App\Models\Archive;
+use App\Models\MasterData\ReferenceGroup;
 use App\Services\Archive\ReadArchive;
 use App\Services\Archive\ReferenceSnapshot;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
 class ArchiveController extends Controller
@@ -52,6 +55,10 @@ class ArchiveController extends Controller
 
     public function show(Request $request, Archive $archive, ReadArchive $read): InertiaResponse
     {
+        $request->validate([
+            'target_keyword' => ['nullable', 'string', 'max:255'],
+            'target_page' => ['nullable', 'integer', 'min:1'],
+        ]);
         $archive = $read->query()->whereKey($archive->id)->firstOrFail();
         $read->loadTargets(collect([$archive]));
         $parent = $archive->records()->where('entity', ReferenceSnapshot::GROUP)->orderBy('id')->first();
@@ -64,6 +71,22 @@ class ArchiveController extends Controller
             'resource' => ArchiveResource::make($archive),
             'parent_record' => $parent !== null ? ArchiveRecordResource::make($parent) : null,
             'resources' => ArchiveRecordResource::collection($children),
+            'target_groups' => Inertia::optional(function () use ($request, $archive) {
+                $keyword = trim($request->string('target_keyword')->toString());
+                $groups = ReferenceGroup::query()
+                    ->when($archive->module !== 'reference', fn(Builder $query) => $query->whereKey(-1))
+                    ->when(mb_strlen($keyword) >= 2, function (Builder $query) use ($keyword): void {
+                        $term = '%' . addcslashes($keyword, '\\%_') . '%';
+                        $query->where(function (Builder $query) use ($term): void {
+                            $query->whereRaw("name LIKE ? ESCAPE '\\'", [$term])
+                                ->orWhereRaw("description LIKE ? ESCAPE '\\'", [$term]);
+                        });
+                    })
+                    ->withCount('items')->orderBy('name')->orderBy('id')
+                    ->paginate(10, ['*'], 'target_page')->withQueryString();
+
+                return ReferenceGroupResource::collection($groups);
+            }),
         ]);
     }
 

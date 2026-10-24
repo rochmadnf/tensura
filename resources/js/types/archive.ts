@@ -86,7 +86,13 @@ export interface ArchivePreview {
     archive_uuid: string;
     action: 'restore' | 'delete_forever';
     mode: ArchiveRestoreMode | ArchiveDeleteMode;
-    parent: { record_uuid: string; uuid: string; name: string; description: string | null } | null;
+    parent: {
+        record_uuid: string;
+        uuid: string;
+        name: string;
+        description: string | null;
+        items: { record_uuid: string; label: string }[];
+    } | null;
     target: ArchivePreviewGroup | null;
     matching_groups: ArchivePreviewGroup[];
     candidates: ArchiveCandidate[];
@@ -115,4 +121,19 @@ export interface ArchiveDeleteResult {
     mode: ArchiveDeleteMode;
     counts: { requested: number; deleted: number; remaining: number };
     archive_exists: boolean;
+}
+
+export type ArchiveRestoreSelection = Extract<ArchiveSelection, { action: 'restore' }>;
+
+export interface ArchiveTargetGroup {
+    id: string;
+    name: string;
+    description: string | null;
+    items_count: number;
+}
+
+export interface ArchivedGroupRenameResult {
+    archive_uuid: string;
+    group: { record_uuid: string; uuid: string; name: string; description: string | null };
+    revision: number;
 }

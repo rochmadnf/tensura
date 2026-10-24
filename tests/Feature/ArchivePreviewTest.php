@@ -48,6 +48,22 @@ class ArchivePreviewTest extends TestCase
             ->assertOk()->assertJsonPath('data.counts.total', 1)->assertJsonPath('data.candidates.0.record_uuid', $root->uuid);
     }
 
+    public function test_group_comparison_lists_archived_children_without_expanding_parent_only_restore(): void
+    {
+        [$archive, $actor, $group] = $this->package();
+        $children = $archive->records()->where('entity', ReferenceSnapshot::ITEM)->orderBy('id')->get();
+        $active = ReferenceGroup::factory()->create(['name' => $group->name, 'description' => 'Deskripsi aktif']);
+        ReferenceItem::factory()->for($active, 'group')->create(['content' => 'Konten pembanding']);
+
+        $this->actingAs($actor)->postJson(route('archives.preview', $archive->uuid), ['action' => 'restore', 'mode' => 'parent_only'])
+            ->assertOk()->assertJsonCount(1, 'data.candidates')->assertJsonCount(2, 'data.parent.items')
+            ->assertJsonPath('data.parent.items.0', ['record_uuid' => $children[0]->uuid, 'label' => $children[0]->label])
+            ->assertJsonPath('data.matching_groups.0.description', 'Deskripsi aktif')
+            ->assertJsonPath('data.matching_groups.0.items.0.content', 'Konten pembanding');
+
+        $this->assertDatabaseCount('archive_records', 3);
+    }
+
     #[DataProvider('childrenModes')]
     public function test_children_modes_use_active_parent_and_exact_selection(string $mode, int $count): void
     {

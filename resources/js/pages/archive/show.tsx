@@ -3,24 +3,41 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { index } from '@/routes/archives';
 import { index as referenceArchiveIndex } from '@/routes/ref/archive';
-import type { ArchiveContext, ArchivePage, ArchiveRecordResource, ArchiveResource } from '@/types/archive';
+import type {
+    ArchiveContext,
+    ArchivePage,
+    ArchiveRecordResource,
+    ArchiveResource,
+    ArchiveTargetGroup,
+} from '@/types/archive';
 import { archivedDate, moduleLabel, parentStatusLabels } from './components/presentation';
 import { RecordTable } from './components/record-table';
+import { useArchiveRestore } from './components/use-archive-restore';
+import { RestoreWorkbench } from './components/restore-workbench';
+import { selectedRecordUuids } from './components/restore-state';
 
 interface ArchiveShowProps {
     resource: { data: ArchiveResource };
     parent_record: { data: ArchiveRecordResource } | null;
     resources: ArchivePage<ArchiveRecordResource>;
     context: ArchiveContext;
+    target_groups?: ArchivePage<ArchiveTargetGroup>;
 }
 
-export default function ArchiveShow({
+export default function ArchiveShow(props: ArchiveShowProps) {
+    return <ArchiveDetail key={props.resource.data.uuid} {...props} />;
+}
+
+function ArchiveDetail({
     resource: { data: archive },
     parent_record,
     resources,
     context,
+    target_groups,
 }: ArchiveShowProps) {
     const parent = parent_record?.data;
+    const flow = useArchiveRestore(archive, !!parent, context);
+    const selectedCount = selectedRecordUuids(flow.state.rowSelection).length;
     return (
         <>
             <Head title={`Arsip · ${archive.label}`} />
@@ -85,11 +102,48 @@ export default function ArchiveShow({
                         )}
                     </section>
                 )}
+                <RestoreWorkbench archive={archive} parent={parent} groups={target_groups} flow={flow} />
                 <section aria-labelledby="archived-items" className="flex min-w-0 flex-col gap-4">
                     <h3 id="archived-items" className="font-medium">
                         Item yang diarsipkan
                     </h3>
-                    <RecordTable resources={resources} archiveUuid={archive.uuid} />
+                    {archive.kind === 'package' && archive.module === 'reference' && (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <p className="text-sm" role="status">
+                                {selectedCount} item dipilih lintas halaman
+                            </p>
+                            <Button
+                                variant="outline"
+                                disabled={flow.busy || selectedCount === 0}
+                                onClick={() => {
+                                    flow.dispatch({ type: 'mode', mode: 'children_selected' });
+                                    document.getElementById('restore')?.focus();
+                                    document
+                                        .getElementById('restore')
+                                        ?.scrollIntoView({ behavior: 'instant', block: 'start' });
+                                }}
+                            >
+                                Pulihkan Terpilih
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                disabled={flow.busy || selectedCount === 0}
+                                onClick={() => flow.setRowSelection({})}
+                            >
+                                Bersihkan pilihan
+                            </Button>
+                        </div>
+                    )}
+                    <RecordTable
+                        resources={resources}
+                        archiveUuid={archive.uuid}
+                        rowSelection={flow.state.rowSelection}
+                        onRowSelectionChange={flow.setRowSelection}
+                        onRestore={flow.chooseChild}
+                        selectable={archive.kind === 'package' && archive.module === 'reference'}
+                        restorable={archive.module === 'reference'}
+                        disabled={flow.busy}
+                    />
                 </section>
             </div>
         </>

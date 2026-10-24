@@ -10,6 +10,7 @@ use App\Services\Archive\ReferenceSnapshot;
 use Database\Factories\UserFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ArchiveShowTest extends TestCase
@@ -73,5 +74,49 @@ class ArchiveShowTest extends TestCase
         $this->get(route('archives.show', $record->archive->uuid))->assertRedirectToRoute('login.index');
         $this->actingAs(UserFactory::new()->create())->get(route('archives.show', $record->archive->id))->assertNotFound();
         $this->get(route('archives.show', fake()->uuid()))->assertNotFound();
+    }
+
+    public function test_target_picker_is_optional_and_paginates_active_groups_independently(): void
+    {
+        $record = ArchiveRecord::factory()->create();
+        ReferenceGroup::factory()->count(11)->sequence(fn($sequence): array => ['name' => sprintf('Tujuan %02d', $sequence->index)])->create();
+        $actor = UserFactory::new()->create();
+        $this->actingAs($actor)->withoutVite()->get(route('archives.show', $record->archive->uuid))->assertOk()
+            ->assertInertia(fn(Assert $page) => $page->missing('target_groups'));
+
+        $this->get(route('archives.show', ['archive' => $record->archive->uuid, 'target_page' => 2, 'page' => 3, 'context' => 'reference']))
+            ->assertOk()->assertInertia(fn(Assert $page) => $page->reloadOnly('target_groups', fn(Assert $page) => $page->has('target_groups.data', 1)
+            ->where('target_groups.data.0.name', 'Tujuan 10')->where('target_groups.meta.current_page', 2)
+            ->where('target_groups.meta.total', 11)->missing('resources')->missing('target_groups.data.0.items')
+            ->where('target_groups.links.prev', fn(string $url): bool => str_contains($url, 'context=reference'))));
+        $this->assertDatabaseCount('archive_records', 1);
+    }
+
+    #[DataProvider('targetKeywords')]
+    public function test_target_search_matches_literal_names_or_descriptions_without_loading_items(string $keyword): void
+    {
+        $record = ArchiveRecord::factory()->create();
+        $group = ReferenceGroup::factory()->create(['name' => 'Grup tujuan', 'description' => 'Keterangan ' . $keyword]);
+        ReferenceItem::factory()->for($group, 'group')->create();
+        ReferenceGroup::factory()->create(['name' => 'Lainnya']);
+
+        $this->actingAs(UserFactory::new()->create())->withoutVite()->get(route('archives.show', [
+            'archive' => $record->archive->uuid, 'target_keyword' => ' ' . $keyword . ' ',
+        ]))->assertOk()->assertInertia(fn(Assert $page) => $page->reloadOnly('target_groups', fn(Assert $page) => $page->has('target_groups.data', 1)->where('target_groups.data.0.id', $group->uuid)
+            ->where('target_groups.data.0.items_count', 1)->missing('target_groups.data.0.items')));
+    }
+
+    /** @return array<string, array{string}> */
+    public static function targetKeywords(): array
+    {
+        return ['word' => ['khusus'], 'wildcard' => ['50%'], 'underscore' => ['A_'], 'backslash' => ['A\\B'], 'injection' => ["' OR 1=1 --"]];
+    }
+
+    public function test_target_search_rejects_invalid_query_inputs(): void
+    {
+        $record = ArchiveRecord::factory()->create();
+        $this->actingAs(UserFactory::new()->create())->withoutVite()->get(route('archives.show', [
+            'archive' => $record->archive->uuid, 'target_keyword' => ['bad'], 'target_page' => -1,
+        ]))->assertSessionHasErrors(['target_keyword', 'target_page']);
     }
 }

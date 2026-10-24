@@ -118,7 +118,13 @@ class ReferenceArchiveConflicts
         }
 
         return [
-            'parent' => $rootSupported ? ['record_uuid' => $root->uuid, 'uuid' => $root->source_uuid, 'name' => $root->payload['name'], 'description' => $root->payload['description']] : null,
+            'parent' => $rootSupported ? [
+                'record_uuid' => $root->uuid, 'uuid' => $root->source_uuid,
+                'name' => $root->payload['name'], 'description' => $root->payload['description'],
+                'items' => $records->where('entity', ReferenceSnapshot::ITEM)->map(
+                    fn(ArchiveRecord $record): array => ['record_uuid' => $record->uuid, 'label' => $record->label],
+                )->values()->all(),
+            ] : null,
             'target' => $target !== null ? $this->groupData($target, $activeItems) : null,
             'matching_groups' => $groups->map(fn(ReferenceGroup $group): array => $this->groupData($group, $activeItems))->all(),
             'candidates' => $candidates,

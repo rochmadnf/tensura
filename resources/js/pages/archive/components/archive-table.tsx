@@ -46,23 +46,36 @@ const columns = helper.columns([
     helper.display({
         id: 'actions',
         header: 'Aksi',
-        cell: ({ row }) => <ArchiveLink archive={row.original} action />,
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <ArchiveLink archive={row.original} action />
+                {row.original.module === 'reference' && <ArchiveLink archive={row.original} restore />}
+            </div>
+        ),
     }),
 ]);
 
-function ArchiveLink({ archive, action = false }: { archive: ArchiveResource; action?: boolean }) {
+function ArchiveLink({
+    archive,
+    action = false,
+    restore: restoreAction = false,
+}: {
+    archive: ArchiveResource;
+    action?: boolean;
+    restore?: boolean;
+}) {
     const { context } = usePage<{ context: ArchiveContext }>().props;
     const href = show(archive.uuid, { query: { context } });
-    if (action) {
+    if (action || restoreAction) {
         return (
             <Button
                 variant="outline"
                 size="sm"
                 nativeButton={false}
-                render={<Link href={href} />}
-                aria-label={`Detail ${archive.label}`}
+                render={<Link href={restoreAction ? `${href.url}#restore` : href} />}
+                aria-label={`${restoreAction ? 'Pulihkan' : 'Detail'} ${archive.label}`}
             >
-                Detail
+                {restoreAction ? 'Pulihkan…' : 'Detail'}
             </Button>
         );
     }
