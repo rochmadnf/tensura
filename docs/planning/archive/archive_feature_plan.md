@@ -1,6 +1,6 @@
 # Archive — Rencana Fitur dan Implementasi
 
-Status: rancangan teknis hasil diskusi. Belum diimplementasikan.
+Status: implementasi bertahap; tahap 1 selesai, tahap 2–10 belum selesai.
 
 Acuan proses bisnis: [archive_probis.md](archive_probis.md). Dokumen ini mencatat keputusan teknis terbaru dan menggantikan bagian rancangan penyimpanan pada dokumen tersebut: gunakan **dua tabel bersama untuk seluruh modul**, dengan snapshot JSON, bukan tabel arsip khusus per modul. Keputusan terbaru juga mencakup dukungan MySQL/PostgreSQL, konfirmasi ulang ketika data berubah, dan penempatan menu melalui `NavSecondary`.
 
@@ -364,7 +364,7 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 | Tahap                        | Status        | Commit message rencana                                                 |
 | ---------------------------- | ------------- | ---------------------------------------------------------------------- |
-| 1. Fondasi                   | Belum dimulai | `feat(archive): add shared archive storage and snapshot contracts`     |
+| 1. Fondasi                   | Selesai       | `feat(archive): add shared archive storage and snapshot contracts`     |
 | 2. Pengarsipan Reference     | Belum dimulai | `feat(reference): archive groups and items on deletion`                |
 | 3. Pratinjau/token           | Belum dimulai | `feat(archive): add conflict previews and confirmation tokens`         |
 | 4. Restore induk/paket       | Belum dimulai | `feat(archive): restore reference parents and packages`                |
@@ -379,15 +379,15 @@ Jika verifikasi menemukan perbaikan implementasi yang terpisah dari pengujian, b
 
 Perbarui bagian berikut pada akhir sesi/tahap; tidak perlu membuat file handoff baru.
 
-- **Tahap aktif:** belum ada; implementasi belum dimulai.
-- **Status:** perencanaan.
-- **Commit terakhir yang relevan:** belum ada commit implementasi Archive. Saat memperbarui checkpoint sebelum commit tahap, catat hash commit sebelumnya dan message commit tahap yang akan dibuat; hash tahap terbaru dapat dibaca dari git log pada sesi berikutnya.
-- **File/kontrak penting:** dokumen ini dan `archive_probis.md`; keputusan penyimpanan terbaru pada dokumen ini mengungguli rancangan tabel khusus modul di dokumen proses bisnis.
-- **Pekerjaan selesai:** rancangan dua tabel bersama, alur restore/purge, navigasi, pemetaan skill, dan pembagian tahap.
-- **Verifikasi:** belum ada implementasi fitur yang diuji; perubahan saat ini hanya dokumentasi.
-- **Keputusan baru:** belum ada di luar rancangan ini.
-- **Pekerjaan tersisa/kendala:** seluruh tahap implementasi; ketersediaan database pengujian kedua engine diverifikasi saat diperlukan.
-- **Langkah berikutnya:** tahap 1, mulai dari pembacaan schema aktual dan penetapan kontrak snapshot versi 1.
+- **Tahap aktif:** tahap 1 selesai; berikutnya tahap 2.
+- **Status:** fondasi siap untuk integrasi delete Reference.
+- **Commit terakhir yang relevan:** basis `3bbeef2`; commit tahap ini menggunakan `feat(archive): add shared archive storage and snapshot contracts`.
+- **File/kontrak penting:** `Archive`, `ArchiveRecord`, `SnapshotHandler`, `ReferenceSnapshot`, dan `ArchiveEntityRegistry`. Envelope record memakai `source_key` string, `source_uuid`, tiga kolom identitas induk, `schema_version`, dan payload kolom asli. Registry hanya mengenali `reference_group`/`reference_item`.
+- **Pekerjaan selesai:** dua tabel bersama, model/factory, snapshot Reference versi 1 dan validasi envelope, registry eksplisit, serta migration preflight UUID unik.
+- **Verifikasi:** `ArchiveStorageTest` 7 tes/22 assertions dan regresi Reference 91 tes/501 assertions lulus di SQLite; Pint dijalankan. Database aplikasi belum dimigrasikan.
+- **Keputusan baru:** konteks Reference memakai `parent`, `target`, dan `parent_resolved`; identitas induk disalin sebagai metadata, bukan FK yang menghapus children. Tidak ada seeder data arsip fiktif: arsip produksi berasal dari operasi hapus.
+- **Pekerjaan tersisa/kendala:** tahap 2–10; integrasi MySQL/PostgreSQL belum diverifikasi dan tetap menjadi bagian tahap 10.
+- **Langkah berikutnya:** implementasikan layanan pengarsipan transaksional dan integrasikan endpoint delete Reference pada tahap 2.
 
 ## 15. Pengujian dan kriteria penerimaan
 
