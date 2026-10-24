@@ -6,10 +6,11 @@ import { Input } from './ui/input';
 import { useValibotForm } from '@/hooks/use-valibot-form';
 import { InputSearchSchema } from '@/schemas/input-search';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Cancel01Icon, PlusIcon, SearchIcon } from '@hugeicons/core-free-icons';
+import { Archive01Icon, Cancel01Icon, PlusIcon, SearchIcon } from '@hugeicons/core-free-icons';
 import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { ButtonState, ComponentRenderFn, HTMLProps } from '@base-ui/react';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { buildListingQuery } from '@/lib/listing-query';
 
 const DEBOUNCE_MS = 500;
@@ -26,6 +27,7 @@ export type SectionDataProps = {
     searchUrl: string;
     defaultKeyword?: string;
     filterAction?: ReactNode;
+    archiveUrl?: string;
 };
 
 export function SectionData({
@@ -36,6 +38,7 @@ export function SectionData({
     defaultKeyword = '',
     isNativeButton = false,
     filterAction,
+    archiveUrl,
 }: SectionDataProps) {
     const { form, bind } = useValibotForm(InputSearchSchema, {
         keyword: defaultKeyword,
@@ -110,43 +113,61 @@ export function SectionData({
     return (
         <section className="container mx-auto space-y-6">
             <div className="flex flex-wrap items-start gap-4">
-                <form onSubmit={handleSubmit} noValidate className="w-full min-w-0 flex-1 basis-full sm:basis-0">
-                    <FieldGroup>
-                        <Field data-invalid={!!form.errors.keyword}>
-                            <div className="relative flex items-center">
-                                <span className="absolute left-2 text-sm text-muted-foreground">Cari data :</span>
-                                <Input
-                                    type="text"
-                                    className="w-full ps-20 pe-17 align-middle text-sm placeholder:text-sm"
-                                    placeholder="Masukkan kata kunci (min. 2 karakter)..."
-                                    autoComplete="off"
-                                    tabIndex={1}
-                                    {...bind('keyword')}
-                                />
+                <div className="flex min-w-0 flex-1 basis-full items-start gap-4 sm:basis-0">
+                    {archiveUrl && (
+                        <Tooltip>
+                            <Button
+                                variant="dark"
+                                size="icon"
+                                nativeButton={false}
+                                render={<TooltipTrigger render={<Link href={archiveUrl} />} />}
+                                aria-label="Arsip"
+                            >
+                                <HugeiconsIcon icon={Archive01Icon} strokeWidth={2} />
+                            </Button>
+                            <TooltipContent>Arsip</TooltipContent>
+                        </Tooltip>
+                    )}
+                    <form onSubmit={handleSubmit} noValidate className="w-full min-w-0 flex-1">
+                        <FieldGroup>
+                            <Field data-invalid={!!form.errors.keyword}>
+                                <div className="relative flex items-center">
+                                    <span className="absolute left-2 text-sm text-muted-foreground">Cari data :</span>
+                                    <Input
+                                        type="text"
+                                        className="w-full ps-20 pe-17 align-middle text-sm placeholder:text-sm"
+                                        placeholder="Masukkan kata kunci (min. 2 karakter)..."
+                                        autoComplete="off"
+                                        tabIndex={1}
+                                        {...bind('keyword')}
+                                    />
 
-                                {hasKeyword && (
+                                    {hasKeyword && (
+                                        <button
+                                            type="button"
+                                            onClick={handleReset}
+                                            aria-label="Hapus pencarian"
+                                            className="absolute right-10 inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                        >
+                                            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} size={14} />
+                                        </button>
+                                    )}
+
                                     <button
-                                        type="button"
-                                        onClick={handleReset}
-                                        aria-label="Hapus pencarian"
-                                        className="absolute right-10 inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                        type="submit"
+                                        aria-label="Cari"
+                                        className="absolute right-1 inline-flex h-6.5 items-center gap-x-2 rounded-sm bg-primary px-2 py-1 text-white transition-all duration-200 hover:bg-primary/90"
                                     >
-                                        <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} size={14} />
+                                        <HugeiconsIcon icon={SearchIcon} strokeWidth={2} size={16} />
                                     </button>
+                                </div>
+                                {form.errors.keyword && (
+                                    <FieldError className="text-xs">{form.errors.keyword}</FieldError>
                                 )}
-
-                                <button
-                                    type="submit"
-                                    aria-label="Cari"
-                                    className="absolute right-1 inline-flex h-6.5 items-center gap-x-2 rounded-sm bg-primary px-2 py-1 text-white transition-all duration-200 hover:bg-primary/90"
-                                >
-                                    <HugeiconsIcon icon={SearchIcon} strokeWidth={2} size={16} />
-                                </button>
-                            </div>
-                            {form.errors.keyword && <FieldError className="text-xs">{form.errors.keyword}</FieldError>}
-                        </Field>
-                    </FieldGroup>
-                </form>
+                            </Field>
+                        </FieldGroup>
+                    </form>
+                </div>
 
                 {filterAction}
 
