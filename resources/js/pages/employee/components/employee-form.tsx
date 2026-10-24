@@ -1,7 +1,7 @@
+import { FormCard } from '@/components/form-card';
+import { FormActions } from '@/components/form-actions';
 import { DatePickerInput } from '@/components/date-picker-input';
 import { OptionSelect } from '@/components/option-select';
-import { Button } from '@/components/ui/button';
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Field,
     FieldDescription,
@@ -22,10 +22,7 @@ import {
     type EmployeeFormOptions,
     type EmployeeResource,
 } from '@/schemas/employee';
-import { LoaderIcon, SaveIcon, XIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { Link } from '@inertiajs/react';
-import { cn } from 'cn';
 import type { ComponentProps, SubmitEventHandler } from 'react';
 
 interface EmployeeFormProps extends EmployeeFormOptions {
@@ -118,127 +115,94 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
         }
     };
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <CardTitle>{pageName}</CardTitle>
-                <CardDescription>Isi data identitas dan kepegawaian. Kolom bertanda * wajib diisi.</CardDescription>
-                <CardAction>
-                    <Button
-                        type="button"
-                        nativeButton={false}
-                        variant="secondary"
-                        size="icon"
-                        disabled={form.processing}
-                        aria-label="Tutup"
-                        render={<Link href={empl.index().url} />}
-                    >
-                        <HugeiconsIcon icon={XIcon} />
-                    </Button>
-                </CardAction>
-            </CardHeader>
-            <CardContent>
-                <form noValidate onSubmit={handleSubmit}>
-                    <FieldGroup>
-                        {sections.map((section) => (
-                            <FieldSet key={section.title}>
-                                <FieldLegend>{section.title}</FieldLegend>
-                                {section.description && <FieldDescription>{section.description}</FieldDescription>}
-                                <FieldGroup className="grid gap-6 md:grid-cols-2">
-                                    {section.fields.map((name) => {
-                                        const items = selections[name];
-                                        const errorId = `${name}-error`;
-                                        const ariaProps = {
-                                            'aria-invalid': !!form.errors[name],
-                                            'aria-describedby': form.errors[name] ? errorId : undefined,
-                                        };
-                                        return (
-                                            <Field
-                                                key={name}
-                                                data-invalid={!!form.errors[name]}
-                                                data-disabled={form.processing}
-                                            >
-                                                <FieldLabel htmlFor={name}>
-                                                    {employeeFieldLabels[name]}
-                                                    {requiredFields.includes(name) && (
-                                                        <span className="text-destructive">*</span>
-                                                    )}
-                                                </FieldLabel>
-                                                {items ? (
-                                                    <OptionSelect
-                                                        forceCombobox={name === 'str_status'}
-                                                        id={name}
-                                                        name={name}
-                                                        items={items.map((item) => ({
-                                                            value: String(item.id),
-                                                            label: item.label,
-                                                        }))}
-                                                        value={form.data[name]}
-                                                        placeholder={`Pilih ${employeeFieldLabels[name].toLowerCase()}`}
-                                                        resetLabel={`Reset ${employeeFieldLabels[name].toLowerCase()}`}
-                                                        disabled={form.processing}
-                                                        {...ariaProps}
-                                                        onValueChange={(value) => changeValue(name, value)}
-                                                    />
-                                                ) : dateFields.includes(name) ? (
-                                                    <DatePickerInput
-                                                        id={name}
-                                                        name={name}
-                                                        value={form.data[name]}
-                                                        onValueChange={(value) => changeValue(name, value)}
-                                                        disabled={form.processing}
-                                                        max={name === 'sip_expired_date' ? undefined : options.today}
-                                                        {...ariaProps}
-                                                    />
-                                                ) : (
-                                                    <Input
-                                                        {...inputProps[name]}
-                                                        required={requiredFields.includes(name)}
-                                                        disabled={form.processing}
-                                                        {...bind(name)}
-                                                        {...ariaProps}
-                                                    />
+        <FormCard
+            title={pageName}
+            description="Isi data identitas dan kepegawaian. Kolom bertanda * wajib diisi."
+            cancelUrl={empl.index().url}
+            disabled={form.processing}
+        >
+            <form noValidate onSubmit={handleSubmit}>
+                <FieldGroup>
+                    {sections.map((section) => (
+                        <FieldSet key={section.title}>
+                            <FieldLegend>{section.title}</FieldLegend>
+                            {section.description && <FieldDescription>{section.description}</FieldDescription>}
+                            <FieldGroup className="grid gap-6 md:grid-cols-2">
+                                {section.fields.map((name) => {
+                                    const items = selections[name];
+                                    const errorId = `${name}-error`;
+                                    const ariaProps = {
+                                        'aria-invalid': !!form.errors[name],
+                                        'aria-describedby': form.errors[name] ? errorId : undefined,
+                                    };
+                                    return (
+                                        <Field
+                                            key={name}
+                                            data-invalid={!!form.errors[name]}
+                                            data-disabled={form.processing}
+                                        >
+                                            <FieldLabel htmlFor={name}>
+                                                {employeeFieldLabels[name]}
+                                                {requiredFields.includes(name) && (
+                                                    <span className="text-destructive">*</span>
                                                 )}
-                                                {name === 'job_title_id' && options.jobTitles.length === 0 && (
-                                                    <FieldDescription>
-                                                        Belum ada jabatan.{' '}
-                                                        <Link href={jt.create().url} className="text-primary underline">
-                                                            Tambah Jabatan
-                                                        </Link>{' '}
-                                                        terlebih dahulu.
-                                                    </FieldDescription>
-                                                )}
-                                                {form.errors[name] && (
-                                                    <FieldError id={errorId}>{form.errors[name]}</FieldError>
-                                                )}
-                                            </Field>
-                                        );
-                                    })}
-                                </FieldGroup>
-                            </FieldSet>
-                        ))}
-                        <Field orientation="responsive">
-                            <Button className="w-full" type="submit" disabled={form.processing}>
-                                <HugeiconsIcon
-                                    icon={form.processing ? LoaderIcon : SaveIcon}
-                                    data-icon="inline-start"
-                                    className={cn(form.processing && 'animate-spin')}
-                                />
-                                Simpan
-                            </Button>
-                            <Button
-                                disabled={form.processing}
-                                className="w-full"
-                                nativeButton={false}
-                                variant="destructive"
-                                render={<Link href={empl.index().url} />}
-                            >
-                                <HugeiconsIcon icon={XIcon} data-icon="inline-start" />
-                                Batal
-                            </Button>
-                        </Field>
-                    </FieldGroup>
-                </form>
-            </CardContent>
-        </Card>
+                                            </FieldLabel>
+                                            {items ? (
+                                                <OptionSelect
+                                                    forceCombobox={name === 'str_status'}
+                                                    id={name}
+                                                    name={name}
+                                                    items={items.map((item) => ({
+                                                        value: String(item.id),
+                                                        label: item.label,
+                                                    }))}
+                                                    value={form.data[name]}
+                                                    placeholder={`Pilih ${employeeFieldLabels[name].toLowerCase()}`}
+                                                    resetLabel={`Reset ${employeeFieldLabels[name].toLowerCase()}`}
+                                                    disabled={form.processing}
+                                                    {...ariaProps}
+                                                    onValueChange={(value) => changeValue(name, value)}
+                                                />
+                                            ) : dateFields.includes(name) ? (
+                                                <DatePickerInput
+                                                    id={name}
+                                                    name={name}
+                                                    value={form.data[name]}
+                                                    onValueChange={(value) => changeValue(name, value)}
+                                                    disabled={form.processing}
+                                                    max={name === 'sip_expired_date' ? undefined : options.today}
+                                                    {...ariaProps}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    {...inputProps[name]}
+                                                    required={requiredFields.includes(name)}
+                                                    disabled={form.processing}
+                                                    {...bind(name)}
+                                                    {...ariaProps}
+                                                />
+                                            )}
+                                            {name === 'job_title_id' && options.jobTitles.length === 0 && (
+                                                <FieldDescription>
+                                                    Belum ada jabatan.{' '}
+                                                    <Link href={jt.create().url} className="text-primary underline">
+                                                        Tambah Jabatan
+                                                    </Link>{' '}
+                                                    terlebih dahulu.
+                                                </FieldDescription>
+                                            )}
+                                            {form.errors[name] && (
+                                                <FieldError id={errorId}>{form.errors[name]}</FieldError>
+                                            )}
+                                        </Field>
+                                    );
+                                })}
+                            </FieldGroup>
+                        </FieldSet>
+                    ))}
+                    <FormActions cancelUrl={empl.index().url} processing={form.processing} />
+                </FieldGroup>
+            </form>
+        </FormCard>
     );
 }
