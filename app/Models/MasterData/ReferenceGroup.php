@@ -2,6 +2,7 @@
 
 namespace App\Models\MasterData;
 
+use App\Models\Searchable;
 use Database\Factories\ReferenceGroupFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,9 +14,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ReferenceGroup extends Model
 {
     /** @use HasFactory<ReferenceGroupFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Searchable;
 
     protected $fillable = ['name', 'description'];
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['name', 'description'];
+    }
 
     /** @return list<string> */
     public function uniqueIds(): array

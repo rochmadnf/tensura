@@ -5,6 +5,7 @@ namespace App\Models\MasterData;
 use App\Enums\AsnStatusEnum;
 use App\Enums\ContractStatusEnum;
 use App\Enums\StrStatusEnum;
+use App\Models\Searchable;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -20,7 +21,7 @@ class Employee extends Model
     public const int PEREMPUAN = 2;
 
     /** @use HasFactory<EmployeeFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Searchable;
 
     protected $fillable = [
         'nik',
@@ -43,6 +44,12 @@ class Employee extends Model
         'contract_status',
         'status',
     ];
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['name', 'nik', 'nip', 'email'];
+    }
 
     /** @return list<string> */
     public function uniqueIds(): array

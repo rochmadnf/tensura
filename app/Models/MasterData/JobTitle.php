@@ -3,6 +3,7 @@
 namespace App\Models\MasterData;
 
 use App\Enums\JobTitleGroupEnum;
+use App\Models\Searchable;
 use Database\Factories\JobTitleFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -13,9 +14,15 @@ use Illuminate\Database\Eloquent\Model;
 class JobTitle extends Model
 {
     /** @use HasFactory<JobTitleFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Searchable;
 
     protected $fillable = ['name', 'group'];
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['name'];
+    }
 
     /** @return list<string> */
     public function uniqueIds(): array

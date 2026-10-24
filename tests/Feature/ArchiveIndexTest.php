@@ -46,6 +46,21 @@ class ArchiveIndexTest extends TestCase
             ->where('resources.meta.total', 1)->where('resources.data.0.uuid', $archive->uuid)->where('resources.data.0.items_count', 3));
     }
 
+    public function test_child_search_matches_remain_within_module_and_kind_filters(): void
+    {
+        $match = Archive::factory()->create(['label' => 'Grup utama']);
+        $otherModule = Archive::factory()->create(['module' => 'other', 'label' => 'Grup lain']);
+        $otherKind = Archive::factory()->create(['kind' => ArchiveKindEnum::RECORD, 'label' => 'Item terpisah']);
+        foreach ([$match, $otherModule, $otherKind] as $archive) {
+            ArchiveRecord::factory()->for($archive)->create(['label' => 'Konten cocok']);
+        }
+
+        $this->actingAs(UserFactory::new()->create())->withoutVite()
+            ->get(route('archives.index', ['module' => 'reference', 'kind' => 'package', 'keyword' => 'cocok']))
+            ->assertOk()->assertInertia(fn(Assert $page) => $page
+            ->has('resources.data', 1)->where('resources.data.0.uuid', $match->uuid));
+    }
+
     #[DataProvider('literalKeywords')]
     public function test_search_treats_wildcards_and_injection_as_literal_text(string $keyword): void
     {

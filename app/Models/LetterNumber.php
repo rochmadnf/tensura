@@ -7,9 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class LetterNumber extends Model
 {
-    use HasUuids;
+    use HasUuids, Searchable;
 
     protected $fillable = ['classification_name', 'classification_code', 'page_number', 'sequence_number'];
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['classification_name', 'classification_code'];
+    }
 
     /**
      * @return list<string>

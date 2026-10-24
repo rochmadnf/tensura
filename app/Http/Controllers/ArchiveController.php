@@ -26,20 +26,13 @@ class ArchiveController extends Controller
             'kind' => ['nullable', Rule::enum(ArchiveKindEnum::class)],
         ]);
         $context = $request->routeIs('ref.archive.index') ? 'reference' : null;
-        $keyword = trim($request->string('keyword')->toString());
-        $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
+        $keyword = Archive::normalizeSearchKeyword($request->query('keyword'));
         $module = $context ?? $request->string('module')->toString();
         $kind = $request->string('kind')->toString();
         $archives = $read->query()
             ->when($module !== '', fn(Builder $query) => $query->where('module', $module))
             ->when($kind !== '', fn(Builder $query) => $query->where('kind', $kind))
-            ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
-                $query->where(function (Builder $query) use ($term): void {
-                    $query->whereRaw("LOWER(label) LIKE ? ESCAPE '!'", [$term])
-                        ->orWhereHas('records', fn(Builder $records) => $records->whereRaw("LOWER(label) LIKE ? ESCAPE '!'", [$term]));
-                });
-            })
+            ->search($keyword)
             ->orderByDesc('archived_at')->orderByDesc('id')
             ->paginate($this->perPage($request))->withQueryString();
         $read->loadTargets($archives->getCollection());
@@ -72,16 +65,9 @@ class ArchiveController extends Controller
             'parent_record' => $parent !== null ? ArchiveRecordResource::make($parent) : null,
             'resources' => ArchiveRecordResource::collection($children),
             'target_groups' => Inertia::optional(function () use ($request, $archive) {
-                $keyword = trim($request->string('target_keyword')->toString());
                 $groups = ReferenceGroup::query()
                     ->when($archive->module !== 'reference', fn(Builder $query) => $query->whereKey(-1))
-                    ->when(mb_strlen($keyword) >= 2, function (Builder $query) use ($keyword): void {
-                        $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
-                        $query->where(function (Builder $query) use ($term): void {
-                            $query->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term])
-                                ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$term]);
-                        });
-                    })
+                    ->search($request->query('target_keyword'))
                     ->withCount('items')->orderBy('name')->orderBy('id')
                     ->paginate(10, ['*'], 'target_page')->withQueryString();
 

@@ -16,9 +16,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Archive extends Model
 {
     /** @use HasFactory<ArchiveFactory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, Searchable;
 
     protected $fillable = ['module', 'kind', 'entity', 'label', 'archived_by', 'archived_by_name', 'archived_at', 'revision', 'context'];
+
+    /** @return non-empty-list<string> */
+    protected function searchableColumns(): array
+    {
+        return ['label', 'records.label'];
+    }
 
     /** @return list<string> */
     public function uniqueIds(): array

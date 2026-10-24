@@ -7,7 +7,6 @@ use App\Http\Requests\StoreLetterNumberRequest;
 use App\Http\Requests\UpdateLetterNumberRequest;
 use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
@@ -22,20 +21,10 @@ class LetterNumberController extends Controller
             ? $request->integer('per_page')
             : 10;
 
-        $keyword = $request->query('keyword');
-        $keyword = is_string($keyword) ? trim($keyword) : '';
-        $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
+        $keyword = LetterNumber::normalizeSearchKeyword($request->query('keyword'));
 
         $records = LetterNumber::query()
-            ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
-
-                $query->where(
-                    fn(Builder $q): Builder => $q
-                        ->whereRaw("LOWER(classification_name) LIKE ? ESCAPE '!'", [$term])
-                        ->orWhereRaw("LOWER(classification_code) LIKE ? ESCAPE '!'", [$term]),
-                );
-            })
+            ->search($keyword)
             ->orderBy('classification_code')
             ->paginate($perPage)
             ->withQueryString();

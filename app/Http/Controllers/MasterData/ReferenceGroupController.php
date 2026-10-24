@@ -8,7 +8,6 @@ use App\Http\Requests\UpdateReferenceGroupRequest;
 use App\Http\Resources\MasterData\ReferenceGroupResource;
 use App\Models\MasterData\ReferenceGroup;
 use App\Services\Archive\ArchiveReference;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,20 +22,11 @@ class ReferenceGroupController extends Controller
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
             ? $request->integer('per_page')
             : 10;
-        $keyword = $request->query('keyword');
-        $keyword = is_string($keyword) ? trim($keyword) : '';
-        $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
+        $keyword = ReferenceGroup::normalizeSearchKeyword($request->query('keyword'));
 
         $records = ReferenceGroup::query()
             ->withCount('items')
-            ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
-                $query->where(function (Builder $query) use ($term): void {
-                    $query
-                        ->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$term])
-                        ->orWhereRaw("LOWER(description) LIKE ? ESCAPE '!'", [$term]);
-                });
-            })
+            ->search($keyword)
             ->orderBy('name')
             ->orderBy('id')
             ->paginate($perPage)

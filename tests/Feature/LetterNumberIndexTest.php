@@ -17,6 +17,17 @@ class LetterNumberIndexTest extends TestCase
         $this->get(route('ln.index'))->assertRedirectToRoute('login.index');
     }
 
+    public function test_search_matches_classification_codes(): void
+    {
+        $match = LetterNumberFactory::new()->create(['classification_code' => '001', 'classification_name' => 'Administrasi']);
+        LetterNumberFactory::new()->create(['classification_code' => '002', 'classification_name' => 'Keuangan']);
+
+        $this->actingAs(UserFactory::new()->create())->withoutVite()
+            ->get(route('ln.index', ['keyword' => '01']))
+            ->assertOk()->assertInertia(fn(Assert $page) => $page
+            ->has('resources.data', 1)->where('resources.data.0.id', $match->uuid));
+    }
+
     public function test_pages_follow_unique_classification_codes_without_repeated_or_missing_rows(): void
     {
         $records = collect(['101', '007', '445', '002', '123', '003', '006', '001', '004', '005', '999'])

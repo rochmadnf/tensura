@@ -29,9 +29,7 @@ class EmployeeController extends Controller
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100])
             ? $request->integer('per_page')
             : 10;
-        $keyword = $request->query('keyword');
-        $keyword = is_string($keyword) ? trim($keyword) : '';
-        $keyword = mb_strlen($keyword) >= 2 ? $keyword : '';
+        $keyword = Employee::normalizeSearchKeyword($request->query('keyword'));
         $parsed = FilterQuery::parse($request->query('filter'));
         $jobTitles = JobTitle::query()
             ->whereIn('uuid', array_filter($parsed['job_title'] ?? [], fn(string $value): bool => Str::isUuid($value)))
@@ -101,14 +99,7 @@ class EmployeeController extends Controller
                         ->toDateString(),
                 ),
             )
-            ->when($keyword !== '', function (Builder $query) use ($keyword): void {
-                $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($keyword)) . '%';
-                $query->where(function (Builder $search) use ($term): void {
-                    foreach (['name', 'nik', 'nip', 'email'] as $column) {
-                        $search->orWhereRaw("LOWER({$column}) LIKE ? ESCAPE '!'", [$term]);
-                    }
-                });
-            })
+            ->search($keyword)
             ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [AsnStatusEnum::AKTIF->value])
             ->orderBy('join_date')
             ->orderBy('name')
