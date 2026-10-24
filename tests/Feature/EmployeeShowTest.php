@@ -21,6 +21,7 @@ class EmployeeShowTest extends TestCase
             'front_title' => 'dr.',
             'back_title' => 'M.Kes.',
             'join_date' => '2020-10-25',
+            'gender' => 2,
         ]);
         $this->actingAs(UserFactory::new()->create())
             ->withoutVite()
@@ -35,7 +36,17 @@ class EmployeeShowTest extends TestCase
                         'nik' => $employee->nik,
                         'nip' => $employee->nip,
                         'name' => ['first' => 'dr.', 'raw' => 'Siti', 'full' => 'dr. Siti M.Kes.', 'last' => 'M.Kes.'],
-                        'job_title' => ['id' => $employee->jobTitle->uuid, 'name' => $employee->jobTitle->name],
+                        'gender' => ['id' => 2, 'label' => 'Perempuan'],
+                        'job_title' => [
+                            'id' => $employee->jobTitle->uuid,
+                            'name' => $employee->jobTitle->name,
+                            'group' => [
+                                'id' => $employee->jobTitle->group?->value,
+                                'label' => $employee->jobTitle->group?->label(),
+                            ],
+                        ],
+                        'str' => null,
+                        'sip' => null,
                         'rank' => null,
                         'grade' => null,
                         'email' => $employee->email,
@@ -55,14 +66,51 @@ class EmployeeShowTest extends TestCase
         $this->assertNull($employee->fresh()->job_title_id);
         $this->actingAs(UserFactory::new()->create())->withoutVite();
         foreach (['empl.show', 'empl.edit'] as $route) {
-            $this->get(route($route, $employee->uuid))
-                ->assertOk()
-                ->assertInertia(
-                    fn(Assert $page) => $page
-                        ->where('resource.data.job_title', ['id' => null, 'name' => null])
-                        ->where('resource.data.name.full', $employee->name),
-                );
+            $this->get(route($route, $employee->uuid))->assertOk()->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('resource.data.job_title', [
+                        'id' => null,
+                        'name' => null,
+                        'group' => ['id' => null, 'label' => null],
+                    ])
+                    ->where('resource.data.name.full', $employee->name),
+            );
         }
+    }
+
+    public function test_detail_exposes_registration_labels_and_both_date_formats(): void
+    {
+        $employee = Employee::factory()
+            ->withStr()
+            ->withSip()
+            ->create([
+                'gender' => 1,
+                'str_status' => 2,
+                'str_published_date' => '2024-02-29',
+                'sip_published_date' => '2024-03-01',
+                'sip_expired_date' => '2029-03-01',
+            ]);
+        $this->actingAs(UserFactory::new()->create())
+            ->withoutVite()
+            ->get(route('empl.show', $employee->uuid))
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page
+                    ->where('resource.data.gender', ['id' => 1, 'label' => 'Laki-laki'])
+                    ->where('resource.data.str', [
+                        'number' => $employee->str_number,
+                        'status' => ['id' => 2, 'label' => 'Definitif'],
+                        'published_date' => '29-02-2024',
+                        'published_date_input' => '2024-02-29',
+                    ])
+                    ->where('resource.data.sip', [
+                        'number' => $employee->sip_number,
+                        'published_date' => '01-03-2024',
+                        'published_date_input' => '2024-03-01',
+                        'expired_date' => '01-03-2029',
+                        'expired_date_input' => '2029-03-01',
+                    ]),
+            );
     }
 
     public function test_detail_rejects_guest_unknown_uuid_and_numeric_identifier(): void

@@ -29,7 +29,9 @@ class EmployeeStoreTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('employee/create')
                     ->where('page.id', 'a30c21b9-15ef-4dc0-97ef-524ead13be55')
-                    ->where('jobTitles', [['id' => $jobTitle->uuid, 'label' => $jobTitle->name]])
+                    ->where('jobTitles', [
+                        ['id' => $jobTitle->uuid, 'label' => $jobTitle->name, 'group' => $jobTitle->group?->value],
+                    ])
                     ->where('contractStatuses', ContractStatusEnum::options())
                     ->where('statuses', AsnStatusEnum::options()),
             );
@@ -69,6 +71,12 @@ class EmployeeStoreTest extends TestCase
             'back_title' => '',
             'rank' => '',
             'grade' => '',
+            'str_number' => '',
+            'str_status' => '',
+            'str_published_date' => '',
+            'sip_number' => '',
+            'sip_published_date' => '',
+            'sip_expired_date' => '',
         ];
         $this->actingAs(UserFactory::new()->create());
         $this->post(route('empl.store'), $data)->assertSessionHasNoErrors();
@@ -119,6 +127,37 @@ class EmployeeStoreTest extends TestCase
     public static function invalidData(): array
     {
         return [
+            'missing gender' => [['gender' => null], 'gender'],
+            'old gender zero' => [['gender' => 0], 'gender'],
+            'invalid gender' => [['gender' => 3], 'gender'],
+            'non scalar gender' => [['gender' => [1]], 'gender'],
+            'fractional gender' => [['gender' => 1.5], 'gender'],
+            'short str' => [['str_number' => '123'], 'str_number'],
+            'long str' => [['str_number' => str_repeat('A', 17)], 'str_number'],
+            'numeric str' => [['str_number' => 1234567890123456], 'str_number'],
+            'invalid str status' => [['str_status' => 99], 'str_status'],
+            'missing str number' => [['str_number' => null], 'str_number'],
+            'missing str status' => [['str_status' => null], 'str_status'],
+            'missing str date' => [['str_published_date' => null], 'str_published_date'],
+            'only str number' => [['str_status' => null, 'str_published_date' => null], 'str_status'],
+            'only str status' => [['str_number' => null, 'str_published_date' => null], 'str_number'],
+            'only str date' => [['str_number' => null, 'str_status' => null], 'str_number'],
+            'invalid str date' => [['str_published_date' => '2025-02-29'], 'str_published_date'],
+            'future str date' => [['str_published_date' => '2026-10-25'], 'str_published_date'],
+            'partial str date' => [['str_published_date' => '24-10-'], 'str_published_date'],
+            'long sip' => [['sip_number' => str_repeat('A', 31)], 'sip_number'],
+            'non string sip' => [['sip_number' => [1]], 'sip_number'],
+            'missing sip number' => [['sip_number' => null], 'sip_number'],
+            'missing sip date' => [['sip_published_date' => null], 'sip_published_date'],
+            'missing sip expiry' => [['sip_expired_date' => null], 'sip_expired_date'],
+            'only sip number' => [['sip_published_date' => null, 'sip_expired_date' => null], 'sip_published_date'],
+            'only sip publication' => [['sip_number' => null, 'sip_expired_date' => null], 'sip_number'],
+            'only sip expiry' => [['sip_number' => null, 'sip_published_date' => null], 'sip_number'],
+            'future sip date' => [['sip_published_date' => '2026-10-25'], 'sip_published_date'],
+            'invalid sip date' => [['sip_published_date' => '2026-02-30'], 'sip_published_date'],
+            'invalid sip expiry' => [['sip_expired_date' => '2029-02-30'], 'sip_expired_date'],
+            'equal sip expiry' => [['sip_expired_date' => '2024-02-29'], 'sip_expired_date'],
+            'earlier sip expiry' => [['sip_expired_date' => '2024-02-28'], 'sip_expired_date'],
             'missing nik' => [['nik' => ''], 'nik'],
             'short nik' => [['nik' => '123'], 'nik'],
             'long nik' => [['nik' => str_repeat('1', 17)], 'nik'],
@@ -162,7 +201,7 @@ class EmployeeStoreTest extends TestCase
     #[DataProvider('uniqueFields')]
     public function test_store_rejects_duplicate_identities_and_email(string $field): void
     {
-        $other = Employee::factory()->create();
+        $other = Employee::factory()->withStr()->withSip()->create();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
             ->post(route('empl.store'), [...$data, $field => $other->$field])
@@ -173,7 +212,13 @@ class EmployeeStoreTest extends TestCase
     /** @return array<string, array{string}> */
     public static function uniqueFields(): array
     {
-        return ['nik' => ['nik'], 'nip' => ['nip'], 'email' => ['email']];
+        return [
+            'nik' => ['nik'],
+            'nip' => ['nip'],
+            'email' => ['email'],
+            'STR' => ['str_number'],
+            'SIP' => ['sip_number'],
+        ];
     }
 
     public function test_required_messages_use_indonesian_labels(): void
@@ -183,6 +228,7 @@ class EmployeeStoreTest extends TestCase
             ->assertInvalid([
                 'nik' => 'NIK wajib diisi.',
                 'name' => 'Nama wajib diisi.',
+                'gender' => 'Jenis Kelamin wajib diisi.',
                 'job_title_id' => 'Jabatan wajib diisi.',
                 'join_date' => 'Tanggal Bergabung wajib diisi.',
                 'contract_status' => 'Status Kontrak wajib diisi.',
@@ -197,6 +243,31 @@ class EmployeeStoreTest extends TestCase
         $this->assertDatabaseCount('employees', 0);
     }
 
+    public function test_store_accepts_both_genders_and_persists_complete_registrations(): void
+    {
+        $this->actingAs(UserFactory::new()->create());
+        foreach ([1, 2] as $gender) {
+            $data = [
+                ...$this->payload(),
+                'gender' => (string) $gender,
+                'nik' => str_repeat((string) $gender, 16),
+                'nip' => null,
+                'email' => null,
+                'str_number' => 'STR' . str_repeat((string) $gender, 13),
+                'sip_number' => 'SIP/' . $gender,
+            ];
+            $this->post(route('empl.store'), $data)->assertRedirectToRoute('empl.index')->assertSessionHasNoErrors();
+            $employee = Employee::query()->where('nik', $data['nik'])->sole();
+            $this->assertSame($gender, $employee->gender);
+            $this->assertSame($data['str_number'], $employee->str_number);
+            $this->assertSame(1, $employee->str_status->value);
+            $this->assertSame('2024-02-29', $employee->str_published_date->toDateString());
+            $this->assertSame($data['sip_number'], $employee->sip_number);
+            $this->assertSame('2024-02-29', $employee->sip_published_date->toDateString());
+            $this->assertSame('2029-02-28', $employee->sip_expired_date->toDateString());
+        }
+    }
+
     /** @return array<string, mixed> */
     private function payload(): array
     {
@@ -204,6 +275,13 @@ class EmployeeStoreTest extends TestCase
             'nik' => '0000000000000001',
             'nip' => '000000000000000001',
             'name' => 'Siti Aminah',
+            'gender' => 2,
+            'str_number' => 'STR0000000000001',
+            'str_status' => 1,
+            'str_published_date' => '2024-02-29',
+            'sip_number' => 'SIP/001',
+            'sip_published_date' => '2024-02-29',
+            'sip_expired_date' => '2029-02-28',
             'front_title' => 'dr.',
             'back_title' => 'M.Kes.',
             'job_title_id' => JobTitle::factory()->create()->uuid,

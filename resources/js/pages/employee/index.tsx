@@ -10,12 +10,14 @@ import { Input } from '@/components/ui/input';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { useTableLoading } from '@/hooks/use-table-loading';
 import { buildListingQuery } from '@/lib/listing-query';
-import type { EmployeeFormOptions, EmployeeResource } from '@/schemas/employee';
+import type { EmployeeFormOptions, EmployeeOption, EmployeeResource } from '@/schemas/employee';
 
 const pageName = 'Pegawai';
 interface EmployeeFilters {
     keyword: string;
     job_title: string[];
+    job_group: number[];
+    gender: number[];
     contract_status: number[];
     status: number[];
     tenure_min: number | null;
@@ -23,6 +25,8 @@ interface EmployeeFilters {
 }
 interface EmployeeFilterDraft {
     job_title: string[];
+    job_group: string[];
+    gender: string[];
     contract_status: string[];
     status: string[];
     tenure_min: string;
@@ -31,6 +35,7 @@ interface EmployeeFilterDraft {
 interface EmployeeIndexProps extends EmployeeFormOptions {
     resources: { data: EmployeeResource[]; meta: PaginationMeta };
     filters: EmployeeFilters;
+    jobTitleGroups: EmployeeOption[];
 }
 
 function rangeError(value: EmployeeFilterDraft): string | null {
@@ -50,12 +55,16 @@ export default function EmployeeIndex({
     resources,
     filters,
     jobTitles,
+    jobTitleGroups,
+    genders,
     contractStatuses,
     statuses,
 }: EmployeeIndexProps) {
     const isLoading = useTableLoading('resources');
     const draft: EmployeeFilterDraft = {
         job_title: filters.job_title,
+        job_group: filters.job_group.map(String),
+        gender: filters.gender.map(String),
         contract_status: filters.contract_status.map(String),
         status: filters.status.map(String),
         tenure_min: filters.tenure_min === null ? '' : String(filters.tenure_min),
@@ -63,13 +72,17 @@ export default function EmployeeIndex({
     };
     const emptyValue: EmployeeFilterDraft = {
         job_title: [],
+        job_group: [],
+        gender: [],
         contract_status: [],
         status: [],
         tenure_min: '',
         tenure_max: '',
     };
     const selections = [
+        { name: 'job_group', label: 'Kelompok Jabatan', items: jobTitleGroups },
         { name: 'job_title', label: 'Jabatan', items: jobTitles },
+        { name: 'gender', label: 'Jenis Kelamin', items: genders },
         { name: 'contract_status', label: 'Status Kontrak', items: contractStatuses },
         { name: 'status', label: 'Status Pegawai', items: statuses },
     ] as const;
@@ -85,6 +98,8 @@ export default function EmployeeIndex({
             { page: null },
             {
                 job_title: value.job_title,
+                job_group: value.job_group,
+                gender: value.gender,
                 contract_status: value.contract_status,
                 status: value.status,
                 tenure_min: value.tenure_min === '' ? [] : [String(Number(value.tenure_min))],
@@ -117,6 +132,8 @@ export default function EmployeeIndex({
                             emptyValue={emptyValue}
                             activeCount={
                                 draft.job_title.length +
+                                draft.job_group.length +
+                                draft.gender.length +
                                 draft.contract_status.length +
                                 draft.status.length +
                                 Number(draft.tenure_min !== '') +
@@ -132,17 +149,43 @@ export default function EmployeeIndex({
                                             <FieldLabel htmlFor={`filter-${name}`}>{label}</FieldLabel>
                                             <OptionSelect
                                                 multiple
+                                                forceCombobox
                                                 id={`filter-${name}`}
                                                 name={name}
-                                                items={items.map((item) => ({
-                                                    value: String(item.id),
-                                                    label: item.label,
-                                                }))}
+                                                items={items
+                                                    .filter(
+                                                        (item) =>
+                                                            name !== 'job_title' ||
+                                                            value.job_group.length === 0 ||
+                                                            ('group' in item &&
+                                                                item.group !== null &&
+                                                                value.job_group.includes(String(item.group))),
+                                                    )
+                                                    .map((item) => ({
+                                                        value: String(item.id),
+                                                        label: item.label,
+                                                    }))}
                                                 value={value[name]}
-                                                onValueChange={(selected) =>
-                                                    onValueChange({ ...value, [name]: selected })
-                                                }
-                                                placeholder={`Pilih ${label.toLowerCase()}`}
+                                                onValueChange={(selected) => {
+                                                    if (name === 'job_group') {
+                                                        const available = jobTitles.filter(
+                                                            (item) =>
+                                                                selected.length === 0 ||
+                                                                (item.group !== null &&
+                                                                    selected.includes(String(item.group))),
+                                                        );
+                                                        onValueChange({
+                                                            ...value,
+                                                            job_group: selected,
+                                                            job_title: value.job_title.filter((id) =>
+                                                                available.some((item) => item.id === id),
+                                                            ),
+                                                        });
+                                                    } else {
+                                                        onValueChange({ ...value, [name]: selected });
+                                                    }
+                                                }}
+                                                placeholder={`Semua ${label.toLowerCase()}`}
                                                 resetLabel={`Reset ${label.toLowerCase()}`}
                                                 disabled={disabled}
                                             />

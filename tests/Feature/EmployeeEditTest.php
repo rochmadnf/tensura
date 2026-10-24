@@ -40,7 +40,7 @@ class EmployeeEditTest extends TestCase
     public function test_update_changes_all_data_fields_and_ignores_system_fields(): void
     {
         $employee = Employee::factory()->create();
-        $other = Employee::factory()->create();
+        $other = Employee::factory()->withStr()->withSip()->create();
         $before = $other->getAttributes();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
@@ -65,9 +65,12 @@ class EmployeeEditTest extends TestCase
         );
         $this->assertSame($data['job_title_id'], $updated->jobTitle->uuid);
         $this->assertSame($data['join_date'], $updated->join_date->toDateString());
+        foreach (['str_published_date', 'sip_published_date', 'sip_expired_date'] as $date) {
+            $this->assertSame($data[$date], $updated->$date->toDateString());
+        }
         $this->assertDatabaseHas('employees', [
             ...collect($data)
-                ->except(['job_title_id', 'join_date'])
+                ->except(['job_title_id', 'join_date', 'str_published_date', 'sip_published_date', 'sip_expired_date'])
                 ->all(),
             'id' => $employee->id,
             'job_title_id' => $updated->job_title_id,
@@ -76,8 +79,15 @@ class EmployeeEditTest extends TestCase
 
     public function test_update_accepts_own_unique_values_and_clears_optional_fields(): void
     {
-        $employee = Employee::factory()->create();
-        $data = [...$this->payload(), 'nik' => $employee->nik, 'nip' => $employee->nip, 'email' => $employee->email];
+        $employee = Employee::factory()->withStr()->withSip()->create();
+        $data = [
+            ...$this->payload(),
+            'str_number' => $employee->str_number,
+            'sip_number' => $employee->sip_number,
+            'nik' => $employee->nik,
+            'nip' => $employee->nip,
+            'email' => $employee->email,
+        ];
         $this->actingAs(UserFactory::new()->create())
             ->patch(route('empl.update', $employee->uuid), $data)
             ->assertSessionHasNoErrors()
@@ -90,6 +100,12 @@ class EmployeeEditTest extends TestCase
             'grade' => '',
             'front_title' => '',
             'back_title' => '',
+            'str_number' => '',
+            'str_status' => '',
+            'str_published_date' => '',
+            'sip_number' => '',
+            'sip_published_date' => '',
+            'sip_expired_date' => '',
         ])->assertSessionHasNoErrors();
         $this->assertDatabaseHas('employees', [
             'id' => $employee->id,
@@ -99,6 +115,12 @@ class EmployeeEditTest extends TestCase
             'grade' => null,
             'front_title' => null,
             'back_title' => null,
+            'str_number' => null,
+            'str_status' => null,
+            'str_published_date' => null,
+            'sip_number' => null,
+            'sip_published_date' => null,
+            'sip_expired_date' => null,
         ]);
     }
 
@@ -106,7 +128,7 @@ class EmployeeEditTest extends TestCase
     public function test_update_cannot_take_another_employees_unique_value(string $field): void
     {
         $employee = Employee::factory()->create();
-        $other = Employee::factory()->create();
+        $other = Employee::factory()->withStr()->withSip()->create();
         $data = $this->payload();
         $this->actingAs(UserFactory::new()->create())
             ->patch(route('empl.update', $employee->uuid), [
@@ -127,7 +149,13 @@ class EmployeeEditTest extends TestCase
     /** @return array<string, array{string}> */
     public static function uniqueFields(): array
     {
-        return ['nik' => ['nik'], 'nip' => ['nip'], 'email' => ['email']];
+        return [
+            'nik' => ['nik'],
+            'nip' => ['nip'],
+            'email' => ['email'],
+            'STR' => ['str_number'],
+            'SIP' => ['sip_number'],
+        ];
     }
 
     /** @param array<string, mixed> $invalid */
@@ -194,6 +222,13 @@ class EmployeeEditTest extends TestCase
             'nik' => '0000000000000001',
             'nip' => '000000000000000001',
             'name' => 'Siti Aminah',
+            'gender' => 2,
+            'str_number' => 'STR0000000000001',
+            'str_status' => 1,
+            'str_published_date' => '2024-02-29',
+            'sip_number' => 'SIP/001',
+            'sip_published_date' => '2024-02-29',
+            'sip_expired_date' => '2029-02-28',
             'front_title' => 'dr.',
             'back_title' => 'M.Kes.',
             'job_title_id' => JobTitle::factory()->create()->uuid,

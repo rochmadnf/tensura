@@ -4,6 +4,9 @@
 
 ### Ditambahkan
 
+- Formulir Pegawai mendukung jenis kelamin (1: Laki-laki, 2: Perempuan), STR, dan SIP dengan validasi kelengkapan per kelompok, keunikan nomor, serta urutan tanggal SIP.
+- Pemilih tanggal bersama dengan kalender berbahasa Indonesia dan input manual `hh-bb-tttt`; nilai yang dikirim tetap menggunakan format ISO.
+- Filter kelompok jabatan dan jenis kelamin; seluruh filter kategori Pegawai memakai combobox pilihan ganda, dengan opsi jabatan mengikuti kelompok yang dipilih.
 - Fitur Daftar Referensi untuk mengelola grup dan item dalam satu halaman kerja, dengan pencarian, jumlah item, paginasi, edit item langsung, dan konfirmasi hapus permanen.
 - Pengurutan item melalui tombol atas/bawah serta drag dengan mouse, sentuh, dan keyboard; penyimpanan urutan atomik, pembaruan optimistis, dan pemulihan saat gagal.
 - Factory dan pengujian referensi untuk UUID, validasi, isolasi item per grup, cascade delete, urutan, dan seeder yang mempertahankan urutan pengguna.
@@ -19,6 +22,8 @@
 
 ### Diubah
 
+- Detail Pegawai disusun menjadi kartu ringkasan, data diri, pekerjaan, serta STR/SIP dengan kondisi kosong, tampilan responsif, dan dukungan mode gelap mengikuti tema yang ada.
+- Kolom jenis kelamin Pegawai menggunakan integer tetap 1/2; formulir dikelompokkan menjadi Data Diri, Data Kepegawaian, STR, dan SIP.
 - Penyimpanan grup referensi membuka halaman edit untuk melanjutkan pengelolaan item. Overlay pemuatan menghormati opsi kunjungan `showProgress: false` agar aksi item dapat menjaga fokus.
 
 - Resource Jabatan mengekspos UUID sebagai `id` menggantikan id numerik, dengan informasi kelompok yang aman saat bernilai null.

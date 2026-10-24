@@ -4,6 +4,8 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Enums\AsnStatusEnum;
 use App\Enums\ContractStatusEnum;
+use App\Enums\JobTitleGroupEnum;
+use App\Enums\StrStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\FilterQuery;
 use App\Http\Requests\StoreEmployeeRequest;
@@ -37,6 +39,19 @@ class EmployeeController extends Controller
             ->all();
         $contractStatuses = $this->enumValues($parsed['contract_status'] ?? [], ContractStatusEnum::class);
         $statuses = $this->enumValues($parsed['status'] ?? [], AsnStatusEnum::class);
+        $jobGroups = $this->enumValues($parsed['job_group'] ?? [], JobTitleGroupEnum::class);
+        $genders = collect($parsed['gender'] ?? [])
+            ->filter(
+                fn(string $value): bool => in_array(
+                    $value,
+                    [(string) Employee::LAKI_LAKI, (string) Employee::PEREMPUAN],
+                    true,
+                ),
+            )
+            ->map(fn(string $value): int => (int) $value)
+            ->unique()
+            ->values()
+            ->all();
         $tenureMin = $this->tenureBound($parsed['tenure_min'] ?? []);
         $tenureMax = $this->tenureBound($parsed['tenure_max'] ?? []);
 
@@ -46,7 +61,15 @@ class EmployeeController extends Controller
 
         $today = today();
         $records = Employee::query()
-            ->with('jobTitle:id,uuid,name')
+            ->with('jobTitle:id,uuid,name,group')
+            ->when(
+                $jobGroups !== [],
+                fn(Builder $query): Builder => $query->whereHas(
+                    'jobTitle',
+                    fn(Builder $jobTitle): Builder => $jobTitle->whereIn('group', $jobGroups),
+                ),
+            )
+            ->when($genders !== [], fn(Builder $query): Builder => $query->whereIn('gender', $genders))
             ->when(
                 $jobTitles !== [],
                 fn(Builder $query): Builder => $query->whereHas(
@@ -101,12 +124,15 @@ class EmployeeController extends Controller
             'filters' => [
                 'keyword' => $keyword,
                 'job_title' => $jobTitles,
+                'job_group' => $jobGroups,
+                'gender' => $genders,
                 'contract_status' => $contractStatuses,
                 'status' => $statuses,
                 'tenure_min' => $tenureMin,
                 'tenure_max' => $tenureMax,
             ],
             ...$this->formOptions(),
+            'jobTitleGroups' => JobTitleGroupEnum::options(),
             'resources' => EmployeeResource::collection($records),
         ]);
     }
@@ -132,7 +158,7 @@ class EmployeeController extends Controller
     {
         return inertia('employee/show', [
             'page' => ['id' => $this->pageId],
-            'resource' => EmployeeResource::make($employee->load('jobTitle:id,uuid,name')),
+            'resource' => EmployeeResource::make($employee->load('jobTitle:id,uuid,name,group')),
         ]);
     }
 
@@ -141,7 +167,7 @@ class EmployeeController extends Controller
         return inertia('employee/edit', [
             'page' => ['id' => $this->pageId],
             ...$this->formOptions(),
-            'resource' => EmployeeResource::make($employee->load('jobTitle:id,uuid,name')),
+            'resource' => EmployeeResource::make($employee->load('jobTitle:id,uuid,name,group')),
         ]);
     }
 
@@ -161,15 +187,23 @@ class EmployeeController extends Controller
         return redirect()->route('empl.index');
     }
 
-    /** @return array{jobTitles: list<array{id: string, label: string}>, contractStatuses: list<array{id: int, label: string}>, statuses: list<array{id: int, label: string}>, today: string} */
+    /** @return array{jobTitles: list<array{id: string, label: string, group: ?int}>, genders: list<array{id: int, label: string}>, strStatuses: list<array{id: int, label: string}>, contractStatuses: list<array{id: int, label: string}>, statuses: list<array{id: int, label: string}>, today: string} */
     private function formOptions(): array
     {
         return [
             'jobTitles' => JobTitle::query()
                 ->orderBy('name')
-                ->get(['uuid', 'name'])
-                ->map(fn(JobTitle $jobTitle): array => ['id' => $jobTitle->uuid, 'label' => $jobTitle->name])
+                ->get(['uuid', 'name', 'group'])
+                ->map(
+                    fn(JobTitle $jobTitle): array => [
+                        'id' => $jobTitle->uuid,
+                        'label' => $jobTitle->name,
+                        'group' => $jobTitle->group?->value,
+                    ],
+                )
                 ->all(),
+            'genders' => Employee::genderOptions(),
+            'strStatuses' => StrStatusEnum::options(),
             'contractStatuses' => ContractStatusEnum::options(),
             'statuses' => AsnStatusEnum::options(),
             'today' => today()->toDateString(),

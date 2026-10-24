@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\AsnStatusEnum;
 use App\Enums\ContractStatusEnum;
+use App\Enums\JobTitleGroupEnum;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\JobTitle;
 use Database\Factories\UserFactory;
@@ -35,9 +36,13 @@ class EmployeeIndexTest extends TestCase
                     ->where('resources.data.0.id', $employee->uuid)
                     ->where('resources.data.0.job_title.id', $employee->jobTitle->uuid)
                     ->where('resources.meta.per_page', 10)
+                    ->where('genders', Employee::genderOptions())
+                    ->where('jobTitleGroups', JobTitleGroupEnum::options())
                     ->where('filters', [
                         'keyword' => '',
                         'job_title' => [],
+                        'job_group' => [],
+                        'gender' => [],
                         'contract_status' => [],
                         'status' => [],
                         'tenure_min' => null,
@@ -285,6 +290,8 @@ class EmployeeIndexTest extends TestCase
                     ->where('filters.job_title', [])
                     ->where('filters.contract_status', [])
                     ->where('filters.status', [])
+                    ->where('filters.gender', [])
+                    ->where('filters.job_group', [])
                     ->where('filters.tenure_min', null)
                     ->where('filters.tenure_max', null),
             );
@@ -304,6 +311,8 @@ class EmployeeIndexTest extends TestCase
             'non integer range' => ['tenure_min:1.5|tenure_max:abc'],
             'multiple range bounds' => ['tenure_min:1,2|tenure_max:3,4'],
             'overflow range' => ['tenure_min:99999999999999999999999'],
+            'invalid gender and group' => ['gender:0,3,-1,1.5,abc|job_group:0,99,-1,1.5'],
+            'gender and group injection' => ['gender:1 OR 1=1|job_group:1); DROP TABLE employees;--'],
         ];
     }
 
@@ -316,7 +325,7 @@ class EmployeeIndexTest extends TestCase
             ->withoutVite()
             ->get(
                 route('empl.index', [
-                    'filter' => "job_title:{$job->uuid},garbage|status:1,1,99,1 OR 1=1|contract_status:1,99",
+                    'filter' => "job_title:{$job->uuid},garbage|status:1,1,99,1 OR 1=1|contract_status:1,99|gender:1,2,2,0,99|job_group:1,2,3,4,5,6,7,8,9,10,11,99",
                 ]),
             )
             ->assertOk()
@@ -325,6 +334,8 @@ class EmployeeIndexTest extends TestCase
                     ->has('resources.data', 1)
                     ->where('filters.status', [1])
                     ->where('filters.contract_status', [1])
+                    ->where('filters.gender', [1, 2])
+                    ->where('filters.job_group', range(1, 11))
                     ->where('filters.job_title', [$job->uuid]),
             );
     }
@@ -357,12 +368,15 @@ class EmployeeIndexTest extends TestCase
 
     public function test_pagination_keeps_search_filter_and_page_size(): void
     {
+        $job = JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
         Employee::factory()
             ->count(6)
-            ->create(['name' => 'Needle', 'join_date' => '2020-01-01']);
+            ->create(['name' => 'Needle', 'join_date' => '2020-01-01', 'gender' => 2, 'job_title_id' => $job->id]);
         Employee::factory()->create(['name' => 'Other', 'status' => AsnStatusEnum::PENSIUN]);
         $this->actingAs(UserFactory::new()->create())->withoutVite();
-        $response = $this->get(route('empl.index', ['keyword' => 'Needle', 'filter' => 'status:1', 'per_page' => 5]));
+        $response = $this->get(
+            route('empl.index', ['keyword' => 'Needle', 'filter' => 'status:1|job_group:2|gender:2', 'per_page' => 5]),
+        );
         $response
             ->assertOk()
             ->assertInertia(
@@ -371,7 +385,10 @@ class EmployeeIndexTest extends TestCase
                     ->where('resources.meta.total', 6)
                     ->where(
                         'resources.links.next',
-                        fn(string $url): bool => str_contains(urldecode($url), 'filter=status:1') &&
+                        fn(string $url): bool => str_contains(
+                            urldecode($url),
+                            'filter=status:1|job_group:2|gender:2',
+                        ) &&
                             str_contains($url, 'keyword=Needle') &&
                             str_contains($url, 'per_page=5'),
                     ),
@@ -381,5 +398,52 @@ class EmployeeIndexTest extends TestCase
             ->assertInertia(
                 fn(Assert $page) => $page->has('resources.data', 1)->where('resources.meta.current_page', 2),
             );
+    }
+
+    /** @param list<string> $expected */
+    #[DataProvider('groupAndGenderFilters')]
+    public function test_job_group_gender_and_job_filters_combine_with_and(string $filter, array $expected): void
+    {
+        $doctor = JobTitle::factory()->create(['group' => JobTitleGroupEnum::DOKTER]);
+        $nurse = JobTitle::factory()->create(['group' => JobTitleGroupEnum::PERAWAT]);
+        $ungrouped = JobTitle::factory()->create(['group' => null]);
+        $records = [
+            'male doctor' => Employee::factory()->create(['job_title_id' => $doctor->id, 'gender' => 1]),
+            'female doctor' => Employee::factory()->create(['job_title_id' => $doctor->id, 'gender' => 2]),
+            'female nurse' => Employee::factory()->create(['job_title_id' => $nurse->id, 'gender' => 2]),
+            'ungrouped male' => Employee::factory()->create(['job_title_id' => $ungrouped->id, 'gender' => 1]),
+        ];
+        $filter = strtr($filter, ['DOCTOR' => $doctor->uuid, 'NURSE' => $nurse->uuid]);
+        $expectedIds = collect($expected)
+            ->map(fn(string $name): string => $records[$name]->uuid)
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->actingAs(UserFactory::new()->create())
+            ->withoutVite()
+            ->get(route('empl.index', ['filter' => $filter]))
+            ->assertOk()
+            ->assertInertia(
+                fn(Assert $page) => $page->where(
+                    'resources.data',
+                    fn($rows): bool => collect($rows)->pluck('id')->sort()->values()->all() === $expectedIds,
+                ),
+            );
+    }
+
+    /** @return array<string, array{string, list<string>}> */
+    public static function groupAndGenderFilters(): array
+    {
+        return [
+            'group' => ['job_group:1', ['male doctor', 'female doctor']],
+            'multiple groups' => ['job_group:1,2', ['male doctor', 'female doctor', 'female nurse']],
+            'female' => ['gender:2', ['female doctor', 'female nurse']],
+            'male' => ['gender:1', ['male doctor', 'ungrouped male']],
+            'both genders' => ['gender:1,2', ['male doctor', 'female doctor', 'female nurse', 'ungrouped male']],
+            'group and gender' => ['job_group:1|gender:2', ['female doctor']],
+            'group job and gender' => ['job_group:1|job_title:DOCTOR|gender:1', ['male doctor']],
+            'conflicting job and group' => ['job_group:1|job_title:NURSE', []],
+        ];
     }
 }
