@@ -1,10 +1,7 @@
+import { TableActionButton } from '@/components/table-action-button';
 import { Subscribe } from '@tanstack/react-table';
 import { createDataTableColumnHelper } from '@/components/data-table';
-import { Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Edit04Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import ref from '@/routes/ref';
 
 import { DeleteAction } from './delete-action';
@@ -46,18 +43,13 @@ export const columns = columnHelper.columns([
         meta: { className: 'w-15 text-center', skeletonClassName: 'mx-auto w-8' },
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
-                <Tooltip>
-                    <Button
-                        variant="warning"
-                        size="icon-sm"
-                        nativeButton={false}
-                        render={<TooltipTrigger render={<Link href={ref.edit(row.original.id).url} />} />}
-                        aria-label={`Ubah/Kelola ${row.original.name}`}
-                    >
-                        <HugeiconsIcon icon={Edit04Icon} strokeWidth={2} />
-                    </Button>
-                    <TooltipContent>Ubah/Kelola</TooltipContent>
-                </Tooltip>
+                <TableActionButton
+                    variant="warning"
+                    href={ref.edit(row.original.id).url}
+                    label={`Ubah/Kelola ${row.original.name}`}
+                    icon={Edit04Icon}
+                    tooltip="Ubah/Kelola"
+                />
                 <DeleteAction referenceGroup={row.original} />
             </div>
         ),

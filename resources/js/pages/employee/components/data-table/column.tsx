@@ -1,10 +1,7 @@
+import { TableActionButton } from '@/components/table-action-button';
 import { Subscribe } from '@tanstack/react-table';
 import { createDataTableColumnHelper } from '@/components/data-table';
-import { Link } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Edit04Icon, InfoIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
 import empl from '@/routes/empl';
 import type { EmployeeResource } from '@/schemas/employee';
 import { DeleteAction } from './delete-action';
@@ -50,30 +47,20 @@ export const columns = columnHelper.columns([
         meta: { className: 'w-28 text-center', skeletonClassName: 'mx-auto w-16' },
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
-                <Tooltip>
-                    <Button
-                        variant="info"
-                        size="icon-sm"
-                        nativeButton={false}
-                        render={<TooltipTrigger render={<Link href={empl.show(row.original.id).url} />} />}
-                        aria-label={`Detail ${row.original.name.full}`}
-                    >
-                        <HugeiconsIcon icon={InfoIcon} strokeWidth={2} />
-                    </Button>
-                    <TooltipContent>Detail</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                    <Button
-                        variant="warning"
-                        size="icon-sm"
-                        nativeButton={false}
-                        render={<TooltipTrigger render={<Link href={empl.edit(row.original.id).url} />} />}
-                        aria-label={`Ubah ${row.original.name.full}`}
-                    >
-                        <HugeiconsIcon icon={Edit04Icon} strokeWidth={2} />
-                    </Button>
-                    <TooltipContent>Ubah</TooltipContent>
-                </Tooltip>
+                <TableActionButton
+                    variant="info"
+                    href={empl.show(row.original.id).url}
+                    label={`Detail ${row.original.name.full}`}
+                    icon={InfoIcon}
+                    tooltip="Detail"
+                />
+                <TableActionButton
+                    variant="warning"
+                    href={empl.edit(row.original.id).url}
+                    label={`Ubah ${row.original.name.full}`}
+                    icon={Edit04Icon}
+                    tooltip="Ubah"
+                />
                 <DeleteAction employee={row.original} />
             </div>
         ),
