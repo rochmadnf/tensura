@@ -350,11 +350,17 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                             setDragging(true);
                         }}
                         onDragEnd={({ canceled, operation }) => {
-                            setDragging(false);
-                            setDragRevision((revision) => revision + 1);
-                            restoreFocus();
-                            if (!canceled && isSortable(operation.source))
-                                reorder(operation.source.initialIndex, operation.source.index);
+                            const sortableSource = !canceled && isSortable(operation.source) ? operation.source : null;
+                            const from = sortableSource?.initialIndex ?? null;
+                            const to = sortableSource?.index ?? null;
+
+                            // Let dnd-kit finish its placeholder ResizeObserver cycle before React replaces the list.
+                            window.setTimeout(() => {
+                                setDragging(false);
+                                setDragRevision((revision) => revision + 1);
+                                restoreFocus();
+                                if (from !== null && to !== null) reorder(from, to);
+                            }, 0);
                         }}
                     >
                         {/* DnD moves DOM nodes directly; rebuild rows when a drag ends or the canonical order changes. */}
