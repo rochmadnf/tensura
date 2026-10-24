@@ -10,7 +10,7 @@ export function CandidateList({ candidates }: { candidates: ArchiveCandidate[] }
             {candidates.map((candidate) => (
                 <li key={candidate.record_uuid} className="flex flex-col gap-1 rounded-lg border p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium break-words">{candidate.label}</span>
+                        <span className="font-medium wrap-break-word">{candidate.label}</span>
                         <Badge variant={candidate.status === 'conflict' ? 'destructive' : 'outline'}>
                             {candidate.status === 'conflict'
                                 ? 'Tetap di arsip'
@@ -116,7 +116,7 @@ export function RestorePreview({
                                             <Link href={edit(group.uuid)} target="_blank" rel="noopener noreferrer" />
                                         }
                                     >
-                                        Edit grup aktif<span className="sr-only"> (tab baru)</span>
+                                        Ubah grup aktif<span className="sr-only"> (tab baru)</span>
                                     </Button>
                                 </div>
                             </div>

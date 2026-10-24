@@ -33,7 +33,7 @@ function DeletePackageAction({ archive }: { archive: ArchiveResource }) {
             aria-label={`Hapus permanen ${archive.label}`}
             onClick={() => deletion.begin(archive)}
         >
-            Hapus Permanen…
+            Hapus Permanen
         </Button>
     );
 }
@@ -50,7 +50,9 @@ const columns = helper.columns([
         id: 'parent',
         header: 'Induk',
         cell: ({ row }) => (
-            <span className="block max-w-48 break-words whitespace-normal">{row.original.parent?.label ?? '—'}</span>
+            <span className="block max-w-48 wrap-break-word whitespace-normal">
+                {row.original.parent?.label ?? '—'}
+            </span>
         ),
     }),
     helper.accessor('items_count', {
@@ -99,14 +101,14 @@ function ArchiveLink({
                 render={<Link href={restoreAction ? `${href.url}#restore` : href} />}
                 aria-label={`${restoreAction ? 'Pulihkan' : 'Detail'} ${archive.label}`}
             >
-                {restoreAction ? 'Pulihkan…' : 'Detail'}
+                {restoreAction ? 'Pulihkan' : 'Detail'}
             </Button>
         );
     }
     return (
         <Link
             href={href}
-            className="block max-w-64 min-w-36 font-medium break-words whitespace-normal text-foreground underline-offset-4 hover:underline"
+            className="block max-w-64 min-w-36 font-medium wrap-break-word whitespace-normal text-foreground underline-offset-4 hover:underline"
         >
             {archive.label}
         </Link>
