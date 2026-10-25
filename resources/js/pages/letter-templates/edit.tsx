@@ -95,7 +95,7 @@ export default function LetterTemplateEdit({
                     </Card>
                     {resource.data.draft && (
                         <LetterTemplateForm
-                            key={`${resource.data.draft.id}-${activeCard === 'identity'}`}
+                            key={`identity-${resource.data.draft.id}-${activeCard === 'identity'}`}
                             classifications={classifications}
                             editing={activeCard === 'identity'}
                             onEdit={() => setActiveCard('identity')}
@@ -107,7 +107,7 @@ export default function LetterTemplateEdit({
                     )}
                     {configuration && (
                         <LetterTemplateConfigurationForm
-                            key={`${configuration.data.id}-${activeCard === 'configuration'}`}
+                            key={`configuration-${configuration.data.id}-${activeCard === 'configuration'}`}
                             templateId={resource.data.id}
                             configuration={configuration.data}
                             editing={activeCard === 'configuration'}
@@ -120,7 +120,7 @@ export default function LetterTemplateEdit({
                     )}
                     {document && (
                         <LetterTemplateDocumentForm
-                            key={`${document.data.id}-${activeCard === 'document'}`}
+                            key={`document-${document.data.id}-${activeCard === 'document'}`}
                             templateId={resource.data.id}
                             document={document.data}
                             editing={activeCard === 'document'}

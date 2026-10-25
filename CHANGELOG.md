@@ -43,6 +43,7 @@
 
 ### Diubah
 
+- Key kartu identitas, konfigurasi, dan DOCX Templat Surat dibedakan berdasarkan jenis kartu agar tidak mengganda saat Edit/Simpan/Batal meskipun memakai UUID versi yang sama. Reset form saat keluar dari mode edit tetap dipertahankan.
 - Kartu kelola Templat Surat dibuka dalam mode baca dan hanya satu kartu dapat diedit; Simpan/Batal hanya tampil saat edit. Batal memulihkan form tanpa navigasi, tombol urutan memakai ikon outline kecil, dan hapus memakai destructive.
 - Unduh DOCX Contoh versi saat ini hanya ditampilkan sekali secara ringkas pada ringkasan atas. Panduan memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Generate hasil DOCX tetap mengikuti tahap berikutnya.
 
