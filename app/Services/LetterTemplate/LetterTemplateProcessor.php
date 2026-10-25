@@ -45,7 +45,7 @@ class LetterTemplateProcessor extends TemplateProcessor
                 $name = $match[1];
                 $base = preg_replace('/#\d+$/', '', $name);
                 if (!array_key_exists($name, $values) && !array_key_exists($base, $values)) {
-                    throw ValidationException::withMessages(['test' => "Placeholder {$name} tidak dapat diisi. Periksa kembali konfigurasi dan DOCX."]);
+                    throw ValidationException::withMessages(['test' => "Variabel {$name} tidak dapat diisi. Periksa Nama Variabel pada Konfigurasi Formulir Surat dan dokumen, lalu jalankan validasi ulang."]);
                 }
                 $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/u', '', $values[$name] ?? $values[$base]);
                 $escaped = htmlspecialchars($text, ENT_QUOTES | ENT_XML1, 'UTF-8');

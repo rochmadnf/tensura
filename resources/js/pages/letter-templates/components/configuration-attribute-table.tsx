@@ -147,13 +147,13 @@ export function ConfigurationAttributeTable(props: AttributeTableProps) {
         >
             <summary className="cursor-pointer py-2 font-medium">Atribut Pegawai ({props.attributes.length})</summary>
             <p className="my-3 text-sm text-muted-foreground">
-                Semua placeholder mengambil data dari pegawai yang sama. Pilih nama beserta gelar atau nama tanpa gelar
+                Semua variabel mengambil data dari pegawai yang sama. Pilih nama beserta gelar atau nama tanpa gelar
                 sesuai kebutuhan surat. Teks alternatif digunakan jika atribut kosong.
             </p>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {['Atribut', 'Placeholder', 'Teks Alternatif', 'Format tanggal', 'Aksi']
+                        {['Atribut', 'Nama Variabel', 'Teks Alternatif', 'Format tanggal', 'Aksi']
                             .filter((label) => props.editable || label !== 'Aksi')
                             .map((label) => (
                                 <TableHead key={label}>{label}</TableHead>

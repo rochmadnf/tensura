@@ -223,7 +223,7 @@ export function LetterTemplateConfigurationForm({
                                             )}
                                             {variable.is_multiple && (
                                                 <p className="mt-2 text-xs text-muted-foreground">
-                                                    Gunakan placeholder kolom di bawah untuk tabel berulang.
+                                                    Gunakan variabel kolom di bawah untuk tabel berulang.
                                                 </p>
                                             )}
                                         </TableCell>
@@ -285,7 +285,7 @@ export function LetterTemplateConfigurationForm({
                                                     />
                                                     <DeleteConfigurationItem
                                                         label={`variabel ${variable.label}`}
-                                                        description="Variabel dan pengaturan atributnya akan dihapus. Sesuaikan placeholder DOCX dan validasi ulang dokumen setelah menghapus."
+                                                        description="Variabel dan pengaturan atributnya akan dihapus. Sesuaikan variabel DOCX dan validasi ulang dokumen setelah menghapus."
                                                         disabled={blocked}
                                                         onDelete={(done) =>
                                                             mutate(
@@ -376,7 +376,7 @@ export function LetterTemplateConfigurationForm({
             <FormCard
                 title="Penandatangan"
                 step={3}
-                description="Tentukan kandidat pegawai aktif pada setiap slot. Token penandatangan opsional; perubahan jumlah slot dapat mengubah nama placeholder pada DOCX."
+                description="Tentukan kandidat pegawai aktif pada setiap slot. Token penandatangan opsional; perubahan jumlah slot dapat mengubah nama variabel pada DOCX."
                 action={
                     configuration.editable ? (
                         <CardAction
@@ -401,7 +401,7 @@ export function LetterTemplateConfigurationForm({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {['Slot', 'Placeholder', 'Kandidat Penandatangan', 'Aksi']
+                            {['Slot', 'Nama Variabel', 'Kandidat Penandatangan', 'Aksi']
                                 .filter((label) => configuration.editable || label !== 'Aksi')
                                 .map((label) => (
                                     <TableHead key={label}>{label}</TableHead>
@@ -466,7 +466,7 @@ export function LetterTemplateConfigurationForm({
                                                     />
                                                     <DeleteConfigurationItem
                                                         label={`penandatangan slot ${index + 1}`}
-                                                        description="Slot dan pengaturan atributnya akan dihapus. Nomor slot dan placeholder penandatangan dapat berubah. Sesuaikan DOCX dan lakukan validasi ulang."
+                                                        description="Slot dan pengaturan atributnya akan dihapus. Nomor slot dan variabel penandatangan dapat berubah. Sesuaikan DOCX dan lakukan validasi ulang."
                                                         disabled={blocked}
                                                         onDelete={(done) =>
                                                             mutate(

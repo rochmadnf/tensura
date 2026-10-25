@@ -114,7 +114,7 @@ export function ConfigurationSlotRow({
                                 onSuccess: () => {
                                     onClose();
                                     gooeyToast.success('Berhasil', {
-                                        description: 'Penandatangan disimpan. Periksa kembali placeholder DOCX.',
+                                        description: 'Penandatangan disimpan. Periksa kembali variabel DOCX.',
                                     });
                                 },
                             })

@@ -66,7 +66,7 @@ class LetterTemplateConfigurationRules
             'variables.*.columns' => 'Kolom Tabel',
             'variables.*.columns.*.id' => 'Identitas Kolom',
             'variables.*.columns.*.source_attribute' => 'Atribut Kolom',
-            'variables.*.columns.*.placeholder' => 'Placeholder Kolom',
+            'variables.*.columns.*.placeholder' => 'Nama Variabel Kolom',
             'variables.*.default_text' => 'Teks Alternatif Variabel',
             'variables.*.columns.*.date_format' => 'Format Tanggal Kolom',
             'variables.*.employee_attributes' => 'Pengaturan Atribut Pegawai',
@@ -294,10 +294,10 @@ class LetterTemplateConfigurationRules
     private function claimPlaceholder(Validator $validator, array &$placeholders, string $name, string $path): void
     {
         if (strlen($name) > config('letter-templates.placeholders.max_length')) {
-            $validator->errors()->add($path, "Placeholder otomatis {$name} melebihi batas panjang placeholder.");
+            $validator->errors()->add($path, "Nama variabel otomatis {$name} melebihi batas panjang nama variabel.");
         }
         if (isset($placeholders[$name])) {
-            $validator->errors()->add($path, "Placeholder {$name} sudah digunakan dalam versi ini.");
+            $validator->errors()->add($path, "Nama variabel {$name} sudah digunakan dalam versi ini.");
 
             return;
         }

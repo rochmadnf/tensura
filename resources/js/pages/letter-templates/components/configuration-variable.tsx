@@ -98,7 +98,7 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                         <FieldSet>
                             <FieldLegend>Kolom Tabel Berulang</FieldLegend>
                             <FieldDescription>
-                                Letakkan placeholder setiap kolom pada satu baris tabel di DOCX.
+                                Letakkan variabel setiap kolom pada satu baris tabel di DOCX.
                             </FieldDescription>
                             <FieldError>{errors[`${prefix}.columns`]}</FieldError>
                             <FieldGroup>
@@ -133,7 +133,7 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                                             </Field>
                                             <Field data-invalid={!!errors[`${path}.placeholder`]}>
                                                 <FieldLabel htmlFor={`${path}.placeholder`}>
-                                                    Placeholder Kolom {columnIndex + 1}
+                                                    Nama Variabel Kolom {columnIndex + 1}
                                                 </FieldLabel>
                                                 <Input
                                                     id={`${path}.placeholder`}

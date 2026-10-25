@@ -1,3 +1,4 @@
+import { DocumentValidationResult } from './document-validation-result';
 import { Download04Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { TemplateEditAction } from './edit-action';
@@ -81,12 +82,13 @@ export function LetterTemplateDocumentForm({
     };
     function validateSource() {
         if (busy || !editable || !document.source) return;
+        validation.clearErrors();
         validation.post(validate(args).url, {
             preserveScroll: true,
             onStart: () => onProcessingChange(true),
             onFinish: () => onProcessingChange(false),
             onError: showError,
-            onSuccess: () => gooeyToast.success('Berhasil', { description: 'Struktur dan placeholder DOCX valid.' }),
+            onSuccess: () => gooeyToast.success('Berhasil', { description: 'Struktur dan variabel DOCX valid.' }),
         });
     }
     return (
@@ -135,23 +137,12 @@ export function LetterTemplateDocumentForm({
                         ? `${document.source.name} · ${Math.ceil(document.source.size / 1024)} KB`
                         : 'Belum ada DOCX sumber.'}
                 </p>
-                {document.errors.length > 0 && (
-                    <FieldError>
-                        <ul>
-                            {document.errors.map((error) => (
-                                <li key={error}>{error}</li>
-                            ))}
-                        </ul>
-                    </FieldError>
+                {(document.state === 'valid' || document.state === 'invalid') && (
+                    <DocumentValidationResult errors={document.errors} names={document.placeholders} />
                 )}
                 {document.state === 'stale' && (
                     <p className="text-sm text-muted-foreground">
                         Konfigurasi berubah. Jalankan validasi ulang sebelum menguji dokumen.
-                    </p>
-                )}
-                {document.placeholders.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                        Placeholder ditemukan: {document.placeholders.join(', ')}.
                     </p>
                 )}
                 {editable && editing && (
@@ -202,10 +193,14 @@ export function LetterTemplateDocumentForm({
                             <HugeiconsIcon icon={CheckmarkCircle02Icon} data-icon="inline-start" aria-hidden="true" />
                             {validation.processing ? 'Memvalidasi...' : 'Validasi DOCX'}
                         </Button>
-                        <FieldError>{validation.errors.docx}</FieldError>
+                        <FieldError>
+                            {validation.errors.docx && !document.errors.includes(validation.errors.docx)
+                                ? validation.errors.docx
+                                : null}
+                        </FieldError>
                         <FieldDescription>
-                            Validasi ini memeriksa struktur dan placeholder. Lanjutkan generate dan pemeriksaan visual
-                            pada kartu di bawah, lalu lanjutkan publikasi setelah seluruh pemeriksaan terpenuhi.
+                            Validasi ini memeriksa struktur dan variabel. Lanjutkan generate dan pemeriksaan visual pada
+                            kartu di bawah, lalu lanjutkan publikasi setelah seluruh pemeriksaan terpenuhi.
                         </FieldDescription>
                     </Field>
                 )}

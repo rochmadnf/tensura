@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { LetterTemplateLifecycleCard, lifecycleOperationText } from './lifecycle-card';
 import { LetterTemplateVersionTimeline } from './version-timeline';
 import { LetterTemplateForm } from './letter-template-form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DocumentValidationResult } from './document-validation-result';
 import { Button } from '@/components/ui/button';
 import { FormCard } from '@/components/form-card';
 import { AlertDialog, AlertDialogFooter } from '@/components/ui/alert-dialog';
@@ -100,6 +102,81 @@ describe('Publication and version controls', () => {
             true,
         );
         expect(button(LetterTemplateLifecycleCard(props()), 'Publikasikan').props.disabled).toBe(false);
+    });
+    it('shows server checks as read-only indicators and follows updated results', () => {
+        const selected = lifecycle({
+            readiness: {
+                ready: false,
+                checks: [
+                    { key: 'validation', label: 'Validasi DOCX', passed: false, message: 'Perbaiki dokumen.' },
+                    { key: 'draft', label: 'Draft', passed: true, message: 'Siap dipublikasikan.' },
+                ],
+            },
+        });
+        const tree = LetterTemplateLifecycleCard(props({ lifecycle: selected }));
+        const checks = byType(tree, Checkbox);
+        expect(checks.map((item) => item.props.checked)).toEqual([false, true]);
+        expect(checks.every((item) => item.props.readOnly)).toBe(true);
+        expect(text(tree)).toContain('Belum siap');
+        expect(text(tree)).toContain('Perbaiki dokumen.');
+        selected.readiness.checks[0].passed = true;
+        expect(byType(LetterTemplateLifecycleCard(props({ lifecycle: selected })), Checkbox)[0].props.checked).toBe(
+            true,
+        );
+    });
+    it('keeps historical validation details separate from current configuration', () => {
+        const details = {
+            valid: false,
+            source_name: 'lama.docx',
+            errors: ['Variabel belum terdaftar.'],
+            placeholders: ['tujuan'],
+        };
+        const tree = LetterTemplateVersionTimeline({
+            templateId: 'template',
+            lifecycle: lifecycle(),
+            disabled: false,
+            initialAudits: {
+                data: [
+                    {
+                        id: 'event',
+                        operation: 'source.validated',
+                        description: 'Validasi gagal',
+                        occurred_at: '2026-10-25T00:00:00Z',
+                        actor: 'Admin',
+                        changes: [],
+                        validation_details: details,
+                    },
+                ],
+                previous_cursor: null,
+                next_cursor: null,
+            },
+        });
+        expect(byType(tree, DocumentValidationResult)[0].props).toEqual({ errors: details.errors, names: ['tujuan'] });
+        expect(text(tree)).toContain('lama.docx');
+        expect(text(tree)).toContain('Dokumen perlu diperbaiki');
+    });
+    it('explains missing details for legacy validation events', () => {
+        const tree = LetterTemplateVersionTimeline({
+            templateId: 'template',
+            lifecycle: lifecycle(),
+            disabled: false,
+            initialAudits: {
+                data: [
+                    {
+                        id: 'legacy',
+                        operation: 'source.validated',
+                        description: 'Validasi gagal',
+                        actor: 'Admin',
+                        changes: null,
+                        validation_details: null,
+                    },
+                ],
+                previous_cursor: null,
+                next_cursor: null,
+            },
+        });
+        expect(text(tree)).toContain('Rincian hasil pemeriksaan belum tersimpan untuk aktivitas ini.');
+        expect(byType(tree, DocumentValidationResult)).toHaveLength(0);
     });
     it('opens a confirmation without submitting and sends current version/result tokens after confirmation', () => {
         const current = props();

@@ -94,6 +94,34 @@ class LetterTemplateDocxTest extends TestCase
         $this->assertNull($stored->visually_confirmed_at);
     }
 
+    public function test_validation_history_keeps_each_result_after_repeated_failures_and_a_successful_repair(): void
+    {
+        Storage::fake('local');
+        $version = LetterTemplateVersion::factory()->create();
+        $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $this->docx('${tujuan}')])->assertSessionHasNoErrors();
+
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasErrors('docx');
+        $first = $version->audits()->where('operation', 'source.validated')->sole();
+        $expected = [
+            'source_name' => 'source.docx', 'valid' => false,
+            'errors' => ['Variabel tujuan belum terdaftar. Tambahkan pada Konfigurasi Formulir Surat atau sesuaikan nama variabel di dokumen.'],
+            'placeholders' => ['tujuan'],
+        ];
+        $this->assertSame($expected, $first->validation_details);
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasErrors('docx');
+        $this->assertSame(2, $version->audits()->where('operation', 'source.validated')->count());
+        $this->assertSame($expected, $version->audits()->latest('id')->firstOrFail()->validation_details);
+        LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'tujuan']);
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
+        $this->assertSame($expected, $first->fresh()->validation_details);
+        $success = $version->audits()->latest('id')->firstOrFail();
+        $this->assertSame(['source_name' => 'source.docx', 'valid' => true, 'errors' => [], 'placeholders' => ['tujuan']], $success->validation_details);
+        $this->getJson(route('lt.audits.index', $version->template->uuid))->assertOk()
+            ->assertJsonPath('data.0.validation_details.valid', true)
+            ->assertJsonPath('data.1.validation_details', $expected)
+            ->assertJsonPath('data.2.validation_details', $expected);
+    }
+
     public static function placeholderErrors(): array
     {
         return [['${tidak_dikenal}'], ['${belum_selesai'], ['${Nama Salah}'], ['${' . str_repeat('a', 101) . '}']];
@@ -132,7 +160,7 @@ class LetterTemplateDocxTest extends TestCase
         LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai', 'type' => 4, 'option_source' => 2, 'is_multiple' => false]);
         LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai_nip']);
         $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $this->docx('${pegawai_nip}')])->assertSessionHasNoErrors();
-        $this->post($this->route($version, 'validation.store'))->assertInvalid(['docx' => 'Konfigurasi memiliki placeholder yang bertabrakan. Perbaiki nama variabel atau kolom sebelum validasi.']);
+        $this->post($this->route($version, 'validation.store'))->assertInvalid(['docx' => 'Ada nama variabel yang digunakan lebih dari sekali dalam konfigurasi. Bedakan Nama Variabel atau Nama Variabel Kolom, lalu periksa ulang dokumen.']);
         $this->assertNull($version->fresh()->validated_at);
     }
 
@@ -326,7 +354,7 @@ class LetterTemplateDocxTest extends TestCase
         $file = $this->docx('Contoh', ['word/footnotes.xml' => '<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:footnote><w:p><w:r><w:t>${catatan}</w:t></w:r></w:p></w:footnote></w:footnotes>']);
         $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $file])->assertSessionHasNoErrors();
         $this->post($this->route($version, 'validation.store'))->assertInvalid(['docx']);
-        $this->assertStringContainsString('word/footnotes.xml', $version->fresh()->validation_result['errors'][0]);
+        $this->assertSame('Ada variabel pada catatan kaki. Pindahkan variabel ke isi surat, kepala halaman, atau kaki halaman.', $version->fresh()->validation_result['errors'][0]);
     }
 
     #[DataProvider('zipSpecialEntries')]

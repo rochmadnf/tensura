@@ -24,7 +24,7 @@ class LetterTemplateAuditTimelineTest extends TestCase
         LetterTemplateAudit::factory()->create();
         $this->actingAs(UserFactory::new()->create());
         $url = route('lt.audits.index', $version->template->uuid);
-        $first = $this->getJson($url)->assertOk()->assertJsonCount(10, 'data')->assertJsonPath('data.0.id', $audits->last()->uuid)->assertJsonPath('data.0.changes', null)->assertJsonPath('previous_cursor', null)->json();
+        $first = $this->getJson($url)->assertOk()->assertJsonCount(10, 'data')->assertJsonPath('data.0.id', $audits->last()->uuid)->assertJsonPath('data.0.changes', null)->assertJsonPath('data.0.validation_details', null)->assertJsonPath('previous_cursor', null)->json();
         $second = $this->getJson($url . '?cursor=' . urlencode($first['next_cursor']))->assertOk()->assertJsonCount(10, 'data')->json();
         $last = $this->getJson($url . '?cursor=' . urlencode($second['next_cursor']))->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('next_cursor', null)->json();
         $ids = [...array_column($first['data'], 'id'), ...array_column($second['data'], 'id'), ...array_column($last['data'], 'id')];

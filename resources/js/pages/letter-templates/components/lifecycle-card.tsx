@@ -1,3 +1,6 @@
+import { cn } from 'cn';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldLabel, FieldTitle, FieldDescription } from '@/components/ui/field';
 import { useRef, useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import {
@@ -180,19 +183,43 @@ export function LetterTemplateLifecycleCard({
                     </Badge>
                 </div>
                 {lifecycle.editable ? (
-                    <ul className="flex flex-col gap-3">
+                    <FieldGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         {lifecycle.readiness.checks.map((check) => (
-                            <li key={check.key} className="flex items-start gap-3">
-                                <Badge variant={check.passed ? 'secondary' : 'outline'}>
-                                    {check.passed ? 'Siap' : 'Belum'}
-                                </Badge>
-                                <div className="flex min-w-0 flex-col gap-1">
-                                    <p className="font-medium">{check.label}</p>
-                                    <p className="text-sm text-muted-foreground">{check.message}</p>
-                                </div>
-                            </li>
+                            <FieldLabel
+                                key={check.key}
+                                className={cn(
+                                    'relative p-0',
+                                    check.passed
+                                        ? 'border-success! bg-success/10! text-success-foreground'
+                                        : 'border-warning! bg-warning/10! text-warning-foreground',
+                                )}
+                            >
+                                <Field orientation="horizontal">
+                                    <Checkbox
+                                        checked={check.passed}
+                                        readOnly
+                                        aria-label={check.label}
+                                        aria-describedby={`publication-${check.key}`}
+                                        className={cn(
+                                            'absolute top-3 right-3 rounded-full',
+                                            check.passed
+                                                ? 'data-checked:border-success! data-checked:bg-success! data-checked:text-success-foreground!'
+                                                : 'border-warning',
+                                        )}
+                                    />
+                                    <div className="flex min-w-0 flex-col gap-2 pr-7">
+                                        <FieldTitle>{check.label}</FieldTitle>
+                                        <span className="text-xs font-medium">
+                                            {check.passed ? 'Siap' : 'Belum siap'}
+                                        </span>
+                                        <FieldDescription id={`publication-${check.key}`}>
+                                            {check.message}
+                                        </FieldDescription>
+                                    </div>
+                                </Field>
+                            </FieldLabel>
                         ))}
-                    </ul>
+                    </FieldGroup>
                 ) : (
                     <p className="text-sm text-muted-foreground">
                         {lifecycle.status === 3
@@ -240,14 +267,14 @@ export function LetterTemplateLifecycleCard({
                         </Button>
                     )}
                     {lifecycle.can_archive && (
-                        <Button type="button" variant="destructive" disabled={busy} onClick={() => open('archive')}>
+                        <Button type="button" variant="dark" disabled={busy} onClick={() => open('archive')}>
                             <HugeiconsIcon icon={Archive01Icon} data-icon="inline-start" aria-hidden="true" />
                             Arsipkan Draft
                         </Button>
                     )}
                     <Button
                         type="button"
-                        variant={isActive ? 'warning' : 'approve'}
+                        variant={isActive ? 'destructive' : 'approve'}
                         disabled={busy}
                         onClick={() => open('activation')}
                     >
@@ -275,7 +302,13 @@ export function LetterTemplateLifecycleCard({
                             </AlertDialogCancel>
                             <Button
                                 type="button"
-                                variant={operation === 'archive' ? 'destructive' : 'default'}
+                                variant={
+                                    operation === 'archive'
+                                        ? 'dark'
+                                        : operation === 'activation' && isActive
+                                          ? 'destructive'
+                                          : 'default'
+                                }
                                 disabled={busy || !operationAllowed}
                                 onClick={execute}
                             >

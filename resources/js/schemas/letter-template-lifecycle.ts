@@ -28,6 +28,13 @@ export type LetterTemplateLifecycle = {
     }[];
 };
 
+export type LetterTemplateValidationDetails = {
+    valid: boolean;
+    source_name: string | null;
+    errors: string[];
+    placeholders: string[];
+};
+
 export type LetterTemplateAudit = {
     id: string;
     version: number | null;
@@ -35,6 +42,7 @@ export type LetterTemplateAudit = {
     occurred_at: string;
     operation: string;
     description: string;
+    validation_details: LetterTemplateValidationDetails | null;
     changes: { field: string; label: string; before: string | null; after: string | null }[] | null;
 };
 export type LetterTemplateAuditPage = {

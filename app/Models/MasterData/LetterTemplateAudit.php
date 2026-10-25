@@ -15,7 +15,7 @@ class LetterTemplateAudit extends Model
     /** @use HasFactory<LetterTemplateAuditFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_template_id', 'version_id', 'actor_id', 'actor_uuid', 'actor_name', 'occurred_at', 'operation', 'description', 'changes'];
+    protected $fillable = ['letter_template_id', 'version_id', 'actor_id', 'actor_uuid', 'actor_name', 'occurred_at', 'operation', 'description', 'changes', 'validation_details'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -28,6 +28,7 @@ class LetterTemplateAudit extends Model
         return [
             'occurred_at' => 'datetime',
             'changes' => 'array',
+            'validation_details' => 'array',
         ];
     }
 

@@ -76,7 +76,7 @@ class BuildLetterTemplateExample
                 }
                 if ($variable->is_multiple) {
                     $section->addText(
-                        'Contoh tabel berulang: pertahankan satu baris contoh dengan placeholder kolom berikut. Jangan menggabungkan sel secara vertikal atau menaruh tabel ini pada header/footer.',
+                        'Contoh tabel berulang: pertahankan satu baris contoh dengan variabel kolom berikut. Jangan menggabungkan sel secara vertikal atau menaruh tabel ini pada header/footer.',
                     );
                     $table = $section->addTable(['borderSize' => 6, 'cellMargin' => 80]);
                     $table->addRow();
@@ -129,10 +129,10 @@ class BuildLetterTemplateExample
             foreach (
                 [
                     '1. Simpan identitas, variabel, pemetaan kolom, dan kandidat penandatangan di web app.',
-                    '2. Sesuaikan tata letak DOCX. Gunakan placeholder yang dikonfigurasi; variabel dan token penandatangan boleh digunakan sebagian. Slot tanpa token tidak perlu diisi saat generate.',
+                    '2. Sesuaikan tata letak DOCX. Gunakan variabel yang dikonfigurasi; variabel dan token penandatangan boleh digunakan sebagian. Slot tanpa token tidak perlu diisi saat generate.',
                     'Teks alternatif dipakai sebagai teks literal saat nilai kosong; tidak menggantikan isian wajib. Multiple opsional tanpa pilihan menghapus baris contoh, mempertahankan header/baris statis.',
                     'Format tanggal memakai pola PHP dengan bahasa aplikasi. Masa kerja ditampilkan sampai hari tanpa bagian nol, berdasarkan tanggal pemrosesan.',
-                    '3. Unggah DOCX sumber dan jalankan validasi struktur serta placeholder. Perbaiki pesan galat bila ada.',
+                    '3. Unggah DOCX sumber dan jalankan validasi struktur serta variabel. Perbaiki pesan galat bila ada.',
                     '4. Isi data contoh fiktif (misalnya Pegawai Contoh), generate hasil uji, buka DOCX, lalu konfirmasi pemeriksaan visual.',
                     '5. Publikasikan setelah validasi, generate uji, dan konfirmasi terpenuhi. Perubahan konfigurasi atau DOCX mengharuskan pemeriksaan ulang.',
                     'Panduan tidak memuat data pribadi kandidat pegawai. Admin berikutnya dapat mengunduh ulang panduan dari versi yang sama.',

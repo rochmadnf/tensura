@@ -25,6 +25,7 @@ class LetterTemplateAuditTimeline
             'data' => collect($page->items())->map(fn(LetterTemplateAudit $audit): array => [
                 'id' => $audit->uuid, 'version' => $audit->version?->version_number,
                 'actor' => $audit->actor_name, 'occurred_at' => $audit->occurred_at->toIso8601String(),
+                'validation_details' => $audit->validation_details,
                 'operation' => $audit->operation, 'description' => $audit->description, 'changes' => $audit->changes,
             ])->all(),
             'previous_cursor' => $page->previousCursor()?->encode(),

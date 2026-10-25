@@ -16,8 +16,11 @@ class RecordLetterTemplateAudit
         return app(LetterTemplateAuditChanges::class)->snapshot($template, $version);
     }
 
-    /** @param ?array<string, array{label: string, value: ?string}> $before */
-    public function record(LetterTemplate $template, ?LetterTemplateVersion $version, User $actor, string $operation, string $description, ?array $before = null): LetterTemplateAudit
+    /**
+     * @param  ?array<string, array{label: string, value: ?string}>  $before
+     * @param  ?array{valid: bool, source_name: ?string, errors: list<string>, placeholders: list<string>}  $validationDetails
+     */
+    public function record(LetterTemplate $template, ?LetterTemplateVersion $version, User $actor, string $operation, string $description, ?array $before = null, ?array $validationDetails = null): LetterTemplateAudit
     {
         if ($version !== null && $version->letter_template_id !== $template->id) {
             throw new InvalidArgumentException('Versi audit harus milik templat yang sama.');
@@ -38,6 +41,7 @@ class RecordLetterTemplateAudit
             'occurred_at' => now(),
             'operation' => $operation,
             'description' => $description,
+            'validation_details' => $validationDetails,
             'changes' => $after === null ? null : app(LetterTemplateAuditChanges::class)->diff($before, $after),
         ]);
     }
