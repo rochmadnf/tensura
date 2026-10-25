@@ -9,11 +9,13 @@ export function FormActions({
     processing,
     disabled = false,
     fullWidth = true,
+    onCancel,
 }: {
     cancelUrl: string;
     processing: boolean;
     disabled?: boolean;
     fullWidth?: boolean;
+    onCancel?: () => void;
 }) {
     const busy = processing || disabled;
     return (
@@ -31,10 +33,11 @@ export function FormActions({
             <Button
                 type="button"
                 className={fullWidth ? 'w-full' : undefined}
-                nativeButton={false}
+                nativeButton={!!onCancel}
                 variant="destructive"
                 disabled={busy}
-                render={<Link href={cancelUrl} />}
+                onClick={onCancel}
+                render={onCancel ? undefined : <Link href={cancelUrl} />}
             >
                 <HugeiconsIcon icon={XIcon} strokeWidth={2} data-icon="inline-start" aria-hidden="true" />
                 Batal

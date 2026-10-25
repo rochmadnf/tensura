@@ -14,6 +14,7 @@ use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateController;
+use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
@@ -48,6 +49,8 @@ Route::middleware('auth')->group(function () {
         ->parameters(['job-title' => 'jobTitle'])
         ->scoped(['jobTitle' => 'uuid'])
         ->names('jt');
+
+    Route::get('letter-templates/date-format', LetterTemplateDateFormatController::class)->name('lt.date-format');
 
     Route::prefix('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}')->scopeBindings()->whereUuid(['letterTemplate', 'version'])->group(function (): void {
         Route::post('source', [LetterTemplateSourceController::class, 'store'])->name('lt.source.store');

@@ -4,8 +4,12 @@
 
 ### Ditambahkan
 
+- Katalog bersama 25 atribut Pegawai untuk variabel tunggal, kolom tabel berulang, dan penandatangan; token atribut otomatis serta alias nama lengkap tetap tersedia. Pemetaan mencakup pangkat, golongan, masa kerja sampai hari, status, serta STR/SIP.
+- Fallback teks literal variabel tunggal/per atribut Pegawai dan format tanggal per atribut/kolom, disimpan relasional per versi. Format default `d-m-Y`, nama bulan/hari mengikuti locale aplikasi, dan input menyediakan bantuan pola PHP serta contoh dari backend.
+- Fingerprint konfigurasi mencakup fallback, format, locale, dan revisi kontrak katalog agar bukti lama harus diperiksa ulang tanpa menghapus DOCX sumber. Payload konfigurasi lama tetap dapat disimpan tanpa kehilangan pengaturan tambahan.
+
 - Upload/penggantian DOCX sumber privat per draft, unduhan terautentikasi, metadata ukuran/nama/SHA-256, dan pembersihan berkas gagal tanpa menimpa sumber versi historis.
-- Validasi struktur ZIP/XML dan placeholder DOCX, termasuk text run terpecah, header/footer, slot penandatangan wajib, dan baris tabel berulang. Bukti validasi terikat hash sumber serta konfigurasi; galat ditampilkan pada halaman kelola.
+- Validasi struktur ZIP/XML dan placeholder DOCX, termasuk text run terpecah, header/footer, token atribut penandatangan opsional, dan baris tabel berulang. Bukti validasi terikat hash sumber serta konfigurasi; galat ditampilkan pada halaman kelola.
 - Unduh DOCX Contoh sejak identitas draft disimpan, berdasarkan konfigurasi versi terbaru atau historis yang dipilih, dengan panduan pergantian admin dan tanpa mengambil data pribadi kandidat pegawai.
 - Konfigurasi teknis DOCX terpusat pada `config/letter-templates.php`; batas upload aplikasi 10 MB, batas dekompresi/XML/rasio ZIP, serta batas placeholder. Form upload memakai batas backend dan helper Wayfinder.
 
@@ -38,6 +42,9 @@
 - Pengujian Jabatan untuk autentikasi, pencarian literal, paginasi, validasi, persistensi, kontrak Resource, seeder, serta penolakan id numerik dan UUID yang tidak dikenal.
 
 ### Diubah
+
+- Kartu kelola Templat Surat dibuka dalam mode baca dan hanya satu kartu dapat diedit; Simpan/Batal hanya tampil saat edit. Batal memulihkan form tanpa navigasi, tombol urutan memakai ikon outline kecil, dan hapus memakai destructive.
+- Unduh DOCX Contoh versi saat ini hanya ditampilkan sekali secara ringkas pada ringkasan atas. Panduan memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Generate hasil DOCX tetap mengikuti tahap berikutnya.
 
 - Detail Pegawai disusun menjadi kartu ringkasan, data diri, pekerjaan, serta STR/SIP dengan kondisi kosong, tampilan responsif, dan dukungan mode gelap mengikuti tema yang ada.
 - Kolom jenis kelamin Pegawai menggunakan integer tetap 1/2; formulir dikelompokkan menjadi Data Diri, Data Kepegawaian, STR, dan SIP.

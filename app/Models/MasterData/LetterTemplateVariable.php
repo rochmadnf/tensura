@@ -18,7 +18,7 @@ class LetterTemplateVariable extends Model
     /** @use HasFactory<LetterTemplateVariableFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['version_id', 'name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple'];
+    protected $fillable = ['version_id', 'name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple', 'default_text'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -50,5 +50,10 @@ class LetterTemplateVariable extends Model
     public function columns(): HasMany
     {
         return $this->hasMany(LetterTemplateVariableColumn::class, 'variable_id')->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function employeeAttributes(): HasMany
+    {
+        return $this->hasMany(LetterTemplateVariableEmployeeAttribute::class, 'variable_id')->orderBy('source_attribute');
     }
 }

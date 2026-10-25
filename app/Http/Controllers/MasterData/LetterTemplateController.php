@@ -17,6 +17,7 @@ use App\Models\MasterData\Employee;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\ReferenceGroup;
+use App\Services\LetterTemplate\EmployeeAttributeCatalog;
 use App\Services\LetterTemplate\SaveLetterTemplateIdentity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -74,7 +75,7 @@ class LetterTemplateController extends Controller
         $letterTemplate->load(['activeVersion', 'displayVersion.letterNumber', 'draftVersion.letterNumber']);
 
         $version = $letterTemplate->draftVersion ?? $letterTemplate->displayVersion;
-        $version?->load(['variables.referenceGroup', 'variables.columns', 'signerSlots.candidates.employee']);
+        $version?->load(['variables.referenceGroup', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
         $version?->loadExists(['audits as configuration_saved' => fn(Builder $query): Builder => $query->where('operation', 'configuration.updated')]);
 
         return inertia('letter-templates/edit', [
@@ -86,6 +87,7 @@ class LetterTemplateController extends Controller
             'documentUploadLimitKb' => config('letter-templates.max_upload_kb'),
             'documentVersions' => $letterTemplate->versions()->orderByDesc('version_number')->get(['uuid', 'version_number', 'status', 'source_path'])->map(fn(LetterTemplateVersion $item): array => ['id' => $item->uuid, 'number' => $item->version_number, 'status' => $item->status->label(), 'has_source' => $item->source_path !== null])->all(),
             'configurationOptions' => [
+                'employeeAttributes' => EmployeeAttributeCatalog::options(),
                 'types' => LetterTemplateVariableTypeEnum::options(),
                 'sources' => LetterTemplateOptionSourceEnum::options(),
                 'columns' => collect(LetterTemplateOptionSourceEnum::cases())->mapWithKeys(fn(LetterTemplateOptionSourceEnum $source): array => [$source->value => $source->columnOptions()])->all(),

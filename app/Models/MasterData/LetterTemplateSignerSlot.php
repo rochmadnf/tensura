@@ -40,4 +40,9 @@ class LetterTemplateSignerSlot extends Model
     {
         return $this->hasMany(LetterTemplateSignerCandidate::class, 'slot_id');
     }
+
+    public function employeeAttributes(): HasMany
+    {
+        return $this->hasMany(LetterTemplateSignerEmployeeAttribute::class, 'slot_id')->orderBy('source_attribute');
+    }
 }

@@ -146,7 +146,7 @@ class LetterTemplateConfigurationTest extends TestCase
 
     public static function invalidColumnAttributes(): array
     {
-        return [[1, 'name'], [2, 'content'], [2, 'gender'], [2, 'str_number'], [2, 'sip_number']];
+        return [[1, 'name'], [2, 'content'], [2, 'id'], [2, 'uuid'], [2, 'created_at']];
     }
 
     #[DataProvider('placeholderCollisions')]

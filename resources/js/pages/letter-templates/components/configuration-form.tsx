@@ -1,3 +1,7 @@
+import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { EmployeeAttributeFields } from './employee-attribute-fields';
+import { TemplateEditAction } from './edit-action';
 import { type SubmitEventHandler } from 'react';
 import { FormCard } from '@/components/form-card';
 import { FormActions } from '@/components/form-actions';
@@ -31,19 +35,29 @@ export function LetterTemplateConfigurationForm({
     options,
     disabled: externalDisabled = false,
     onProcessingChange,
+    editing = false,
+    onEdit,
+    onClose,
 }: {
     templateId: string;
     configuration: LetterTemplateConfiguration;
     options: ConfigurationOptions;
     disabled?: boolean;
     onProcessingChange?: (processing: boolean) => void;
+    editing?: boolean;
+    onEdit: () => void;
+    onClose: () => void;
 }) {
     const { form, submit } = useValibotForm(letterTemplateConfigurationSchema, {
         variables: configuration.variables,
         signer_slots:
             configuration.signer_slots.length === 0 && !configuration.has_configuration && configuration.editable
-                ? [{ id: null, candidates: [] }]
-                : configuration.signer_slots.map(({ id, candidates }) => ({ id, candidates })),
+                ? [{ id: null, candidates: [], employee_attributes: [] }]
+                : configuration.signer_slots.map(({ id, candidates, employee_attributes }) => ({
+                      id,
+                      candidates,
+                      employee_attributes,
+                  })),
     });
     const disabled = externalDisabled || form.processing || !configuration.editable;
     const errors: Record<string, string | undefined> = form.errors;
@@ -59,10 +73,15 @@ export function LetterTemplateConfigurationForm({
             onFinish: () => onProcessingChange?.(false),
             onError: showError,
             onSuccess: (page) => {
+                onClose();
                 const saved = page.props.configuration as { data: LetterTemplateConfiguration };
                 form.setData({
                     variables: saved.data.variables,
-                    signer_slots: saved.data.signer_slots.map(({ id, candidates }) => ({ id, candidates })),
+                    signer_slots: saved.data.signer_slots.map(({ id, candidates, employee_attributes }) => ({
+                        id,
+                        candidates,
+                        employee_attributes,
+                    })),
                 });
                 gooeyToast.success('Berhasil', {
                     description: 'Konfigurasi disimpan. Periksa kembali DOCX sebelum publikasi.',
@@ -84,11 +103,100 @@ export function LetterTemplateConfigurationForm({
         form.setData('variables', variables);
         form.clearErrors();
     }
+    if (!editing) {
+        return (
+            <FormCard
+                title="Konfigurasi Variabel dan Penandatangan"
+                description="Konfigurasi tersimpan. Salin token yang dibutuhkan ke DOCX."
+                action={
+                    configuration.editable ? (
+                        <TemplateEditAction label="konfigurasi" disabled={externalDisabled} onClick={onEdit} />
+                    ) : undefined
+                }
+            >
+                <FieldGroup>
+                    {configuration.warnings.map((warning) => (
+                        <FieldError key={`${warning.slot}-${warning.employee}`}>
+                            {warning.name} pada slot {warning.slot} sudah tidak aktif. Ganti atau hapus kandidat sebelum
+                            publikasi.
+                        </FieldError>
+                    ))}
+                    {configuration.variables.length === 0 && (
+                        <p className="text-sm text-muted-foreground">Belum ada variabel.</p>
+                    )}
+                    {configuration.variables.map((variable) => (
+                        <FieldGroup key={variable.id}>
+                            <p className="text-sm font-medium">
+                                {variable.label} · {options.types.find((type) => type.id === variable.type)?.label} ·{' '}
+                                {variable.is_required ? 'Wajib' : 'Opsional'}
+                            </p>
+                            {variable.is_multiple ? (
+                                variable.columns.map((column) => (
+                                    <div key={column.id}>
+                                        <CopyPlaceholder name={column.placeholder} />
+                                        <p className="text-sm text-muted-foreground">
+                                            {
+                                                options.columns[variable.option_source ?? 0]?.find(
+                                                    (item) => item.id === column.source_attribute,
+                                                )?.label
+                                            }
+                                            {column.date_format ? ` · ${column.date_format}` : ''}
+                                        </p>
+                                    </div>
+                                ))
+                            ) : (
+                                <CopyPlaceholder name={variable.name} />
+                            )}
+                            {variable.default_text && <p className="text-sm">Fallback: {variable.default_text}</p>}
+                            {variable.option_source === 2 && !variable.is_multiple && (
+                                <EmployeeAttributeFields
+                                    prefix={variable.name}
+                                    path={`saved-variable-${variable.id}`}
+                                    attributes={options.employeeAttributes}
+                                    settings={variable.employee_attributes}
+                                    disabled
+                                    errors={{}}
+                                    readOnly
+                                />
+                            )}
+                        </FieldGroup>
+                    ))}
+                    {configuration.signer_slots.length === 0 && (
+                        <p className="text-sm text-muted-foreground">Tidak ada slot penandatangan aktif.</p>
+                    )}
+                    {configuration.signer_slots.map((slot, index) => (
+                        <FieldGroup key={slot.id}>
+                            <p className="text-sm font-medium">
+                                Kandidat Slot {index + 1}:{' '}
+                                {slot.candidates
+                                    .map(
+                                        (id) =>
+                                            options.employees.find((employee) => employee.id === id)?.label ??
+                                            configuration.warnings.find((warning) => warning.employee === id)?.name ??
+                                            'Tidak tersedia',
+                                    )
+                                    .join(', ')}
+                            </p>
+                            <CopyPlaceholder name={slot.placeholder} />
+                            <EmployeeAttributeFields
+                                prefix={slot.placeholder}
+                                path={`saved-slot-${slot.id}`}
+                                attributes={options.employeeAttributes}
+                                settings={slot.employee_attributes}
+                                disabled
+                                errors={{}}
+                                readOnly
+                            />
+                        </FieldGroup>
+                    ))}
+                </FieldGroup>
+            </FormCard>
+        );
+    }
     return (
         <FormCard
             title="Konfigurasi Variabel dan Penandatangan"
             description="Atur isian surat dan kandidat untuk setiap slot, lalu simpan konfigurasi. Gunakan placeholder pada DOCX."
-            cancelUrl={lt.index().url}
             disabled={externalDisabled || form.processing}
         >
             <form noValidate onSubmit={handleSubmit}>
@@ -157,10 +265,13 @@ export function LetterTemplateConfigurationForm({
                                                 reference_group: null,
                                                 is_multiple: false,
                                                 columns: [],
+                                                default_text: null,
+                                                employee_attributes: [],
                                             },
                                         ])
                                     }
                                 >
+                                    <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
                                     Tambah Variabel
                                 </Button>
                             )}
@@ -170,7 +281,8 @@ export function LetterTemplateConfigurationForm({
                         <FieldLegend>Penandatangan</FieldLegend>
                         <FieldDescription>
                             Setiap slot aktif wajib memiliki kandidat pegawai aktif. Hapus slot jika penandatangan tidak
-                            diperlukan. Jika jumlah slot berubah, sesuaikan placeholder di DOCX.
+                            diperlukan. Token penandatangan bersifat opsional. Jika jumlah slot berubah, sesuaikan
+                            placeholder di DOCX.
                         </FieldDescription>
                         <FieldError>{errors.signer_slots}</FieldError>
                         <FieldGroup>
@@ -228,7 +340,7 @@ export function LetterTemplateConfigurationForm({
                                                 <span>{warning.name} — Tidak aktif</span>
                                                 <Button
                                                     type="button"
-                                                    variant="outline"
+                                                    variant="destructive"
                                                     size="sm"
                                                     disabled={disabled}
                                                     onClick={() =>
@@ -237,6 +349,11 @@ export function LetterTemplateConfigurationForm({
                                                         )
                                                     }
                                                 >
+                                                    <HugeiconsIcon
+                                                        icon={Delete02Icon}
+                                                        data-icon="inline-start"
+                                                        aria-hidden="true"
+                                                    />
                                                     Hapus Kandidat
                                                 </Button>
                                             </div>
@@ -251,10 +368,30 @@ export function LetterTemplateConfigurationForm({
                                                     : `penandatangan_${index + 1}`
                                             }
                                         />
+                                        <EmployeeAttributeFields
+                                            prefix={
+                                                form.data.signer_slots.length === 1
+                                                    ? 'penandatangan'
+                                                    : `penandatangan_${index + 1}`
+                                            }
+                                            path={`signer_slots.${index}.employee_attributes`}
+                                            attributes={options.employeeAttributes}
+                                            settings={slot.employee_attributes}
+                                            disabled={disabled}
+                                            errors={errors}
+                                            onChange={(employee_attributes) =>
+                                                form.setData(
+                                                    'signer_slots',
+                                                    form.data.signer_slots.map((value, position) =>
+                                                        position === index ? { ...value, employee_attributes } : value,
+                                                    ),
+                                                )
+                                            }
+                                        />
                                         {configuration.editable && (
                                             <Button
                                                 type="button"
-                                                variant="outline"
+                                                variant="destructive"
                                                 disabled={disabled}
                                                 onClick={() => {
                                                     form.setData(
@@ -266,6 +403,11 @@ export function LetterTemplateConfigurationForm({
                                                     form.clearErrors();
                                                 }}
                                             >
+                                                <HugeiconsIcon
+                                                    icon={Delete02Icon}
+                                                    data-icon="inline-start"
+                                                    aria-hidden="true"
+                                                />
                                                 Hapus Slot {index + 1}
                                             </Button>
                                         )}
@@ -280,17 +422,23 @@ export function LetterTemplateConfigurationForm({
                                     onClick={() =>
                                         form.setData('signer_slots', [
                                             ...form.data.signer_slots,
-                                            { id: null, candidates: [] },
+                                            { id: null, candidates: [], employee_attributes: [] },
                                         ])
                                     }
                                 >
+                                    <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
                                     Tambah Slot
                                 </Button>
                             )}
                         </FieldGroup>
                     </FieldSet>
                     {configuration.editable && (
-                        <FormActions cancelUrl={lt.index().url} processing={form.processing} fullWidth={false} />
+                        <FormActions
+                            cancelUrl={lt.index().url}
+                            onCancel={onClose}
+                            processing={form.processing}
+                            fullWidth={false}
+                        />
                     )}
                 </FieldGroup>
             </form>

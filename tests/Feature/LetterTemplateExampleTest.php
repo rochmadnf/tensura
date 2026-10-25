@@ -13,6 +13,7 @@ use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVariableColumn;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\LetterTemplate\EmployeeAttributeCatalog;
 use App\Services\LetterTemplate\InspectLetterTemplateDocx;
 use App\Services\LetterTemplate\LetterTemplateProcessor;
 use App\Services\LetterTemplate\ValidateLetterTemplateDocx;
@@ -60,7 +61,11 @@ class LetterTemplateExampleTest extends TestCase
 
         $result = $this->example($version, true);
 
-        $this->assertSame(['pegawai_nama', 'pegawai_no', 'penandatangan', 'tujuan'], $result['variables']);
+        $expected = ['pegawai_nama', 'pegawai_no', 'tujuan', ...array_keys(EmployeeAttributeCatalog::tokens('penandatangan'))];
+        sort($expected);
+        $this->assertSame($expected, $result['variables']);
+        $this->assertContains('penandatangan_pangkat', $result['variables']);
+        $this->assertContains('penandatangan_masa_kerja', $result['variables']);
         $this->assertStringContainsString('Tujuan $ {bukan_placeholder} & Keterangan', $result['text']);
         $this->assertStringNotContainsString($employee->name, $result['text']);
         $this->assertStringNotContainsString($employee->nik, $result['text']);
@@ -88,6 +93,27 @@ class LetterTemplateExampleTest extends TestCase
         $this->assertSame($before, $history->fresh()->getAttributes());
         $this->assertModelExists($old);
         $this->assertSame('historical source', Storage::disk('local')->get('history.docx'));
+    }
+
+    public function test_scalar_employee_guide_contains_all_tokens_and_owner_settings_without_extra_placeholders(): void
+    {
+        Storage::fake('local');
+        $version = LetterTemplateVersion::factory()->create();
+        $variable = LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai', 'type' => LetterTemplateVariableTypeEnum::COMBOBOX, 'option_source' => LetterTemplateOptionSourceEnum::EMPLOYEE, 'is_multiple' => false]);
+        $variable->employeeAttributes()->create(['source_attribute' => 'nip', 'default_text' => 'NIP ${bukan_token}']);
+        $variable->employeeAttributes()->create(['source_attribute' => 'join_date', 'date_format' => 'd F Y']);
+        $this->actingAs(UserFactory::new()->create());
+        $result = $this->example($version, true);
+
+        $this->assertCount(26, $result['variables']);
+        $this->assertContains('pegawai_pangkat', $result['variables']);
+        $this->assertContains('pegawai_golongan', $result['variables']);
+        $this->assertContains('pegawai_masa_kerja_hari', $result['variables']);
+        $this->assertContains('pegawai_tanggal_terbit_sip', $result['variables']);
+        $this->assertNotContains('bukan_token', $result['variables']);
+        $this->assertStringContainsString('NIP $ {bukan_token}', $result['text']);
+        $this->assertStringContainsString('format d F Y', $result['text']);
+        $this->assertTrue($result['valid']);
     }
 
     private function example(LetterTemplateVersion $version, bool $validate = false): array

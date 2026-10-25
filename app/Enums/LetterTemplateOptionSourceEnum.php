@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Services\LetterTemplate\EmployeeAttributeCatalog;
+
 enum LetterTemplateOptionSourceEnum: int
 {
     case REFERENCE = 1;
@@ -15,15 +17,12 @@ enum LetterTemplateOptionSourceEnum: int
         };
     }
 
-    /** @return list<array{id: string, label: string}> */
+    /** @return list<array{id: string, label: string, suffix?: string, type?: string}> */
     public function columnOptions(): array
     {
         return match ($this) {
             self::REFERENCE => [['id' => 'row_number', 'label' => 'Nomor urut'], ['id' => 'content', 'label' => 'Isi item']],
-            self::EMPLOYEE => [
-                ['id' => 'row_number', 'label' => 'Nomor urut'], ['id' => 'name', 'label' => 'Nama beserta gelar'],
-                ['id' => 'nip', 'label' => 'NIP'], ['id' => 'job_title', 'label' => 'Jabatan'],
-            ],
+            self::EMPLOYEE => [['id' => 'row_number', 'label' => 'Nomor urut'], ...EmployeeAttributeCatalog::options()],
         };
     }
 

@@ -1,3 +1,5 @@
+import { Download04Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +32,7 @@ export default function LetterTemplateEdit({
     documentVersions: LetterTemplateDocumentVersion[];
 }) {
     const [isSaving, setIsSaving] = useState(false);
+    const [activeCard, setActiveCard] = useState<'identity' | 'configuration' | 'document' | null>(null);
     return (
         <>
             <Head title={pageName}>
@@ -62,6 +65,8 @@ export default function LetterTemplateEdit({
                                     <Button
                                         nativeButton={false}
                                         variant="outline"
+                                        size="sm"
+                                        className="self-start"
                                         disabled={isSaving}
                                         render={
                                             <a
@@ -74,6 +79,11 @@ export default function LetterTemplateEdit({
                                             />
                                         }
                                     >
+                                        <HugeiconsIcon
+                                            icon={Download04Icon}
+                                            data-icon="inline-start"
+                                            aria-hidden="true"
+                                        />
                                         Unduh DOCX Contoh
                                     </Button>
                                 )}
@@ -85,31 +95,41 @@ export default function LetterTemplateEdit({
                     </Card>
                     {resource.data.draft && (
                         <LetterTemplateForm
-                            key={resource.data.draft.id}
+                            key={`${resource.data.draft.id}-${activeCard === 'identity'}`}
                             classifications={classifications}
+                            editing={activeCard === 'identity'}
+                            onEdit={() => setActiveCard('identity')}
+                            onClose={() => setActiveCard(null)}
                             letterTemplate={resource.data}
-                            disabled={isSaving}
+                            disabled={isSaving || (activeCard !== null && activeCard !== 'identity')}
                             onProcessingChange={setIsSaving}
                         />
                     )}
                     {configuration && (
                         <LetterTemplateConfigurationForm
-                            key={configuration.data.id}
+                            key={`${configuration.data.id}-${activeCard === 'configuration'}`}
                             templateId={resource.data.id}
                             configuration={configuration.data}
+                            editing={activeCard === 'configuration'}
+                            onEdit={() => setActiveCard('configuration')}
+                            onClose={() => setActiveCard(null)}
                             options={configurationOptions}
-                            disabled={isSaving}
+                            disabled={isSaving || (activeCard !== null && activeCard !== 'configuration')}
                             onProcessingChange={setIsSaving}
                         />
                     )}
                     {document && (
                         <LetterTemplateDocumentForm
+                            key={`${document.data.id}-${activeCard === 'document'}`}
                             templateId={resource.data.id}
                             document={document.data}
+                            editing={activeCard === 'document'}
+                            onEdit={() => setActiveCard('document')}
+                            onClose={() => setActiveCard(null)}
                             editable={configuration?.data.editable ?? false}
                             maxKb={documentUploadLimitKb}
                             versions={documentVersions}
-                            disabled={isSaving}
+                            disabled={isSaving || (activeCard !== null && activeCard !== 'document')}
                             onProcessingChange={setIsSaving}
                         />
                     )}

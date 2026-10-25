@@ -3,11 +3,14 @@
 namespace App\Services\LetterTemplate;
 
 use App\Enums\AsnStatusEnum;
+use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateSignerCandidate;
+use App\Models\MasterData\LetterTemplateSignerEmployeeAttribute;
 use App\Models\MasterData\LetterTemplateVariableColumn;
+use App\Models\MasterData\LetterTemplateVariableEmployeeAttribute;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\ReferenceGroup;
 use App\Models\MasterData\User;
@@ -18,7 +21,7 @@ class SaveLetterTemplateConfiguration
 {
     public function __construct(private RecordLetterTemplateAudit $audit, private InvalidateLetterTemplateEvidence $evidence) {}
 
-    /** @param array{variables: list<array{id?: ?string, name: string, label: string, type: int, is_required: bool, option_source?: ?int, reference_group?: ?string, is_multiple: bool, columns: list<array{id?: ?string, source_attribute: string, placeholder: string}>}>, signer_slots: list<array{id?: ?string, candidates: list<string>}>} $data */
+    /** @param array{variables: list<array{id?: ?string, name: string, label: string, type: int, is_required: bool, option_source?: ?int, reference_group?: ?string, is_multiple: bool, default_text?: ?string, employee_attributes?: ?list<array{source_attribute: string, default_text?: ?string, date_format?: ?string}>, columns: list<array{id?: ?string, source_attribute: string, placeholder: string, date_format?: ?string}>}>, signer_slots: list<array{id?: ?string, candidates: list<string>, employee_attributes?: ?list<array{source_attribute: string, default_text?: ?string, date_format?: ?string}>}>} $data */
     public function save(LetterTemplate $template, LetterTemplateVersion $version, array $data, User $actor): void
     {
         DB::transaction(function () use ($template, $version, $data, $actor): void {
@@ -27,7 +30,7 @@ class SaveLetterTemplateConfiguration
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['configuration' => 'Konfigurasi hanya dapat diubah pada draft yang belum digunakan.']);
             }
-            $version->load(['variables.columns', 'signerSlots.candidates']);
+            $version->load(['variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
             $this->validateChildOwnership($version, $data);
 
             $groupUuids = collect($data['variables'])->pluck('reference_group')->filter()->unique()->all();
@@ -86,26 +89,41 @@ class SaveLetterTemplateConfiguration
      */
     private function replaceConfiguration(LetterTemplateVersion $version, array $data, array $groups, array $employees): void
     {
+        $oldVariables = $version->variables->keyBy('uuid');
+        $oldSlots = $version->signerSlots->keyBy('uuid');
+        LetterTemplateVariableEmployeeAttribute::query()->whereIn('variable_id', $version->variables->modelKeys())->delete();
+        LetterTemplateSignerEmployeeAttribute::query()->whereIn('slot_id', $version->signerSlots->modelKeys())->delete();
         LetterTemplateVariableColumn::query()->whereIn('variable_id', $version->variables->modelKeys())->delete();
         $version->variables()->delete();
         LetterTemplateSignerCandidate::query()->whereIn('slot_id', $version->signerSlots->modelKeys())->delete();
         $version->signerSlots()->delete();
 
         foreach ($data['variables'] as $index => $variable) {
+            $old = $oldVariables->get($variable['id'] ?? '');
+            $employeeSingle = (int) ($variable['option_source'] ?? 0) === LetterTemplateOptionSourceEnum::EMPLOYEE->value && !$variable['is_multiple'];
+            $sameSource = $old !== null && $old->type->value === (int) $variable['type'] && $old->option_source?->value === (isset($variable['option_source']) ? (int) $variable['option_source'] : null) && $old->is_multiple === (bool) $variable['is_multiple'];
             $model = $version->variables()->make([
                 'name' => $variable['name'], 'label' => $variable['label'], 'type' => $variable['type'],
                 'is_required' => $variable['is_required'], 'sort_order' => $index,
                 'option_source' => $variable['option_source'] ?? null,
                 'reference_group_id' => isset($variable['reference_group']) ? $groups[$variable['reference_group']] : null,
                 'is_multiple' => $variable['is_multiple'],
+                'default_text' => $variable['is_multiple'] || $employeeSingle ? null : (array_key_exists('default_text', $variable) ? $variable['default_text'] : ($sameSource ? $old?->default_text : null)),
             ]);
             if (isset($variable['id'])) {
                 $model->uuid = $variable['id'];
             }
             $model->save();
+            if ($employeeSingle) {
+                $settings = array_key_exists('employee_attributes', $variable) ? ($variable['employee_attributes'] ?? []) : ($sameSource ? $old->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all() : []);
+                $model->employeeAttributes()->createMany($this->attributeSettings($settings));
+            }
             foreach ($variable['columns'] as $columnIndex => $column) {
+                $oldColumn = $old?->columns->firstWhere('uuid', $column['id'] ?? null);
+                $dateFormat = (int) ($variable['option_source'] ?? 0) === LetterTemplateOptionSourceEnum::EMPLOYEE->value && EmployeeAttributeCatalog::isDate($column['source_attribute']);
                 $columnModel = $model->columns()->make([
                     'source_attribute' => $column['source_attribute'], 'placeholder' => $column['placeholder'], 'sort_order' => $columnIndex,
+                    'date_format' => $dateFormat ? (array_key_exists('date_format', $column) ? $column['date_format'] : ($sameSource && $oldColumn?->source_attribute === $column['source_attribute'] ? $oldColumn?->date_format : null)) : null,
                 ]);
                 if (isset($column['id'])) {
                     $columnModel->uuid = $column['id'];
@@ -119,9 +137,20 @@ class SaveLetterTemplateConfiguration
                 $model->uuid = $slot['id'];
             }
             $model->save();
+            $settings = array_key_exists('employee_attributes', $slot) ? ($slot['employee_attributes'] ?? []) : ($oldSlots->get($slot['id'] ?? '')?->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all() ?? []);
+            $model->employeeAttributes()->createMany($this->attributeSettings($settings));
             foreach ($slot['candidates'] as $uuid) {
                 $model->candidates()->create(['employee_id' => $employees[$uuid]]);
             }
         }
+    }
+
+    /**
+     * @param  list<array{source_attribute: string, default_text?: ?string, date_format?: ?string}>  $settings
+     * @return list<array{source_attribute: string, default_text: ?string, date_format: ?string}>
+     */
+    private function attributeSettings(array $settings): array
+    {
+        return array_values(array_filter(EmployeeAttributeCatalog::settings($settings), fn(array $setting): bool => filled($setting['default_text']) || ($setting['date_format'] !== null && $setting['date_format'] !== 'd-m-Y')));
     }
 }

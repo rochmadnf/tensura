@@ -1,3 +1,6 @@
+import { Download04Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { TemplateEditAction } from './edit-action';
 import { useRef, type SubmitEventHandler } from 'react';
 import { useForm } from '@inertiajs/react';
 import { FormCard } from '@/components/form-card';
@@ -33,6 +36,9 @@ export function LetterTemplateDocumentForm({
     versions,
     disabled = false,
     onProcessingChange,
+    editing,
+    onEdit,
+    onClose,
 }: {
     templateId: string;
     document: LetterTemplateDocument;
@@ -41,6 +47,9 @@ export function LetterTemplateDocumentForm({
     versions: LetterTemplateDocumentVersion[];
     disabled?: boolean;
     onProcessingChange: (processing: boolean) => void;
+    editing: boolean;
+    onEdit: () => void;
+    onClose: () => void;
 }) {
     const input = useRef<HTMLInputElement>(null);
     const { form, submit } = useValibotForm(createLetterTemplateDocxSchema(maxKb), { docx: null });
@@ -60,6 +69,7 @@ export function LetterTemplateDocumentForm({
                 onFinish: () => onProcessingChange(false),
                 onError: showError,
                 onSuccess: () => {
+                    onClose();
                     form.reset();
                     if (input.current) input.current.value = '';
                     gooeyToast.success('Berhasil', { description: 'DOCX disimpan. Jalankan validasi dokumen.' });
@@ -82,19 +92,15 @@ export function LetterTemplateDocumentForm({
         <FormCard
             title="DOCX Sumber"
             description="Unduh contoh, sesuaikan dokumen, lalu unggah dan validasi. Panduan memakai konfigurasi yang sudah disimpan."
-            cancelUrl={lt.index().url}
+            action={
+                !editing && editable ? (
+                    <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} />
+                ) : undefined
+            }
             disabled={busy}
         >
             <FieldGroup>
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                        nativeButton={false}
-                        variant="outline"
-                        disabled={busy}
-                        render={<a href={exampleDownload(args).url} />}
-                    >
-                        Unduh DOCX Contoh
-                    </Button>
                     {document.source && (
                         <Button
                             nativeButton={false}
@@ -102,6 +108,7 @@ export function LetterTemplateDocumentForm({
                             disabled={busy}
                             render={<a href={sourceDownload(args).url} />}
                         >
+                            <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
                             Unduh DOCX Sumber
                         </Button>
                     )}
@@ -133,7 +140,7 @@ export function LetterTemplateDocumentForm({
                         Placeholder ditemukan: {document.placeholders.join(', ')}.
                     </p>
                 )}
-                {editable && (
+                {editable && editing && (
                     <form noValidate onSubmit={handleSubmit}>
                         <FieldGroup>
                             <Field data-invalid={!!form.errors.docx} data-disabled={busy}>
@@ -162,6 +169,7 @@ export function LetterTemplateDocumentForm({
                             </Field>
                             <FormActions
                                 cancelUrl={lt.index().url}
+                                onCancel={onClose}
                                 processing={form.processing}
                                 disabled={disabled || validation.processing}
                                 fullWidth={false}
@@ -174,9 +182,10 @@ export function LetterTemplateDocumentForm({
                         <Button
                             type="button"
                             variant="outline"
-                            disabled={busy || !document.source}
+                            disabled={busy || editing || !document.source}
                             onClick={validateSource}
                         >
+                            <HugeiconsIcon icon={CheckmarkCircle02Icon} data-icon="inline-start" aria-hidden="true" />
                             {validation.processing ? 'Memvalidasi...' : 'Validasi DOCX'}
                         </Button>
                         <FieldError>{validation.errors.docx}</FieldError>
@@ -210,6 +219,11 @@ export function LetterTemplateDocumentForm({
                                             />
                                         }
                                     >
+                                        <HugeiconsIcon
+                                            icon={Download04Icon}
+                                            data-icon="inline-start"
+                                            aria-hidden="true"
+                                        />
                                         Unduh Contoh
                                     </Button>
                                     {version.has_source && (
@@ -229,6 +243,11 @@ export function LetterTemplateDocumentForm({
                                                 />
                                             }
                                         >
+                                            <HugeiconsIcon
+                                                icon={Download04Icon}
+                                                data-icon="inline-start"
+                                                aria-hidden="true"
+                                            />
                                             Unduh Sumber
                                         </Button>
                                     )}

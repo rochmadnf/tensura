@@ -11,10 +11,12 @@ export function FormCard({
     cancelUrl,
     disabled = false,
     children,
+    action,
 }: {
     title: string;
     description: ReactNode;
-    cancelUrl: string;
+    cancelUrl?: string;
+    action?: ReactNode;
     disabled?: boolean;
     children: ReactNode;
 }) {
@@ -23,19 +25,22 @@ export function FormCard({
             <CardHeader>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
-                <CardAction>
-                    <Button
-                        type="button"
-                        nativeButton={false}
-                        variant="secondary"
-                        size="icon"
-                        disabled={disabled}
-                        aria-label="Tutup"
-                        render={<Link href={cancelUrl} />}
-                    >
-                        <HugeiconsIcon icon={XIcon} strokeWidth={2} aria-hidden="true" />
-                    </Button>
-                </CardAction>
+                {action ??
+                    (cancelUrl && (
+                        <CardAction>
+                            <Button
+                                type="button"
+                                nativeButton={false}
+                                variant="secondary"
+                                size="icon"
+                                disabled={disabled}
+                                aria-label="Tutup"
+                                render={<Link href={cancelUrl} />}
+                            >
+                                <HugeiconsIcon icon={XIcon} strokeWidth={2} aria-hidden="true" />
+                            </Button>
+                        </CardAction>
+                    ))}
             </CardHeader>
             <CardContent>{children}</CardContent>
         </Card>

@@ -15,7 +15,7 @@ class LetterTemplateVariableColumn extends Model
     /** @use HasFactory<LetterTemplateVariableColumnFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['variable_id', 'source_attribute', 'placeholder', 'sort_order'];
+    protected $fillable = ['variable_id', 'source_attribute', 'placeholder', 'sort_order', 'date_format'];
 
     /** @return list<string> */
     public function uniqueIds(): array

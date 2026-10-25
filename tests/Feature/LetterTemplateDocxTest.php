@@ -99,17 +99,41 @@ class LetterTemplateDocxTest extends TestCase
         return [['${tidak_dikenal}'], ['${belum_selesai'], ['${Nama Salah}'], ['${' . str_repeat('a', 101) . '}']];
     }
 
-    public function test_active_signer_placeholder_is_required_but_variables_may_be_unused(): void
+    public function test_signer_and_variable_placeholders_may_be_unused_and_signer_attributes_work_without_name(): void
     {
         Storage::fake('local');
         $version = LetterTemplateVersion::factory()->create();
         LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'tidak_dipakai']);
         LetterTemplateSignerSlot::factory()->for($version, 'version')->create();
         $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $this->docx('Tanpa penandatangan')])->assertSessionHasNoErrors();
-        $this->post($this->route($version, 'validation.store'))->assertInvalid(['docx' => 'Placeholder slot penandatangan wajib dicantumkan pada DOCX.']);
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
+        $this->assertTrue($version->fresh()->validation_result['valid']);
+        $this->post($this->route($version, 'source.store'), ['docx' => $this->docx('${penandatangan_pangkat} ${penandatangan_golongan}')])->assertSessionHasNoErrors();
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
         $this->post($this->route($version, 'source.store'), ['docx' => $this->docx('${penandatangan}')])->assertSessionHasNoErrors();
         $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
         $this->assertTrue($version->fresh()->validation_result['valid']);
+    }
+
+    public function test_scalar_employee_attribute_tokens_validate_in_document_headers_and_footers(): void
+    {
+        Storage::fake('local');
+        $version = LetterTemplateVersion::factory()->create();
+        LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai', 'type' => 4, 'option_source' => 2, 'is_multiple' => false]);
+        $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $this->docx('${pegawai_pangkat} ${pegawai_golongan} ${pegawai_masa_kerja} ${pegawai_tanggal_bergabung}', headerFooter: true)])->assertSessionHasNoErrors();
+        $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
+        $this->assertTrue($version->fresh()->validation_result['valid']);
+    }
+
+    public function test_existing_configuration_with_new_automatic_token_collision_must_be_fixed_before_validation(): void
+    {
+        Storage::fake('local');
+        $version = LetterTemplateVersion::factory()->create();
+        LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai', 'type' => 4, 'option_source' => 2, 'is_multiple' => false]);
+        LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pegawai_nip']);
+        $this->actingAs(UserFactory::new()->create())->post($this->route($version, 'source.store'), ['docx' => $this->docx('${pegawai_nip}')])->assertSessionHasNoErrors();
+        $this->post($this->route($version, 'validation.store'))->assertInvalid(['docx' => 'Konfigurasi memiliki placeholder yang bertabrakan. Perbaiki nama variabel atau kolom sebelum validasi.']);
+        $this->assertNull($version->fresh()->validated_at);
     }
 
     #[DataProvider('dangerousPackages')]

@@ -1,3 +1,6 @@
+import { ArrowUp01Icon, ArrowDown01Icon, Delete02Icon, Add01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { EmployeeAttributeFields, EmployeeDateFormat } from './employee-attribute-fields';
 import { OptionSelect } from '@/components/option-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -92,6 +95,8 @@ export function ConfigurationVariableFields({
                                 reference_group: null,
                                 is_multiple: false,
                                 columns: [],
+                                default_text: null,
+                                employee_attributes: [],
                             })
                         }
                         disabled={disabled}
@@ -123,6 +128,8 @@ export function ConfigurationVariableFields({
                                         option_source: value ? Number(value) : null,
                                         reference_group: null,
                                         columns: [],
+                                        default_text: null,
+                                        employee_attributes: [],
                                     })
                                 }
                                 disabled={disabled}
@@ -153,7 +160,12 @@ export function ConfigurationVariableFields({
                                 id={`${prefix}.is_multiple`}
                                 checked={variable.is_multiple}
                                 onCheckedChange={(checked) =>
-                                    patch({ is_multiple: checked, columns: checked ? variable.columns : [] })
+                                    patch({
+                                        is_multiple: checked,
+                                        columns: checked ? variable.columns : [],
+                                        default_text: null,
+                                        employee_attributes: [],
+                                    })
                                 }
                                 disabled={disabled}
                             />
@@ -192,7 +204,7 @@ export function ConfigurationVariableFields({
                                                         )}
                                                         value={column.source_attribute}
                                                         onValueChange={(value) =>
-                                                            patchColumn({ source_attribute: value })
+                                                            patchColumn({ source_attribute: value, date_format: null })
                                                         }
                                                         disabled={disabled}
                                                         aria-invalid={!!errors[`${path}.source_attribute`]}
@@ -215,11 +227,23 @@ export function ConfigurationVariableFields({
                                                     <FieldError>{errors[`${path}.placeholder`]}</FieldError>
                                                     <CopyPlaceholder name={column.placeholder} />
                                                 </Field>
+                                                {variable.option_source === 2 &&
+                                                    options.employeeAttributes.find(
+                                                        (attribute) => attribute.id === column.source_attribute,
+                                                    )?.type === 'date' && (
+                                                        <EmployeeDateFormat
+                                                            id={`${path}.date_format`}
+                                                            value={column.date_format}
+                                                            disabled={disabled}
+                                                            onChange={(date_format) => patchColumn({ date_format })}
+                                                            error={errors[`${path}.date_format`]}
+                                                        />
+                                                    )}
                                                 <div className="flex flex-wrap gap-2">
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        size="sm"
+                                                        size="icon-sm"
                                                         disabled={disabled || columnIndex === 0}
                                                         onClick={() => {
                                                             const columns = [...variable.columns];
@@ -231,12 +255,12 @@ export function ConfigurationVariableFields({
                                                         }}
                                                         aria-label={`Naikkan kolom ${columnIndex + 1}`}
                                                     >
-                                                        Naik
+                                                        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
                                                     </Button>
                                                     <Button
                                                         type="button"
                                                         variant="outline"
-                                                        size="sm"
+                                                        size="icon-sm"
                                                         disabled={
                                                             disabled || columnIndex === variable.columns.length - 1
                                                         }
@@ -250,11 +274,11 @@ export function ConfigurationVariableFields({
                                                         }}
                                                         aria-label={`Turunkan kolom ${columnIndex + 1}`}
                                                     >
-                                                        Turun
+                                                        <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
                                                     </Button>
                                                     <Button
                                                         type="button"
-                                                        variant="outline"
+                                                        variant="destructive"
                                                         size="sm"
                                                         disabled={disabled}
                                                         onClick={() =>
@@ -265,6 +289,11 @@ export function ConfigurationVariableFields({
                                                             })
                                                         }
                                                     >
+                                                        <HugeiconsIcon
+                                                            icon={Delete02Icon}
+                                                            data-icon="inline-start"
+                                                            aria-hidden="true"
+                                                        />
                                                         Hapus Kolom {columnIndex + 1}
                                                     </Button>
                                                 </div>
@@ -279,11 +308,17 @@ export function ConfigurationVariableFields({
                                             patch({
                                                 columns: [
                                                     ...variable.columns,
-                                                    { id: null, source_attribute: '', placeholder: '' },
+                                                    {
+                                                        id: null,
+                                                        source_attribute: '',
+                                                        placeholder: '',
+                                                        date_format: null,
+                                                    },
                                                 ],
                                             })
                                         }
                                     >
+                                        <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
                                         Tambah Kolom
                                     </Button>
                                 </FieldGroup>
@@ -291,26 +326,57 @@ export function ConfigurationVariableFields({
                         )}
                     </>
                 )}
+                {!variable.is_multiple &&
+                    (combo && variable.option_source === 2 ? (
+                        <EmployeeAttributeFields
+                            prefix={variable.name}
+                            path={`${prefix}.employee_attributes`}
+                            attributes={options.employeeAttributes}
+                            settings={variable.employee_attributes}
+                            disabled={disabled}
+                            errors={errors}
+                            onChange={(employee_attributes) => patch({ employee_attributes })}
+                        />
+                    ) : (
+                        <Field>
+                            <FieldLabel htmlFor={`${prefix}.default_text`}>Fallback teks</FieldLabel>
+                            <Input
+                                id={`${prefix}.default_text`}
+                                value={variable.default_text ?? ''}
+                                maxLength={10000}
+                                disabled={disabled}
+                                onChange={(event) => patch({ default_text: event.target.value || null })}
+                                placeholder="Kosong"
+                            />
+                            <FieldDescription>
+                                Teks literal pada DOCX jika isian opsional kosong. Tidak menggantikan isian wajib.
+                            </FieldDescription>
+                            <FieldError>{errors[`${prefix}.default_text`]}</FieldError>
+                        </Field>
+                    ))}
                 <div className="flex flex-wrap gap-2">
                     <Button
                         type="button"
                         variant="outline"
+                        size="icon-sm"
                         disabled={disabled || index === 0}
                         onClick={() => onMove(-1)}
                         aria-label={`Naikkan variabel ${variable.label || index + 1}`}
                     >
-                        Naik
+                        <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
+                        size="icon-sm"
                         disabled={disabled || index === count - 1}
                         onClick={() => onMove(1)}
                         aria-label={`Turunkan variabel ${variable.label || index + 1}`}
                     >
-                        Turun
+                        <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
                     </Button>
-                    <Button type="button" variant="outline" disabled={disabled} onClick={onRemove}>
+                    <Button type="button" variant="destructive" disabled={disabled} onClick={onRemove}>
+                        <HugeiconsIcon icon={Delete02Icon} data-icon="inline-start" aria-hidden="true" />
                         Hapus Variabel
                     </Button>
                 </div>

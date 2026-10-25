@@ -1,3 +1,4 @@
+import { TemplateEditAction } from './edit-action';
 import { OptionSelect } from '@/components/option-select';
 import { FormCard } from '@/components/form-card';
 import { FormActions } from '@/components/form-actions';
@@ -18,11 +19,17 @@ export function LetterTemplateForm({
     letterTemplate,
     disabled = false,
     onProcessingChange,
+    editing = true,
+    onEdit,
+    onClose,
 }: {
     classifications: ClassificationOption[];
     letterTemplate?: LetterTemplateResource;
     disabled?: boolean;
     onProcessingChange?: (processing: boolean) => void;
+    editing?: boolean;
+    onEdit?: () => void;
+    onClose?: () => void;
 }) {
     const pageName = letterTemplate ? 'Ubah Templat Surat' : 'Tambah Templat Surat';
     const { form, submit, bind } = useValibotForm(createLetterTemplateSchema(classifications), {
@@ -43,7 +50,9 @@ export function LetterTemplateForm({
             onError: () => {
                 gooeyToast.error('Galat', { description: 'Terdapat data yang tidak valid.' });
             },
+            preserveScroll: true,
             onSuccess: () => {
+                onClose?.();
                 gooeyToast.success('Berhasil', {
                     description: (
                         <p>
@@ -60,6 +69,30 @@ export function LetterTemplateForm({
         }
     };
 
+    if (letterTemplate && !editing) {
+        return (
+            <FormCard
+                title="Identitas Templat"
+                description="Nama dan klasifikasi draft yang tersimpan."
+                action={<TemplateEditAction label="identitas" disabled={disabled} onClick={() => onEdit?.()} />}
+            >
+                <dl className="flex flex-col gap-3 text-sm">
+                    <div>
+                        <dt className="text-muted-foreground">Nama</dt>
+                        <dd>{letterTemplate.name}</dd>
+                    </div>
+                    <div>
+                        <dt className="text-muted-foreground">Klasifikasi</dt>
+                        <dd>
+                            {classifications.find((item) => item.id === letterTemplate.draft?.letter_number)?.label ??
+                                'Belum tersedia'}
+                        </dd>
+                    </div>
+                </dl>
+            </FormCard>
+        );
+    }
+
     return (
         <FormCard
             title={pageName}
@@ -68,7 +101,7 @@ export function LetterTemplateForm({
                     ? 'Ubah identitas draft. Perubahan membatalkan bukti pemeriksaan sebelumnya.'
                     : 'Simpan nama dan klasifikasi untuk membuat draft awal.'
             }
-            cancelUrl={lt.index().url}
+            cancelUrl={letterTemplate ? undefined : lt.index().url}
             disabled={busy}
         >
             <form noValidate onSubmit={handleSubmit}>
@@ -104,7 +137,12 @@ export function LetterTemplateForm({
                         />
                         {form.errors.letter_number && <FieldError>{form.errors.letter_number}</FieldError>}
                     </Field>
-                    <FormActions cancelUrl={lt.index().url} processing={form.processing} disabled={disabled} />
+                    <FormActions
+                        cancelUrl={lt.index().url}
+                        onCancel={letterTemplate ? onClose : undefined}
+                        processing={form.processing}
+                        disabled={disabled}
+                    />
                 </FieldGroup>
             </form>
         </FormCard>

@@ -2,6 +2,7 @@
 
 namespace App\Services\LetterTemplate;
 
+use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
@@ -70,16 +71,17 @@ class ValidateLetterTemplateDocx
                     $multiple[$column->placeholder] = $variable->name;
                 }
             } else {
-                $known[] = $variable->name;
+                $known = [...$known, ...($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name])];
             }
         }
         $signers = [];
         foreach ($version->signerSlots as $index => $slot) {
-            $signers[] = $version->signerSlots->count() === 1 ? 'penandatangan' : 'penandatangan_' . ($index + 1);
+            $prefix = $version->signerSlots->count() === 1 ? 'penandatangan' : 'penandatangan_' . ($index + 1);
+            $signers = [...$signers, ...array_keys(EmployeeAttributeCatalog::tokens($prefix))];
         }
         $known = [...$known, ...$signers];
         $found = [];
-        $errors = [];
+        $errors = count($known) === count(array_unique($known)) ? [] : ['Konfigurasi memiliki placeholder yang bertabrakan. Perbaiki nama variabel atau kolom sebelum validasi.'];
         $rows = [];
         $rowOwners = [];
         $occurrences = 0;
@@ -148,9 +150,6 @@ class ValidateLetterTemplateDocx
         $names = array_values(array_unique($found));
         if (array_diff($phpWordNames, $names) !== [] || array_diff($names, $phpWordNames) !== []) {
             $errors[] = 'Ada placeholder pada lokasi atau text run yang tidak didukung PHPWord. Tulis ulang placeholder pada teks paragraf biasa.';
-        }
-        foreach (array_diff($signers, $names) as $missing) {
-            $errors[] = "Placeholder slot {$missing} wajib dicantumkan pada DOCX.";
         }
         $errors = array_values(array_unique($errors));
         sort($names);
