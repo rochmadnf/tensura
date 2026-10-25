@@ -24,5 +24,6 @@ return [
         'expires_hours' => 24,
         'max_output_bytes' => 20 * 1024 * 1024,
     ],
+    'cleanup' => ['temporary_hours' => 1, 'orphan_hours' => 24],
     'placeholders' => ['max_length' => 100, 'max_occurrences' => 1000],
 ];

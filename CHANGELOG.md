@@ -4,6 +4,9 @@
 
 ### Ditambahkan
 
+- Cleanup Templat Surat setiap jam melalui `letter-templates:cleanup`, dilengkapi dry-run, masa aman berkas sementara 1 jam dan hasil uji yatim 24 jam, pemeriksaan ulang referensi dalam transaksi, serta perlindungan DOCX sumber, metadata publikasi, dan riwayat.
+- Indeks pencarian disk/path berkas pada versi templat dan runner konkurensi PostgreSQL khusus `phpunit.letter-templates.xml` dengan database disposable, proses/koneksi terpisah, pengujian retry salinan DOCX, integrasi publikasi/arsip, dan perlindungan master.
+
 - Pencarian opsi database bersama dengan maksimal 10 hasil, penyegaran saat pilihan dibuka, dan pemuatan label pilihan tersimpan tanpa menghapus isian formulir.
 - Detail audit Templat Surat sebelum–sesudah dan timeline lintas versi berisi 10 aktivitas per halaman dengan navigasi Sebelumnya/Berikutnya.
 - Header tahap editor Templat Surat, switch Wajib diisi, kolom aksi yang mengikuti izin edit versi, serta tombol Simpan/Batal ikon dengan tooltip pada komponen bersama dan item referensi.
