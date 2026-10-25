@@ -1,6 +1,6 @@
 # Templat Surat MVP 1 — Proses Bisnis
 
-Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–6 beserta tambahan 4A dan perapihan 5A sudah diimplementasikan; cleanup, konkurensi, dan verifikasi akhir menunggu tahap 7.
+Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–7 beserta tambahan 4A dan perapihan 5A sudah diimplementasikan. Cleanup, konkurensi, dan regresi integrasi tahap 7 sudah lulus; browser alur utama dan visual sampel DOCX sudah diperiksa. Checklist verifikasi akhir menyeluruh belum dinyatakan seluruhnya selesai.
 
 Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi database dan tujuh tahap implementasi beserta tahap tambahan 4A dan aturan test/commit ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md). Pola implementasi mengikuti [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) dan [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) yang sudah diperbarui.
 
@@ -9,14 +9,14 @@ Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi d
 | Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
 | --- | --- | --- |
 | Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Verifikasi akhir browser/visual |
-| Domain templat | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, publikasi, perubahan versi, arsip draft, aktif/nonaktif, timeline, dan test tahap 1–6/4A/5A | Cleanup dan regresi integrasi/konkurensi |
-| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat serta pemeriksaan kandidat saat publikasi | Konkurensi pada tahap 7 |
+| Domain templat | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, publikasi, perubahan versi, arsip draft, aktif/nonaktif, timeline, cleanup terjadwal, serta test tahap 1–7/4A/5A | Sisa checklist verifikasi akhir manual |
+| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat serta pemeriksaan kandidat saat publikasi | Sisa verifikasi akhir manual |
 | Arsip | Arsip pusat, arsip/pemulihan Reference, penolakan arsip grup yang dirujuk templat, dan status arsip draft templat | Tidak ada integrasi Arsip pusat untuk templat dalam lingkup ini |
 | Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Verifikasi akhir interaksi dan responsivitas |
-| DOCX | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin | Cleanup terjadwal |
-| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Konkurensi antarkoneksi dan regresi integrasi tahap 7 |
+| DOCX | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin | Variasi tata letak DOCX dalam verifikasi akhir manual |
+| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Sisa verifikasi akhir manual |
 
-Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–6 beserta 4A dan 5A diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
+Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–7 beserta 4A dan 5A diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
 ## 1. Tujuan dan akses
 
@@ -194,8 +194,8 @@ letter-templates/
 - `env()` hanya dibaca melalui file config untuk pengaturan yang berbeda antar lingkungan.
 - Path berkas ditentukan aplikasi, bukan input admin.
 - DOCX sumber historis tidak ikut cleanup hasil uji atau berkas sementara.
-- Batas upload/ZIP/XML/placeholder sudah ditetapkan pada `config/letter-templates.php` dan dirinci dalam kontrak tahap 4 rencana teknis. Batas generate dan masa simpan hasil uji sudah ditetapkan tahap 5; mekanisme cleanup terjadwal menyusul tahap 7.
-- File config, penyimpanan privat sumber/hasil uji, dan berkas contoh sementara sudah tersedia. Cleanup terjadwal hasil uji/berkas sementara mengikuti tahap 7.
+- Batas upload/ZIP/XML/placeholder sudah ditetapkan pada `config/letter-templates.php` dan dirinci dalam kontrak tahap 4 rencana teknis. Batas generate dan masa simpan hasil uji sudah ditetapkan tahap 5; cleanup terjadwal sudah ditambahkan pada tahap 7.
+- File config, penyimpanan privat sumber/hasil uji, dan berkas contoh sementara sudah tersedia. Cleanup berjalan setiap jam melalui scheduler, dengan perlindungan sumber/riwayat, masa aman berkas sementara 1 jam, dan hasil uji yatim 24 jam; hasil uji terikat versi mengikuti expiry tanpa mengubah metadata publikasi.
 - Pengaturan dokumen fitur Surat akan dibahas pada fitur tersebut.
 
 ## 8. Halaman daftar dan kelola
@@ -256,10 +256,13 @@ Perapihan editor 5A berikutnya lulus 282 test PHPUnit/1.873 assertion dan 24 tes
 Sebelum pekerjaan terkait dimulai, rincikan:
 
 - Kontrak tahap 6 sudah diterapkan dan dirinci pada rencana teknis; keputusan penyalinan arsip dan publikasi tanpa aktivasi otomatis tetap dipertahankan.
-- Jadwal dan mekanisme cleanup hasil uji kedaluwarsa/yatim serta runner konkurensi tahap 7; timeout, expiry, dan batas hasil uji sudah ditetapkan tahap 5.
+- Cleanup dan runner konkurensi tahap 7 sudah diterapkan. Sisa checklist verifikasi akhir manual mengikuti rincian pada rencana teknis.
 - Snapshot surat historis nanti harus mempertahankan urutan pilihan, atribut, tanggal acuan masa kerja, serta locale/format efektif. Keluaran Referensi/Pegawai, fallback, format, dan masa kerja sudah diterapkan pada generate uji; tidak perlu mengulang keputusan tersebut.
 - Snapshot nilai surat historis pada fitur Surat, termasuk atribut Pegawai, tanggal acuan masa kerja, serta locale/format efektif; tanpa menambahkan tabel Surat pada tahap ini.
 
 Alokasi nomor, pembuatan surat sebenarnya, revisi surat, dan penyerahan kepada pemohon belum masuk pekerjaan ini. Rincian teknis yang belum diputuskan tetap harus dirinci sebelum implementasi terkait.
 
 Tahap 6 lulus 34 test PHPUnit/445 assertion khusus publikasi dan versi; bersama regresi Templat Surat lulus 316 test/2.318 assertion. Sebanyak 38 test frontend terarah, TypeScript, lint terkait, Pint, formatter, serta build produksi lulus. Tidak ada migration atau dependency baru. Browser, pemeriksaan visual DOCX, dan konkurensi antarkoneksi belum dijalankan dan tetap mengikuti tahap akhir/7. Fitur Surat masih belum tersedia; pemakaian pertama diuji melalui data test, tanpa alokasi nomor.
+
+
+Tahap 7 selesai pada commit `5c59638`: cleanup terjadwal dan indeks pencarian berkas, pengujian integrasi sampai publikasi/copy/arsip/cleanup, serta runner konkurensi PostgreSQL tersendiri. Suite utama lulus 1.014 test/7.379 assertion; 35 skip suite khusus sudah dijalankan eksplisit melalui runner templat (24 test/325 assertion) dan arsip (274 test/2.197 assertion), keduanya tanpa skip. Pemeriksaan terarah tambahan lulus 15 test/83 assertion. Sebanyak 296 test frontend, TypeScript, lint, Pint, serta build produksi lulus. Browser pada database/storage disposable membuktikan alur utama sampai publikasi, reopen, dan arsip tanpa galat JavaScript dan tanpa overflow halaman pada 390 px. Sampel hasil DOCX dan panduan satu halaman A4 dirender dengan LibreOffice dan diperiksa visual. Pemeriksaan ini tidak mengklaim seluruh variasi tata letak DOCX atau seluruh checklist interaksi manual sudah selesai; rincian bukti dan cara menjalankan runner ada pada rencana teknis.

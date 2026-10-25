@@ -1,6 +1,6 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: implementasi bertahap; tahap 1–6 beserta tahap tambahan 4A dan perapihan editor per item 5A selesai; tahap 7 belum dimulai. Publikasi, perubahan versi, arsip draft, aktif/nonaktif, dan timeline sudah tersedia. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, pola aplikasi terbaru, dan keputusan lanjutan pengguna. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: tahap 1–7 beserta tambahan 4A dan perapihan editor per item 5A selesai implementasi. Cleanup, konkurensi PostgreSQL antarkoneksi, serta regresi integrasi tahap 7 selesai dan di-commit pada 25 Oktober 2026. Browser alur utama dan render sampel DOCX sudah diperiksa; checklist verifikasi akhir menyeluruh tetap dicatat terpisah dan belum dinyatakan seluruhnya selesai.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
@@ -265,7 +265,32 @@ Cakupan:
 
 Kriteria lulus PHPUnit: cleanup hanya menghapus berkas yang boleh dihapus; alur integrasi lulus; konkurensi tidak menghasilkan draft/pointer ganda, referensi hilang, atau penggunaan penandatangan tidak aktif; seluruh suite PHPUnit utama dan runner integrasi arsip yang terdampak lulus. Jalankan test konkurensi templat secara eksplisit; kasus wajib yang skipped tidak dihitung lulus.
 
-Usulan commit: `feat: lengkapi cleanup dan regresi integrasi templat surat`.
+Commit implementasi: `5c59638` — `feat: add letter template cleanup and integration coverage`.
+
+### Hasil tahap 7 — 25 Oktober 2026
+
+- Command `php artisan letter-templates:cleanup` berjalan melalui scheduler setiap jam dengan `withoutOverlapping(60)`; `--dry-run` menghitung kandidat tanpa menghapus. Scheduler Laravel harus dijalankan pada lingkungan deployment.
+- Folder `previews` dan `temporary` dipindai secara streaming. Hasil uji terikat versi dihapus setelah expiry; hasil uji yatim memiliki masa aman 24 jam dan berkas sementara 1 jam melalui `letter-templates.cleanup`. Folder sumber tidak dipindai, termasuk sumber yang sudah tidak dirujuk.
+- Referensi versi diperiksa ulang dengan urutan lock templat lalu versi di dalam transaksi. Sumber pada status apa pun, hasil uji yang masih berlaku, dan referensi tanpa expiry dipertahankan. Status/pointer publikasi, metadata bukti, audit, konfigurasi, fallback, dan format tanggal tidak diubah oleh cleanup. Kegagalan berkas dilaporkan, berkas lain tetap diproses, dan command mengembalikan status gagal.
+- Migration `2026_10_25_192113_add_file_lookup_indexes_to_letter_template_versions_table.php` menambah indeks disk/path sumber dan hasil uji; sudah diterapkan pada database aplikasi lokal. Tidak ada kolom, tabel, atau dependency baru.
+- Runner `phpunit.letter-templates.xml` memakai bootstrap khusus yang menolak database di luar `tensura_test_letters_*`, mengabaikan kredensial koneksi aplikasi, dan gagal bila kasus wajib skipped. Test memakai proses/koneksi PostgreSQL terpisah serta disk test tersendiri.
+- Sebanyak 24 kasus konkurensi/325 assertion lulus: reopen/copy bersamaan, publikasi melawan edit/arsip/publikasi lain, status kandidat melawan publikasi/generate/simpan kandidat, penyimpanan relasi melawan hapus/arsip master, cleanup melawan perpanjangan expiry, perubahan dua item berbeda, dan retry setelah berkas salinan ditulis. Kontrak pemakaian pertama diuji lewat transaksi test yang mengunci templat/versi dan memeriksa pointer aktif; fitur Surat dan endpoint pemakaian pertama tetap belum diimplementasikan.
+- Suite utama `vendor/bin/phpunit`: 1.014 lulus, 7.379 assertion, 35 skipped yang merupakan suite khusus. Semua kasus wajib suite khusus sudah dijalankan secara eksplisit: runner templat 24 lulus tanpa skip dan runner arsip 274 lulus/2.197 assertion tanpa skip. Pemeriksaan terarah setelah migration dan penambahan bootstrap lulus 15 test/83 assertion, termasuk 6 test keamanan bootstrap.
+- Sebanyak 296 test frontend, TypeScript, lint, Pint, build produksi, dan pemeriksaan diff lulus. Build tetap memiliki peringatan ukuran chunk existing. `schedule:list` menampilkan jadwal per jam; dry-run database aplikasi mempertahankan 4 berkas dan menghapus 0 berkas, tanpa kegagalan.
+- Browser Brave pada server sementara, database disposable, dan storage terisolasi membuktikan tambah identitas/pertanyaan wajib, upload, validasi, generate, unduhan, konfirmasi visual, publikasi, reopen, serta arsip. Tidak ada galat JavaScript dan tidak ada overflow halaman pada lebar 390 px. Hasil uji bertuliskan “Tujuan: Makassar” serta panduan satu halaman A4 dirender dengan LibreOffice dan diperiksa secara visual.
+- Verifikasi akhir tersebut bersifat terarah: seluruh variasi tata letak DOCX, katalog/tabel berulang secara visual, serta seluruh checklist keyboard/fokus/request lambat/Back-Forward/filter/pagination belum diperiksa manual menyeluruh. Kelulusan tahap implementasi 7 tidak menandai seluruh checklist verifikasi akhir di bawah selesai.
+
+Eksekusi konkurensi secara eksplisit setelah menyiapkan database PostgreSQL disposable:
+
+```sh
+LETTER_TEMPLATE_TEST_DATABASE=tensura_test_letters_stage7 \
+LETTER_TEMPLATE_TEST_HOST=127.0.0.1 \
+LETTER_TEMPLATE_TEST_PORT=5433 \
+LETTER_TEMPLATE_TEST_USERNAME=postgres \
+vendor/bin/phpunit -c phpunit.letter-templates.xml
+```
+
+Set `LETTER_TEMPLATE_TEST_PASSWORD` pada environment bila diperlukan; jangan gunakan database aplikasi. Sesi ini mengambil nilai koneksi dari `.env.testing` tanpa mengubah file lingkungan, memakai database `tensura_test_letters_stage7`, dan menjalankan regresi arsip secara terpisah dengan `phpunit.archive.xml` pada `tensura_archive_test_stage7`.
 
 ### Progres dan bukti tiap tahap
 
@@ -281,7 +306,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | 5. Generate/konfirmasi | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 265 test, 1.753 assertion lulus | `b05dac1`, perbaikan transisi form `581ce3f` |
 | 5A. Perapihan editor per item | Selesai implementasi; browser belum diverifikasi | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 282 test, 1.873 assertion lulus | `844bafd` |
 | 6. Publikasi/versi | Selesai implementasi; browser/konkurensi mengikuti tahap akhir | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 316 test, 2.318 assertion lulus; 34 test/445 assertion khusus siklus versi | `7b7b4c0` |
-| 7. Cleanup/integrasi | Belum dimulai | — | — |
+| 7. Cleanup/integrasi | Selesai implementasi dan pengujian wajib; verifikasi akhir terarah tersedia | Suite utama: 1.014 lulus/7.379 assertion; 35 skip suite khusus dijalankan terpisah. Runner templat: 24 lulus/325 assertion; runner arsip: 274 lulus/2.197 assertion; keduanya tanpa skip. Pemeriksaan tambahan: 15 lulus/83 assertion | `5c59638` |
 
 ### Verifikasi akhir — Setelah tahap 1–7 termasuk 4A selesai dan di-commit
 
@@ -417,12 +442,12 @@ Bagian ini mencatat kontrak awal tahap 3. Batas empat kolom Pegawai dan payload 
 
 ## 6. Kelanjutan perencanaan
 
-Keputusan atribut Pegawai, token otomatis/alias, token penandatangan opsional, fallback, format tanggal per atribut, masa kerja sampai hari, dan perbaikan UX sudah ditetapkan pada bagian 2 serta tahap 4A. Tahap 4A, tahap 5, perapihan 5A, dan tahap 6 sudah selesai; tahap 7 menjadi pekerjaan berikutnya; tidak perlu mengulang keputusan produk tersebut.
+Keputusan atribut Pegawai, token otomatis/alias, token penandatangan opsional, fallback, format tanggal per atribut, masa kerja sampai hari, dan perbaikan UX sudah ditetapkan pada bagian 2 serta tahap 4A. Tahap 4A, tahap 5, perapihan 5A, tahap 6, dan tahap 7 sudah selesai implementasi; checklist verifikasi akhir menyeluruh tetap perlu dituntaskan; tidak perlu mengulang keputusan produk tersebut.
 
 Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
 - Kontrak publikasi/perubahan versi/arsip/aktivasi tahap 6 sudah dirinci di atas. Pertahankan keputusan penyalinan arsip dan publikasi tanpa aktivasi otomatis; jangan mengulang keputusan produk yang sudah disepakati.
-- Jadwal dan mekanisme cleanup hasil uji kedaluwarsa/yatim serta runner konkurensi antarkoneksi tahap 7. Batas waktu/expiry/ukuran hasil uji sudah ditetapkan pada config tahap 5.
+- Jadwal dan mekanisme cleanup serta runner konkurensi tahap 7 sudah diterapkan sesuai hasil di atas. Yang tersisa adalah bagian checklist verifikasi akhir yang belum diperiksa secara manual.
 - Mekanisme snapshot nilai surat historis pada fitur Surat, termasuk atribut Pegawai, tanggal acuan masa kerja, serta locale/format efektif. Hasil uji tetap menyimpan isi berkas saat dibuat, tetapi belum menjadi kontrak snapshot surat sebenarnya dan tidak menambah tabel Surat.
 
 Jangan menganggap rincian yang belum ditetapkan sebagai keputusan final.
@@ -431,4 +456,4 @@ Tahap 1–4 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL dispos
 
 Tahap 5 diuji pada PostgreSQL 18 sementara dengan database disposable `tensura_test_stage5` melalui override `TEST_DB_*`. `.env`/`.env.testing` dan dependency tidak diubah. Migration tambahan hanya menambah metadata hasil uji pada versi; sumber DOCX dan data master existing tetap dipertahankan.
 
-Tahap 6 diuji pada PostgreSQL 18 sementara dengan database disposable melalui override `TEST_DB_*`; konfigurasi lingkungan dan database aplikasi tidak diubah. Penyalinan berkas diuji dengan storage fake, termasuk kegagalan/rollback dan independensi sumber serta panduan versi asal. Mekanisme cleanup terjadwal tahap 7 harus mempertahankan seluruh sumber yang masih dirujuk, termasuk sumber draft salinan dan arsip, serta tidak membatalkan publikasi hanya karena hasil uji setelah publikasi kedaluwarsa.
+Tahap 6 diuji pada PostgreSQL 18 sementara dengan database disposable melalui override `TEST_DB_*`; konfigurasi lingkungan dan database aplikasi tidak diubah. Penyalinan berkas diuji dengan storage fake, termasuk kegagalan/rollback dan independensi sumber serta panduan versi asal. Mekanisme cleanup terjadwal tahap 7 mempertahankan seluruh sumber, termasuk sumber draft salinan dan arsip, serta tidak membatalkan publikasi ketika hasil uji setelah publikasi kedaluwarsa.
