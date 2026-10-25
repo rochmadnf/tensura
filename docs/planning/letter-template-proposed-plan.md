@@ -1,6 +1,6 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: implementasi bertahap; tahap 1–3 selesai; tahap 4–7 belum dimulai. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: implementasi bertahap; tahap 1–4 selesai; tahap 5–7 belum dimulai. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
@@ -20,7 +20,7 @@ Gunakan tujuh tabel relasional. Identitas templat tetap satu; DOCX dan seluruh k
 | Infrastruktur bersama | `Searchable`, komponen list/form, Wayfinder, runner PostgreSQL | Gunakan fondasi yang ada; rincian mengikuti [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) dan [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) |
 | PHPWord | Terpasang pada commit `91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` | Tidak perlu memasang dependency baru; kemampuan DOCX tetap perlu dibuktikan dengan test |
 
-Daftar ini mempertahankan kondisi sebelum implementasi; hasil tahap 1–3 tercatat pada tabel progres. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
+Daftar ini mempertahankan kondisi sebelum implementasi; hasil tahap 1–4 tercatat pada tabel progres. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
 
 ## 2. Tabel dan relasi
 
@@ -195,7 +195,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | `785609f` |
 | 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | `f10ef22` |
 | 3. Variabel/penandatangan | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ReferenceItemDeleteTest.php` — 172 test, 1.095 assertion lulus | `1d1b684` |
-| 4. Upload/validasi DOCX | Belum dimulai | — | — |
+| 4. Upload/validasi DOCX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateDocxTest.php tests/Feature/LetterTemplateExampleTest.php tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php` — 197 test, 1.305 assertion lulus | Dicatat setelah commit |
 | 5. Generate/konfirmasi | Belum dimulai | — | — |
 | 6. Publikasi/versi | Belum dimulai | — | — |
 | 7. Cleanup/integrasi | Belum dimulai | — | — |
@@ -231,7 +231,22 @@ Jalankan PHPUnit langsung untuk tahap implementasi, misalnya `vendor/bin/phpunit
 
 Kasus konkurensi PostgreSQL perlu membuktikan pembuatan draft bersamaan, publikasi, perubahan versi, serta penghapusan/arsip master yang bersaing dengan penyimpanan konfigurasi. Test transaksi biasa belum membuktikan perilaku antarkoneksi. Runner arsip `phpunit.archive.xml` tetap khusus integrasi arsip; test konkurensi templat perlu cakupan dan cara eksekusi tersendiri yang dirinci saat implementasi. Catat kasus yang dilewati atau belum dijalankan.
 
-Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test DOCX belum tersedia; pengujian tahap 1–2 belum membuktikan alur DOCX.
+Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test tahap 4 memakai DOCX nyata melalui PHPWord yang dipin, termasuk penggantian teks panjang/text run/header/footer dan clone baris. Endpoint generate uji dan bukti pemeriksaan tetap menunggu tahap 5.
+
+### Kontrak DOCX yang diterapkan pada tahap 4
+
+- Endpoint terautentikasi dengan scoped binding templat/versi: `POST .../source` (`lt.source.store`), `GET .../source` (`lt.source.download`), `POST .../validate` (`lt.validation.store`), dan `GET .../example` (`lt.example.download`), dengan awalan `/letter-templates/{letterTemplate:uuid}/versions/{version:uuid}`. UUID versi asing/tidak dikenal/numerik ditolak 404. Upload menerima hanya file `docx`; field sistem tidak ditulis.
+- `config/letter-templates.php` menetapkan disk lokal privat, path sources/temporary/previews, upload 10.240 KB (10 MB), maksimal 1.000 entry ZIP, total dekompresi 50 MB, XML per entry 2 MB/total 8 MB, rasio kompresi maksimal 200, panjang placeholder 100 karakter, serta maksimal 1.000 kemunculan placeholder. Nilai expiry/generate belum ditetapkan karena belum digunakan.
+- Upload memeriksa paket sebelum menyimpan. Pemeriksaan menolak path traversal/duplikat, symlink, enkripsi, ZIP rusak, XML tidak valid, DTD/entitas (termasuk encoding UTF-16), macro, objek tertanam/ActiveX, altChunk, field DDE/INCLUDETEXT/INCLUDEPICTURE/LINK/DATABASE, serta konten eksternal selain hyperlink HTTP/HTTPS/mailto. XML dibaca tanpa resolusi eksternal atau substitusi entitas.
+- Profil DOCX memakai WordprocessingML transitional, dokumen utama `word/document.xml`, content type DOCX biasa, relasi paket utama relatif ke `word/document.xml`, serta header/footer bernomor berurutan mulai 1 agar sesuai PHPWord yang dipin. Komponen biner yang didukung terbatas pada gambar tertanam umum, font, dan printer settings; SVG/lampiran/komponen aktif ditolak. Bagian XML lain tetap diperiksa, tetapi placeholder di footnote/endnote/comment/custom XML tidak didukung.
+- Placeholder teks boleh terpecah antar text run dalam satu paragraf, termasuk pada header/footer. Placeholder pada atribut XML, terpisah antarparagraf, tidak dikenal, atau tidak sesuai sintaks ditolak saat validasi. Variabel biasa boleh tidak digunakan; setiap slot aktif wajib memiliki placeholder sesuai jumlah slot tersimpan.
+- Combobox multiple memakai placeholder kolom, bukan nama variabel induk. Kolom yang digunakan harus berada dalam satu baris tabel isi dokumen untuk setiap variabel; satu baris tidak boleh dipakai dua variabel multiple. Tabel bersarang, penggabungan vertikal, atau tabel berulang pada header/footer ditolak. Konfigurasi/kolom lain boleh tidak digunakan.
+- Upload membuat path acak baru per versi, mengunci templat/versi untuk memastikan draft belum digunakan, menyimpan metadata aktual dan SHA-256, membatalkan bukti lama, serta mencatat `source.uploaded`. Kegagalan database membersihkan berkas baru dan mempertahankan sumber lama. Berkas lama hanya dihapus jika tidak lagi dirujuk versi mana pun; kegagalan cleanup dilaporkan tanpa menggagalkan metadata baru yang sudah tersimpan.
+- Validasi terpisah memeriksa ulang sumber tersimpan, hash aktual, struktur, placeholder, serta hasil pembacaan PHPWord. Hasil gagal tetap disimpan dengan daftar galat dan tanpa bukti valid. Hasil lulus mengisi `validated_at`, hash sumber, hash konfigurasi, dan audit `source.validated`. Validasi ulang membatalkan bukti uji/visual sebelumnya. Hash konfigurasi mencakup nama templat, relasi klasifikasi, konfigurasi variabel/kolom, dan himpunan kandidat per slot; tidak menjadi snapshot nilai data master.
+- Halaman kelola menerima metadata sumber tanpa disk/path privat, status pending/valid/invalid/stale, daftar galat/placeholder, batas upload, dan daftar versi yang dokumennya dapat diunduh. Unduhan sumber membuka stream selama shared lock versi dan dikirim sebagai attachment privat. Upload/validasi versi Terbit, Diarsipkan, atau sudah digunakan ditolak; unduh sumber/contoh tetap tersedia untuk versi historis.
+- DOCX contoh dibuat melalui PHPWord dari snapshot konfigurasi versi dalam shared lock, dengan identitas/klasifikasi, penjelasan jenis/sumber/wajib, contoh paragraf, baris tabel, slot, serta langkah validasi/uji/publikasi. Nama dalam penjelasan tidak menciptakan placeholder tambahan; data kandidat pegawai tidak dimuat. Berkas sementara dihapus sesudah response dikirim. Unduhan tidak mengubah source, status, bukti pemeriksaan, atau audit.
+- PHPUnit membuktikan akses login/tamu/UUID, paket berbahaya dan batas resource, placeholder/slot/tabel/header/footer/text run, hash berubah, invalidasi bukti, rollback file/database, unduhan, serta contoh baru/historis/admin pengganti. Regresi tahap 1–3 lulus sesuai tabel. Pint, TypeScript, lint terkait, dan `pnpm run build` lulus. Pemeriksaan browser/visual serta test frontend/konkurensi tetap mengikuti jadwal akhir; belum diklaim terverifikasi.
+- Tidak ada migration/dependency baru. Batas PHP CLI yang terdeteksi adalah upload 2 MB dan POST 8 MB; batas web server dapat berbeda dan perlu diperiksa bila upload besar ditolak. Batas aplikasi tetap 10 MB; konfigurasi PHP sistem tidak diubah.
 
 ### Kontrak konfigurasi yang diterapkan pada tahap 3
 
@@ -272,13 +287,13 @@ Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header
 
 Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
-- Kontrak validasi upload/generate/publikasi dan operasi versi tahap 4–7; fondasi kolom/default/nullability/indeks serta validasi konfigurasi tahap 1–3 sudah diterapkan.
-- Endpoint operasi DOCX/publikasi dan kontrak props/payload/error tahap 4–7. Route identitas/daftar/konfigurasi `lt.*` serta payload tahap 2–3 sudah tersedia.
-- Nilai config selain upload 10 MB, aturan struktur DOCX yang didukung/ditolak, timeout, expiry, dan cleanup.
+- Kontrak validasi data contoh/generate/publikasi dan operasi versi tahap 5–7; fondasi, konfigurasi, upload, dan validasi struktur DOCX tahap 1–4 sudah diterapkan.
+- Endpoint generate uji/konfirmasi/publikasi dan kontrak props/payload/error tahap 5–7. Route identitas/daftar/konfigurasi/upload/validasi/unduhan `lt.*` sudah tersedia.
+- Nilai config untuk timeout generate, expiry hasil uji, dan cleanup tahap 5–7; aturan serta batas upload/ZIP/XML/placeholder tahap 4 sudah ditetapkan.
 - Format keluaran combobox tunggal dan penandatangan, urutan pilihan multiple pada hasil, serta penanganan NIP/jabatan kosong.
 - Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji yang sudah ada. Aturan penandatangan tidak aktif sudah ditetapkan pada bagian 3 dan proses bisnis.
 - Mekanisme data snapshot surat historis pada fitur Surat. Ini bukan penambahan tabel Surat dalam tahap fondasi templat.
 
 Jangan menganggap rincian yang belum ditetapkan sebagai keputusan final.
 
-Tahap 1–3 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL disposable. Dependency tidak berubah. Tahap 3 tidak menambah atau menjalankan migration database aplikasi; skema aktif sudah berisi tabel tahap 1 ketika diperiksa.
+Tahap 1–4 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL disposable. Dependency tidak berubah. Tahap 4 tidak menambah atau menjalankan migration database aplikasi; build frontend sudah diperbarui.

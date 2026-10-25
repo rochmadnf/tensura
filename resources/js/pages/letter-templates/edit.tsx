@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import lt from '@/routes/lt';
 import { LetterTemplateConfigurationForm } from './components/configuration-form';
 import type { ConfigurationOptions, LetterTemplateConfiguration } from '@/schemas/letter-template-configuration';
+import { LetterTemplateDocumentForm } from './components/document-form';
+import type { LetterTemplateDocument, LetterTemplateDocumentVersion } from '@/schemas/letter-template-document';
+import { Button } from '@/components/ui/button';
+import { download as exampleDownload } from '@/routes/lt/example';
 import { LetterTemplateForm } from './components/letter-template-form';
 import type { ClassificationOption, LetterTemplateResource } from '@/schemas/letter-template';
 
@@ -13,11 +17,17 @@ export default function LetterTemplateEdit({
     resource,
     configuration,
     configurationOptions,
+    document,
+    documentUploadLimitKb,
+    documentVersions,
 }: {
     classifications: ClassificationOption[];
     resource: { data: LetterTemplateResource };
     configuration: { data: LetterTemplateConfiguration } | null;
     configurationOptions: ConfigurationOptions;
+    document: { data: LetterTemplateDocument } | null;
+    documentUploadLimitKb: number;
+    documentVersions: LetterTemplateDocumentVersion[];
 }) {
     const [isSaving, setIsSaving] = useState(false);
     return (
@@ -48,6 +58,25 @@ export default function LetterTemplateEdit({
                                 <p className="text-muted-foreground">
                                     Lengkapi variabel dan penandatangan sebelum menyiapkan DOCX untuk publikasi.
                                 </p>
+                                {document && (
+                                    <Button
+                                        nativeButton={false}
+                                        variant="outline"
+                                        disabled={isSaving}
+                                        render={
+                                            <a
+                                                href={
+                                                    exampleDownload({
+                                                        letterTemplate: resource.data.id,
+                                                        version: document.data.id,
+                                                    }).url
+                                                }
+                                            />
+                                        }
+                                    >
+                                        Unduh DOCX Contoh
+                                    </Button>
+                                )}
                                 <Link href={lt.index().url} className="text-primary underline underline-offset-4">
                                     Kembali ke daftar templat
                                 </Link>
@@ -69,6 +98,17 @@ export default function LetterTemplateEdit({
                             templateId={resource.data.id}
                             configuration={configuration.data}
                             options={configurationOptions}
+                            disabled={isSaving}
+                            onProcessingChange={setIsSaving}
+                        />
+                    )}
+                    {document && (
+                        <LetterTemplateDocumentForm
+                            templateId={resource.data.id}
+                            document={document.data}
+                            editable={configuration?.data.editable ?? false}
+                            maxKb={documentUploadLimitKb}
+                            versions={documentVersions}
                             disabled={isSaving}
                             onProcessingChange={setIsSaving}
                         />

@@ -4,6 +4,11 @@
 
 ### Ditambahkan
 
+- Upload/penggantian DOCX sumber privat per draft, unduhan terautentikasi, metadata ukuran/nama/SHA-256, dan pembersihan berkas gagal tanpa menimpa sumber versi historis.
+- Validasi struktur ZIP/XML dan placeholder DOCX, termasuk text run terpecah, header/footer, slot penandatangan wajib, dan baris tabel berulang. Bukti validasi terikat hash sumber serta konfigurasi; galat ditampilkan pada halaman kelola.
+- Unduh DOCX Contoh sejak identitas draft disimpan, berdasarkan konfigurasi versi terbaru atau historis yang dipilih, dengan panduan pergantian admin dan tanpa mengambil data pribadi kandidat pegawai.
+- Konfigurasi teknis DOCX terpusat pada `config/letter-templates.php`; batas upload aplikasi 10 MB, batas dekompresi/XML/rasio ZIP, serta batas placeholder. Form upload memakai batas backend dan helper Wayfinder.
+
 - Konfigurasi Templat Surat per draft: variabel teks pendek/panjang/tanggal, combobox tunggal/multiple bersumber referensi atau pegawai, kolom tabel berulang, dan slot kandidat penandatangan dengan placeholder yang dapat disalin.
 - Validasi benturan placeholder, kepemilikan UUID variabel/kolom/slot, dan kandidat pegawai aktif diperiksa saat penyimpanan atomik. Penyimpanan membatalkan bukti pemeriksaan serta mempertahankan DOCX sumber dan versi historis.
 - Peringatan nama pegawai dan slot untuk kandidat yang menjadi tidak aktif, tanpa menghapus kandidat otomatis. Form identitas dan konfigurasi saling menunggu saat menyimpan.

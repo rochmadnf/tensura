@@ -14,6 +14,9 @@ use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateController;
+use App\Http\Controllers\MasterData\LetterTemplateExampleController;
+use App\Http\Controllers\MasterData\LetterTemplateSourceController;
+use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +48,13 @@ Route::middleware('auth')->group(function () {
         ->parameters(['job-title' => 'jobTitle'])
         ->scoped(['jobTitle' => 'uuid'])
         ->names('jt');
+
+    Route::prefix('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}')->scopeBindings()->whereUuid(['letterTemplate', 'version'])->group(function (): void {
+        Route::post('source', [LetterTemplateSourceController::class, 'store'])->name('lt.source.store');
+        Route::get('source', [LetterTemplateSourceController::class, 'show'])->name('lt.source.download');
+        Route::post('validate', LetterTemplateValidationController::class)->name('lt.validation.store');
+        Route::get('example', LetterTemplateExampleController::class)->name('lt.example.download');
+    });
 
     Route::put('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}/configuration', LetterTemplateConfigurationController::class)
         ->scopeBindings()->whereUuid(['letterTemplate', 'version'])->name('lt.configuration.update');
