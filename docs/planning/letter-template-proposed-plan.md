@@ -1,6 +1,6 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: implementasi bertahap; tahap 1–2 selesai; tahap 3–7 belum dimulai. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: implementasi bertahap; tahap 1–3 selesai; tahap 4–7 belum dimulai. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, dan pola aplikasi terbaru. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
@@ -20,7 +20,7 @@ Gunakan tujuh tabel relasional. Identitas templat tetap satu; DOCX dan seluruh k
 | Infrastruktur bersama | `Searchable`, komponen list/form, Wayfinder, runner PostgreSQL | Gunakan fondasi yang ada; rincian mengikuti [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) dan [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) |
 | PHPWord | Terpasang pada commit `91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` | Tidak perlu memasang dependency baru; kemampuan DOCX tetap perlu dibuktikan dengan test |
 
-Daftar ini mempertahankan kondisi sebelum implementasi; hasil tahap 1–2 tercatat pada tabel progres. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
+Daftar ini mempertahankan kondisi sebelum implementasi; hasil tahap 1–3 tercatat pada tabel progres. Fitur Surat juga belum tersedia; menu masih menggunakan URL `#`.
 
 ## 2. Tabel dan relasi
 
@@ -194,7 +194,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | --- | --- | --- | --- |
 | 1. Fondasi database/domain | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php` — 41 test, 132 assertion lulus | `785609f` |
 | 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | `f10ef22` |
-| 3. Variabel/penandatangan | Belum dimulai | — | — |
+| 3. Variabel/penandatangan | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ReferenceItemDeleteTest.php` — 172 test, 1.095 assertion lulus | Dicatat setelah commit |
 | 4. Upload/validasi DOCX | Belum dimulai | — | — |
 | 5. Generate/konfirmasi | Belum dimulai | — | — |
 | 6. Publikasi/versi | Belum dimulai | — | — |
@@ -233,6 +233,21 @@ Kasus konkurensi PostgreSQL perlu membuktikan pembuatan draft bersamaan, publika
 
 Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test DOCX belum tersedia; pengujian tahap 1–2 belum membuktikan alur DOCX.
 
+### Kontrak konfigurasi yang diterapkan pada tahap 3
+
+- Endpoint terautentikasi `PUT /letter-templates/{letterTemplate:uuid}/versions/{version:uuid}/configuration` (`lt.configuration.update`) memakai scoped binding. UUID versi yang tidak dikenal, numerik, atau milik templat lain ditolak 404. Service memeriksa ulang kepemilikan dalam transaksi.
+- Payload mengganti seluruh konfigurasi draft melalui `variables` dan `signer_slots` berbentuk list, termasuk list kosong untuk menonaktifkan semuanya. Variabel memuat `id` UUID existing nullable, `name`, `label`, `type`, `is_required`, `option_source`, `reference_group` UUID nullable, `is_multiple`, dan `columns`. Kolom memuat `id` UUID nullable, `source_attribute`, dan `placeholder`; slot memuat `id` UUID nullable dan `candidates` berupa list UUID pegawai. Key anak selain allowlist ditolak. Field sistem tingkat atas tidak ditulis.
+- Nama variabel/placeholder kolom maksimal 100 karakter sesuai skema, diawali huruf kecil dan hanya menggunakan huruf kecil, angka, atau garis bawah. Label wajib berupa teks maksimal 100 karakter. Nama variabel, placeholder kolom, dan placeholder slot aktif berbagi satu namespace per versi.
+- Teks pendek/panjang/tanggal tidak menerima sumber, grup, multiple, atau kolom. Combobox wajib memiliki sumber; sumber referensi wajib memilih grup aktif, sedangkan sumber pegawai tidak menerima grup. Combobox multiple wajib memiliki minimal satu kolom; mode tunggal tidak menerima kolom.
+- Atribut kolom referensi: `row_number`, `content`. Atribut kolom pegawai: `row_number`, `name` (beserta gelar), `nip`, `job_title`. Jenis kelamin/STR/SIP tidak termasuk. Opsi enum, atribut, grup aktif, dan pegawai aktif dikirim melalui `configurationOptions`.
+- Urutan list menentukan `sort_order`: variabel/kolom mulai 0, slot mulai 1. Slot tersimpan selalu aktif dan wajib memiliki kandidat; kandidat duplikat dalam slot ditolak. Pegawai yang sama boleh menjadi kandidat di beberapa slot; pemilihan orang berbeda saat generate mengikuti tahap 5. Placeholder satu slot adalah `penandatangan`; beberapa slot memakai `penandatangan_1`, `penandatangan_2`, dan seterusnya.
+- UUID variabel/kolom/slot existing harus milik versi dan induk anak yang tepat. Penyimpanan mengganti snapshot konfigurasi draft dalam transaksi sambil mempertahankan UUID tersebut; primary key internal dan baris kandidat dapat dibuat ulang. Riwayat versi lain tetap utuh. Templat dan versi dikunci, lalu grup dan pegawai diperiksa dengan shared lock berurutan sebelum penulisan. Versi Terbit, Diarsipkan, atau yang sudah digunakan tidak dapat diubah melalui endpoint ini.
+- Setiap penyimpanan konfigurasi membatalkan bukti validasi/uji/visual melalui `InvalidateLetterTemplateEvidence`, mempertahankan metadata DOCX sumber, dan mencatat audit `configuration.updated`. Penyimpanan identitas menggunakan layanan invalidasi yang sama. Galat penyimpanan membatalkan penggantian konfigurasi dan audit secara utuh.
+- Halaman kelola mengirim `configuration.data` berisi UUID versi, `editable`, `has_configuration`, variabel/kolom, slot/kandidat, serta warning nama/slot pegawai tidak aktif. Kandidat tersebut tetap tersimpan. Warning dan pilihan aktif disegarkan dari data terbaru; menyimpan kandidat tidak aktif ditolak. Versi tanpa draft menampilkan konfigurasi versi rujukan secara read-only.
+- Form awal menyediakan satu slot yang dapat dihapus. Audit penyimpanan membedakan konfigurasi awal dengan konfigurasi yang sengaja disimpan tanpa slot; slot kosong tidak otomatis muncul kembali setelah reload. Form memakai schema dan komponen bersama, urutan variabel/kolom, serta salin placeholder. Form identitas/konfigurasi menonaktifkan aksi selama salah satunya menyimpan; UUID hasil simpan digunakan pada simpan berikutnya.
+- Hapus klasifikasi/pegawai mengunci record dan menolak referensi semua status versi dengan galat `deletion`; arsip grup melakukan pemeriksaan serupa sebelum membuat snapshot. Toast bersama menampilkan pesan penolakan backend. Item referensi tetap dapat diarsipkan sendiri.
+- PHPUnit dan regresi tahap ini lulus sesuai tabel progres; Pint, lint file frontend terkait, TypeScript, dan diff lulus. Browser/visual, test frontend, serta konkurensi antarkoneksi tetap ditunda sesuai jadwal. Tidak ada dependency atau migration baru; skema aktif saat pemeriksaan sudah berisi tabel tahap 1.
+
 ### Kontrak identitas dan daftar yang diterapkan pada tahap 2
 
 - Route: `GET /letter-templates` (`lt.index`), `GET /letter-templates/create` (`lt.create`), `POST /letter-templates` (`lt.store`), `GET /letter-templates/{letterTemplate:uuid}/edit` (`lt.edit`), serta `PUT/PATCH /letter-templates/{letterTemplate:uuid}` (`lt.update`). Semuanya memerlukan login; tidak ada route hapus permanen.
@@ -257,8 +272,8 @@ Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header
 
 Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
-- Kontrak validasi konfigurasi dan operasi versi untuk tahap 3–7; fondasi kolom/default/nullability/indeks tahap 1 sudah ditetapkan pada migration.
-- Endpoint operasi konfigurasi/DOCX/publikasi dan kontrak props/payload/error tahap 3–7. Route identitas/daftar `lt.*` serta payload tahap 2 sudah tersedia.
+- Kontrak validasi upload/generate/publikasi dan operasi versi tahap 4–7; fondasi kolom/default/nullability/indeks serta validasi konfigurasi tahap 1–3 sudah diterapkan.
+- Endpoint operasi DOCX/publikasi dan kontrak props/payload/error tahap 4–7. Route identitas/daftar/konfigurasi `lt.*` serta payload tahap 2–3 sudah tersedia.
 - Nilai config selain upload 10 MB, aturan struktur DOCX yang didukung/ditolak, timeout, expiry, dan cleanup.
 - Format keluaran combobox tunggal dan penandatangan, urutan pilihan multiple pada hasil, serta penanganan NIP/jabatan kosong.
 - Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji yang sudah ada. Aturan penandatangan tidak aktif sudah ditetapkan pada bagian 3 dan proses bisnis.
@@ -266,4 +281,4 @@ Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
 Jangan menganggap rincian yang belum ditetapkan sebagai keputusan final.
 
-Tahap 1–2 sudah mengubah kode dan menjalankan migration melalui PHPUnit pada PostgreSQL disposable. Dependency tidak berubah; migration database aplikasi belum dijalankan.
+Tahap 1–3 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL disposable. Dependency tidak berubah. Tahap 3 tidak menambah atau menjalankan migration database aplikasi; skema aktif sudah berisi tabel tahap 1 ketika diperiksa.

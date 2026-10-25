@@ -1,6 +1,6 @@
 # Templat Surat MVP 1 — Proses Bisnis
 
-Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–2 sudah diimplementasikan; konfigurasi, DOCX, dan publikasi menunggu tahap 3–7.
+Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–3 sudah diimplementasikan; DOCX, pengujian dokumen, dan publikasi menunggu tahap 4–7.
 
 Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi database dan tujuh tahap implementasi beserta aturan test/commit ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md). Pola implementasi mengikuti [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) dan [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) yang sudah diperbarui.
 
@@ -9,14 +9,14 @@ Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi d
 | Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
 | --- | --- | --- |
 | Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Kontrol pengelolaan tahap berikutnya |
-| Domain templat | Tujuh tabel, model, factory, enum, audit, identitas draft, daftar, dan test tahap 1–2 | Konfigurasi, DOCX, validasi/uji, publikasi, perubahan versi, dan nonaktifkan |
-| Master pendukung | Penomoran Surat, Pegawai/Jabatan, dan Daftar Referensi | Pengambilan opsi, validasi relasi, serta perlindungan master yang dirujuk templat |
-| Arsip | Arsip pusat serta arsip/pemulihan grup dan item Reference | Perlindungan arsip grup yang dirujuk; arsip draft templat dikelola sebagai status versi |
+| Domain templat | Tujuh tabel, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, dan test tahap 1–3 | DOCX, validasi/uji, publikasi, perubahan versi, dan nonaktifkan |
+| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat | Pemeriksaan kelayakan saat generate/publikasi |
+| Arsip | Arsip pusat, arsip/pemulihan Reference, serta penolakan arsip grup yang dirujuk templat | Operasi arsip draft templat sebagai status versi |
 | Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Komposisi halaman serta konfigurasi dan operasi khusus templat |
 | DOCX | PHPWord sudah terpasang pada commit yang dipin | Seluruh alur upload, validasi, generate uji, pemeriksaan visual, dan cleanup |
 | Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Test perilaku templat dan konkurensi yang relevan |
 
-Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–2 diverifikasi dengan PHPUnit pada PostgreSQL disposable; migration database aplikasi belum dijalankan. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
+Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–3 diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
 ## 1. Tujuan dan akses
 
@@ -139,8 +139,8 @@ Seluruh versi tetap terhubung ke satu identitas templat. Timeline versi ditampil
 
 ### Hubungan dengan Arsip dan perubahan master
 
-- Arsip pusat saat ini menyimpan snapshot grup/item Reference, lalu menghapus record dari tabel aktif. Mengarsipkan grup yang dirujuk versi templat harus ditolak dengan pesan jelas dan tanpa meninggalkan paket arsip baru. Perlindungan ini belum ada karena relasi templat belum dibuat.
-- Penghapusan klasifikasi dan pegawai saat ini permanen; pemblokiran ketika dirujuk templat masih perlu ditambahkan. Record lain yang tidak dirujuk tetap mengikuti perilaku fitur masing-masing.
+- Arsip pusat saat ini menyimpan snapshot grup/item Reference, lalu menghapus record dari tabel aktif. Mengarsipkan grup yang dirujuk versi templat harus ditolak dengan pesan jelas dan tanpa meninggalkan paket arsip baru. Perlindungan ini diterapkan pada tahap 3, sebelum snapshot dibuat.
+- Penghapusan klasifikasi dan pegawai tetap permanen; tahap 3 menolak penghapusan ketika masih dirujuk templat dengan pesan yang jelas. Record lain yang tidak dirujuk tetap mengikuti perilaku fitur masing-masing.
 - Status Diarsipkan pada versi templat berbeda dari snapshot Arsip pusat. Rencana ini belum mencakup pemindahan templat ke Arsip pusat, pemulihan melalui halaman Arsip, atau hapus permanen templat.
 - Menyimpan konfigurasi dan DOCX versi asal belum membekukan isi master. Nama/gelar/jabatan pegawai, isi referensi, dan nama/kode klasifikasi masih dapat berubah. Agar generate ulang surat historis mempertahankan data asal, kontrak snapshot nilai terpilih harus dirinci pada fitur Surat nanti.
 
@@ -211,17 +211,17 @@ letter-templates/
 | Penyimpanan konfigurasi versi | Tabel relasional terpisah, bukan JSON untuk variabel, kolom, slot, dan kandidat |
 | PHPWord | Sudah terpasang; ikuti pin `dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` pada `composer.json` |
 
-Route identitas/daftar `lt.*`, binding `letterTemplate`, model, dan halaman dasar sudah tersedia. Semua route tersebut memerlukan autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
+Route identitas/daftar/konfigurasi `lt.*`, binding `letterTemplate`, model, dan halaman dasar sudah tersedia. Semua route tersebut memerlukan autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
 
 ## 10. Verifikasi dan rincian yang masih terbuka
 
 Implementasi dibagi menjadi tujuh tahap teknis: fondasi database/domain; identitas/daftar; variabel/penandatangan; upload/validasi DOCX; generate/konfirmasi; publikasi/versi; serta cleanup/integrasi. Setiap tahap diselesaikan dan di-commit setelah test PHPUnit tahap tersebut beserta regresi yang terdampak lulus. Test browser dan pemeriksaan visual dilakukan setelah seluruh tahap implementasi selesai, menggunakan Chromium yang sudah disediakan pengguna. Rincian cakupan, kriteria kelulusan, dan pencatatan commit mengikuti rencana teknis. Konfirmasi visual DOCX oleh admin tetap merupakan persyaratan proses publikasi, terpisah dari jadwal pengujian browser/visual oleh pengembang.
 
-Implementasi perlu membuktikan alur empat tahap, invalidasi hasil uji, keunikan dan isolasi versi, penolakan penghapusan/arsip master yang dirujuk, UUID dan autentikasi, serta pencarian/filter/pagination. Verifikasi juga peringatan kandidat tidak aktif, penolakan publikasi, dan penolakan penggunaan penandatangan yang menjadi tidak aktif setelah formulir dibuka. Jalankan test database melalui runner PostgreSQL terisolasi; uji konkurensi antarkoneksi secara khusus dan laporkan bila belum dijalankan. Tahap 1–2 beserta regresi terkait lulus 144 test dan 1.213 assertion. Perintah serta commit dicatat pada tabel progres rencana teknis. Pemeriksaan TypeScript dan formatter lulus; browser/visual serta test frontend/konkurensi belum dijalankan sesuai jadwal.
+Implementasi perlu membuktikan alur empat tahap, invalidasi hasil uji, keunikan dan isolasi versi, penolakan penghapusan/arsip master yang dirujuk, UUID dan autentikasi, serta pencarian/filter/pagination. Verifikasi juga peringatan kandidat tidak aktif, penolakan publikasi, dan penolakan penggunaan penandatangan yang menjadi tidak aktif setelah formulir dibuka. Jalankan test database melalui runner PostgreSQL terisolasi; uji konkurensi antarkoneksi secara khusus dan laporkan bila belum dijalankan. Verifikasi tahap 3 beserta regresi tahap 1–2 dan master terkait lulus 172 test dan 1.095 assertion. Perintah serta commit dicatat pada tabel progres rencana teknis. Pemeriksaan TypeScript dan formatter lulus; browser/visual serta test frontend/konkurensi belum dijalankan sesuai jadwal.
 
 Sebelum pekerjaan terkait dimulai, rincikan:
 
-- Endpoint operasi, props/payload/error, serta field dan validasi tiap tahap.
+- Endpoint operasi, props/payload/error, serta field dan validasi tahap 4–7; kontrak konfigurasi tahap 3 sudah dirinci pada rencana teknis.
 - Nilai batas config selain upload 10 MB dan aturan DOCX yang didukung/ditolak.
 - Teks keluaran combobox tunggal/penandatangan, urutan hasil multiple, dan data pegawai yang kosong.
 - Dampak perubahan data master selain status aktif penandatangan terhadap validasi dan hasil uji; Pemilihan klasifikasi daftar sudah dirinci pada bagian 8. Aturan kandidat tidak aktif sudah ditetapkan pada bagian Penandatangan.

@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Enums\AsnStatusEnum;
+use App\Enums\LetterTemplateOptionSourceEnum;
+use App\Enums\LetterTemplateVariableTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Http\FilterQuery;
 use App\Http\Requests\StoreLetterTemplateRequest;
 use App\Http\Requests\UpdateLetterTemplateRequest;
+use App\Http\Resources\MasterData\LetterTemplateConfigurationResource;
 use App\Http\Resources\MasterData\LetterTemplateResource;
 use App\Models\LetterNumber;
+use App\Models\MasterData\Employee;
 use App\Models\MasterData\LetterTemplate;
+use App\Models\MasterData\ReferenceGroup;
 use App\Services\LetterTemplate\SaveLetterTemplateIdentity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -65,10 +71,22 @@ class LetterTemplateController extends Controller
     {
         $letterTemplate->load(['activeVersion', 'displayVersion.letterNumber', 'draftVersion.letterNumber']);
 
+        $version = $letterTemplate->draftVersion ?? $letterTemplate->displayVersion;
+        $version?->load(['variables.referenceGroup', 'variables.columns', 'signerSlots.candidates.employee']);
+        $version?->loadExists(['audits as configuration_saved' => fn(Builder $query): Builder => $query->where('operation', 'configuration.updated')]);
+
         return inertia('letter-templates/edit', [
             'page' => ['id' => $this->pageId],
             'classifications' => $this->classifications(),
             'resource' => LetterTemplateResource::make($letterTemplate),
+            'configuration' => $version === null ? null : LetterTemplateConfigurationResource::make($version),
+            'configurationOptions' => [
+                'types' => LetterTemplateVariableTypeEnum::options(),
+                'sources' => LetterTemplateOptionSourceEnum::options(),
+                'columns' => collect(LetterTemplateOptionSourceEnum::cases())->mapWithKeys(fn(LetterTemplateOptionSourceEnum $source): array => [$source->value => $source->columnOptions()])->all(),
+                'referenceGroups' => ReferenceGroup::query()->orderBy('name')->orderBy('id')->get(['uuid', 'name'])->map(fn(ReferenceGroup $group): array => ['id' => $group->uuid, 'label' => $group->name])->all(),
+                'employees' => Employee::query()->where('status', AsnStatusEnum::AKTIF)->orderBy('name')->orderBy('id')->get(['id', 'uuid', 'name', 'front_title', 'back_title'])->map(fn(Employee $employee): array => ['id' => $employee->uuid, 'label' => LetterTemplateConfigurationResource::employeeName($employee)])->all(),
+            ],
         ]);
     }
 

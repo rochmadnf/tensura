@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\MasterData\LetterTemplateVersion;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LetterNumber extends Model
 {
@@ -23,5 +25,10 @@ class LetterNumber extends Model
     public function uniqueIds(): array
     {
         return ['uuid'];
+    }
+
+    public function templateVersions(): HasMany
+    {
+        return $this->hasMany(LetterTemplateVersion::class, 'letter_number_id');
     }
 }

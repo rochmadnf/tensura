@@ -5,14 +5,13 @@ namespace App\Services\LetterTemplate;
 use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\LetterNumber;
 use App\Models\MasterData\LetterTemplate;
-use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SaveLetterTemplateIdentity
 {
-    public function __construct(private RecordLetterTemplateAudit $audit) {}
+    public function __construct(private RecordLetterTemplateAudit $audit, private InvalidateLetterTemplateEvidence $evidence) {}
 
     /** @param array{name: string, letter_number: string} $data */
     public function create(array $data, User $actor): LetterTemplate
@@ -49,7 +48,7 @@ class SaveLetterTemplateIdentity
                 return;
             }
 
-            $this->invalidateEvidence($version);
+            $this->evidence->invalidate($version);
             $template->save();
             $version->save();
             $this->audit->record($template, $version, $actor, 'identity.updated', 'Identitas draft diperbarui; bukti pemeriksaan dibatalkan.');
@@ -64,14 +63,5 @@ class SaveLetterTemplateIdentity
         }
 
         return $classification;
-    }
-
-    private function invalidateEvidence(LetterTemplateVersion $version): void
-    {
-        $version->fill(array_fill_keys([
-            'validated_source_sha256', 'validated_configuration_sha256', 'validated_at', 'validation_result',
-            'tested_source_sha256', 'tested_configuration_sha256', 'test_disk', 'test_path', 'tested_at', 'test_expires_at',
-            'visually_confirmed_at', 'visually_confirmed_by', 'visually_confirmed_by_uuid', 'visually_confirmed_by_name',
-        ], null));
     }
 }

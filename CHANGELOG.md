@@ -4,6 +4,11 @@
 
 ### Ditambahkan
 
+- Konfigurasi Templat Surat per draft: variabel teks pendek/panjang/tanggal, combobox tunggal/multiple bersumber referensi atau pegawai, kolom tabel berulang, dan slot kandidat penandatangan dengan placeholder yang dapat disalin.
+- Validasi benturan placeholder, kepemilikan UUID variabel/kolom/slot, dan kandidat pegawai aktif diperiksa saat penyimpanan atomik. Penyimpanan membatalkan bukti pemeriksaan serta mempertahankan DOCX sumber dan versi historis.
+- Peringatan nama pegawai dan slot untuk kandidat yang menjadi tidak aktif, tanpa menghapus kandidat otomatis. Form identitas dan konfigurasi saling menunggu saat menyimpan.
+- Penghapusan klasifikasi/pegawai dan arsip grup referensi ditolak dengan pesan yang jelas selama masih dirujuk versi templat, termasuk versi historis atau diarsipkan. Penolakan arsip grup tidak meninggalkan snapshot; arsip item terpisah tetap tersedia.
+
 - Identitas dan daftar Templat Surat melalui route terautentikasi `lt.*`, halaman tambah/kelola, dan sidebar existing. Draft awal hanya menyimpan nama serta klasifikasi tanpa mengubah counter penomoran.
 - Pencarian literal nama/kode/nama klasifikasi, filter tunggal status/klasifikasi, dan paginasi stabil. Klasifikasi daftar mengikuti versi aktif, lalu draft berjalan, lalu versi terbaru.
 - Perubahan identitas draft membatalkan bukti validasi/uji/pemeriksaan, mempertahankan DOCX sumber serta versi historis, dan mencatat audit; payload sistem dan versi milik templat lain tidak dapat mengubah target.

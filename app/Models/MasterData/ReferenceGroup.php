@@ -34,4 +34,9 @@ class ReferenceGroup extends Model
     {
         return $this->hasMany(ReferenceItem::class, 'reference_group_id')->orderBy('sort_order')->orderBy('id');
     }
+
+    public function templateVariables(): HasMany
+    {
+        return $this->hasMany(LetterTemplateVariable::class, 'reference_group_id');
+    }
 }

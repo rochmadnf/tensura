@@ -9,6 +9,8 @@ use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response as InertiaResponse;
 
 class LetterNumberController extends Controller
@@ -69,7 +71,13 @@ class LetterNumberController extends Controller
 
     public function destroy(LetterNumber $letterNumber): RedirectResponse
     {
-        $letterNumber->delete();
+        DB::transaction(function () use ($letterNumber): void {
+            $letterNumber = LetterNumber::query()->whereKey($letterNumber->id)->lockForUpdate()->firstOrFail();
+            if ($letterNumber->templateVersions()->exists()) {
+                throw ValidationException::withMessages(['deletion' => 'Klasifikasi tidak dapat dihapus karena masih dirujuk templat surat, termasuk versi historis atau diarsipkan.']);
+            }
+            $letterNumber->delete();
+        }, 5);
 
         return redirect()->route('ln.index');
     }

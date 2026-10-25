@@ -45,7 +45,7 @@ export function DeleteResourceAction({
                 setOpen(false);
                 gooeyToast.success('Berhasil', { description: successMessage });
             },
-            onError: () => gooeyToast.error('Galat', { description: errorMessage }),
+            onError: (errors) => gooeyToast.error('Galat', { description: errors.deletion ?? errorMessage }),
             onFinish: () => {
                 operationLock.current = false;
             },

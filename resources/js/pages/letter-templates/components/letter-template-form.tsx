@@ -16,23 +16,30 @@ import type { SubmitEventHandler } from 'react';
 export function LetterTemplateForm({
     classifications,
     letterTemplate,
+    disabled = false,
+    onProcessingChange,
 }: {
     classifications: ClassificationOption[];
     letterTemplate?: LetterTemplateResource;
+    disabled?: boolean;
+    onProcessingChange?: (processing: boolean) => void;
 }) {
     const pageName = letterTemplate ? 'Ubah Templat Surat' : 'Tambah Templat Surat';
     const { form, submit, bind } = useValibotForm(createLetterTemplateSchema(classifications), {
         name: letterTemplate?.name ?? '',
         letter_number: letterTemplate?.draft?.letter_number ?? '',
     });
+    const busy = disabled || form.processing;
     const classificationItems = classifications.map((item) => ({ value: item.id, label: item.label }));
 
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
 
-        if (form.processing) return;
+        if (busy) return;
         const action = letterTemplate ? lt.update(letterTemplate.id) : lt.store();
         const submitted = submit(action.method, action.url, {
+            onStart: () => onProcessingChange?.(true),
+            onFinish: () => onProcessingChange?.(false),
             onError: () => {
                 gooeyToast.error('Galat', { description: 'Terdapat data yang tidak valid.' });
             },
@@ -62,7 +69,7 @@ export function LetterTemplateForm({
                     : 'Simpan nama dan klasifikasi untuk membuat draft awal.'
             }
             cancelUrl={lt.index().url}
-            disabled={form.processing}
+            disabled={busy}
         >
             <form noValidate onSubmit={handleSubmit}>
                 <FieldGroup>
@@ -74,12 +81,12 @@ export function LetterTemplateForm({
                             minLength={3}
                             maxLength={100}
                             autoFocus
-                            disabled={form.processing}
+                            disabled={busy}
                             {...bind('name')}
                         />
                         {form.errors.name && <FieldError>{form.errors.name}</FieldError>}
                     </Field>
-                    <Field data-invalid={!!form.errors.letter_number} data-disabled={form.processing}>
+                    <Field data-invalid={!!form.errors.letter_number} data-disabled={busy}>
                         <FieldLabel htmlFor="letter_number">Klasifikasi</FieldLabel>
                         <OptionSelect
                             id="letter_number"
@@ -89,7 +96,7 @@ export function LetterTemplateForm({
                             placeholder="Pilih klasifikasi"
                             resetLabel="Reset klasifikasi"
                             aria-invalid={!!form.errors.letter_number}
-                            disabled={form.processing}
+                            disabled={busy}
                             onValueChange={(value) => {
                                 form.setData('letter_number', value);
                                 form.clearErrors('letter_number');
@@ -97,7 +104,7 @@ export function LetterTemplateForm({
                         />
                         {form.errors.letter_number && <FieldError>{form.errors.letter_number}</FieldError>}
                     </Field>
-                    <FormActions cancelUrl={lt.index().url} processing={form.processing} />
+                    <FormActions cancelUrl={lt.index().url} processing={form.processing} disabled={disabled} />
                 </FieldGroup>
             </form>
         </FormCard>

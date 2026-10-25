@@ -17,7 +17,9 @@ use BackedEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Response as InertiaResponse;
 
 class EmployeeController extends Controller
@@ -170,7 +172,13 @@ class EmployeeController extends Controller
 
     public function destroy(Employee $employee): RedirectResponse
     {
-        $employee->delete();
+        DB::transaction(function () use ($employee): void {
+            $employee = Employee::query()->whereKey($employee->id)->lockForUpdate()->firstOrFail();
+            if ($employee->templateSignerCandidates()->exists()) {
+                throw ValidationException::withMessages(['deletion' => 'Pegawai tidak dapat dihapus karena masih menjadi kandidat penandatangan templat surat, termasuk versi historis atau diarsipkan.']);
+            }
+            $employee->delete();
+        }, 5);
 
         return redirect()->route('empl.index');
     }

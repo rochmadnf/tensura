@@ -9,6 +9,7 @@ use App\Models\MasterData\ReferenceItem;
 use App\Models\MasterData\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ArchiveReference
 {
@@ -18,6 +19,9 @@ class ArchiveReference
     {
         return DB::transaction(function () use ($group, $actor): Archive {
             $group = ReferenceGroup::query()->whereKey($group->id)->where('uuid', $group->uuid)->lockForUpdate()->firstOrFail();
+            if ($group->templateVariables()->exists()) {
+                throw ValidationException::withMessages(['deletion' => 'Grup referensi tidak dapat diarsipkan karena masih dirujuk templat surat, termasuk versi historis atau diarsipkan.']);
+            }
             $archive = $this->package($group, $actor, ArchiveKindEnum::PACKAGE, $group->name);
             $archive->records()->create($this->snapshot->snapshot($group));
             $group->items()->reorder()->chunkById(200, function (Collection $items) use ($group, $archive): void {
