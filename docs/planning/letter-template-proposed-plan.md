@@ -1,10 +1,10 @@
 # Rencana Teknis Bertahap Templat Surat MVP 1
 
-Status: implementasi bertahap; tahap 1–4 selesai; tahap tambahan 4A serta tahap 5–7 belum dimulai. Tahap 4A menjadi prasyarat tahap 5. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, pola aplikasi terbaru, dan keputusan lanjutan pengguna. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
+Status: implementasi bertahap; tahap 1–4 dan tahap tambahan 4A selesai; tahap 5–7 belum dimulai. Prasyarat katalog/konfigurasi tahap 4A untuk tahap 5 sudah tersedia. Ditinjau ulang pada 25 Oktober 2026 terhadap kode, route, skema database aktif, pola aplikasi terbaru, dan keputusan lanjutan pengguna. Fondasi database dan pembagian pekerjaan ditetapkan di sini; rincian kontrak yang masih terbuka tercatat pada bagian 6.
 
 Acuan proses bisnis: [letter-template-management-probis.md](letter-template-management-probis.md). Pilihan tabel relasional dan pemblokiran penghapusan master yang dirujuk, termasuk oleh versi historis atau arsip, sudah disepakati. Rincian kolom dan constraint di bawah merupakan rancangan teknis terakhir.
 
-Keputusan lanjutan pada tahap 4A memperbarui cakupan atribut Pegawai, kewajiban token penandatangan, fallback, format tanggal, dan UX halaman kelola. Jika berbeda dengan batas atribut atau kewajiban placeholder pada dokumen proses bisnis sebelumnya, gunakan keputusan terbaru dalam rencana ini. Catatan kontrak tahap 1–4 di bagian 5 mempertahankan riwayat implementasi; perubahan tahap 4A belum diterapkan dan belum memiliki bukti pengujian.
+Keputusan lanjutan pada tahap 4A memperbarui cakupan atribut Pegawai, kewajiban token penandatangan, fallback, format tanggal, dan UX halaman kelola. Jika berbeda dengan batas atribut atau kewajiban placeholder pada dokumen proses bisnis sebelumnya, gunakan keputusan terbaru dalam rencana ini. Catatan kontrak tahap 1–4 di bagian 5 mempertahankan riwayat implementasi; perubahan tahap 4A sudah diterapkan dan cakupan serta bukti pengujiannya tercatat tersendiri di bawah.
 
 ## 1. Ringkasan
 
@@ -52,7 +52,7 @@ Ketentuan:
 - Tahap 4A menyediakan seluruh atribut bisnis Pegawai yang tercantum dalam katalog di bawah untuk penandatangan, variabel Pegawai tunggal, dan kolom berulang. Penambahan atribut berikutnya harus melalui katalog backend dan test; jangan mengekspos seluruh kolom model secara otomatis atau membuat jenis variabel baru untuk setiap atribut.
 - DOCX contoh/panduan dihasilkan dari konfigurasi versi saat diminta, tanpa tabel tambahan. Panduan dapat diunduh ulang dan tidak menjadi bukti validasi/uji maupun pengganti DOCX sumber.
 
-### Katalog Pegawai bersama — target tahap 4A
+### Katalog Pegawai bersama — kontrak tahap 4A
 
 Katalog backend memiliki key atribut, label, sufiks token, jenis nilai, dan pemetaan nilai. Katalog yang sama dipakai Resource opsi, UI konfigurasi, validasi namespace, resolver, formatter, dan panduan DOCX. ID database, UUID, dan timestamps bukan atribut surat; `row_number` tetap khusus kolom tabel berulang.
 
@@ -71,7 +71,7 @@ Katalog backend memiliki key atribut, label, sufiks token, jenis nilai, dan peme
 - Nama lengkap mengikuti susunan gelar aplikasi, jabatan/kelompok berasal dari relasi `jobTitle`, dan enum menghasilkan label. Setiap atribut dibaca dari data sumbernya sendiri; nilai null/relasi kosong mengikuti fallback, bukan angka kode enum atau id relasi.
 - Masa kerja dihitung sebagai selisih kalender dari tanggal bergabung sampai tanggal acuan pemrosesan, dalam zona waktu aplikasi. Resolver menerima tanggal acuan eksplisit agar satu proses konsisten dan dapat diuji. Teks sampai hari, bagian nol dihilangkan: `5 tahun 3 hari`, `2 bulan 7 hari`, atau `12 hari`. Komponen tahun/bulan/hari adalah bagian selisih tersebut, bukan total bulan/hari; angka `0` tetap sah. Tanggal bergabung hari ini atau masa depan menghasilkan `0 hari`; tanggal kosong mengikuti fallback.
 
-### Fallback dan format tanggal — target tahap 4A
+### Fallback dan format tanggal — kontrak tahap 4A
 
 - Penandatangan dan variabel Pegawai tunggal memiliki fallback teks literal per atribut, default kosong. Atribut yang bernilai kosong memakai fallback; tanpa fallback hasilnya teks kosong. Angka `0` bukan nilai kosong. Alias dasar memakai fallback nama lengkap yang sama.
 - Variabel tunggal teks pendek/panjang, tanggal, dan Referensi memakai `default_text` sebagai fallback literal pada DOCX, bukan nilai awal form. Variabel Pegawai tunggal memakai pengaturan per atribut, tanpa fallback induk tambahan. Fallback tidak melewati validasi variabel wajib; data wajib tetap harus diisi.
@@ -257,7 +257,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | 2. Identitas/daftar | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberIndexTest.php tests/Feature/LetterNumberEditTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ListingSearchTest.php` — 144 test, 1.213 assertion lulus | `f10ef22` |
 | 3. Variabel/penandatangan | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php tests/Feature/LetterNumberDeleteTest.php tests/Feature/EmployeeDeleteTest.php tests/Feature/ReferenceGroupDeleteTest.php tests/Feature/ReferenceArchiveTest.php tests/Feature/ReferenceItemDeleteTest.php` — 172 test, 1.095 assertion lulus | `1d1b684` |
 | 4. Upload/validasi DOCX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateDocxTest.php tests/Feature/LetterTemplateExampleTest.php tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php` — 197 test, 1.305 assertion lulus | `8dd1f0c` |
-| 4A. Katalog Pegawai/fallback/format/UX | Belum dimulai; prasyarat tahap 5 | — | — |
+| 4A. Katalog Pegawai/fallback/format/UX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 229 test, 1.460 assertion lulus | `1341301` |
 | 5. Generate/konfirmasi | Belum dimulai | — | — |
 | 6. Publikasi/versi | Belum dimulai | — | — |
 | 7. Cleanup/integrasi | Belum dimulai | — | — |
@@ -301,9 +301,20 @@ Kasus konkurensi PostgreSQL perlu membuktikan pembuatan draft bersamaan, publika
 
 Untuk DOCX, uji hasil berkas dengan fixture yang mencakup tabel berulang, header/footer, placeholder terpecah, teks panjang, input berbahaya, perubahan hash/konfigurasi, dan expiry hasil uji. Test tahap 4 memakai DOCX nyata melalui PHPWord yang dipin, termasuk penggantian teks panjang/text run/header/footer dan clone baris. Endpoint generate uji dan bukti pemeriksaan tetap menunggu tahap 5.
 
+### Kontrak katalog, fallback, format, dan UX yang diterapkan pada tahap 4A
+
+- `EmployeeAttributeCatalog` memetakan 25 atribut bisnis Pegawai sesuai bagian 2. Resource opsi, pilihan kolom, namespace, validator DOCX, resolver, dan panduan memakai katalog yang sama; penambahan atribut tidak memerlukan kolom pengaturan baru. Token dasar tetap alias nama lengkap. Resolver menerima tanggal acuan eksplisit, menangani label enum/relasi kosong, dan menghitung masa kerja kalender sampai hari.
+- Migration tambahan menambah `variables.default_text`, `columns.date_format`, dan dua tabel pengaturan atribut dengan UUID, FK restrict, serta unique pemilik–atribut. Pengaturan default disajikan secara efektif; hanya fallback/format yang berbeda dari default disimpan sebagai baris anak. Penggantian snapshot menghapus anak sebelum induk, mempertahankan UUID pemilik, dan rollback utuh jika gagal.
+- Endpoint konfigurasi existing menerima `default_text`, `employee_attributes` per variabel/slot, dan `date_format` kolom sesuai tahap 4A. Field baru yang dihilangkan pada payload lama mempertahankan pengaturan existing bila jenis/sumber/mode sama. Null/list kosong eksplisit mereset pengaturan; perubahan jenis/sumber/mode membersihkan pengaturan yang tidak sesuai. Fallback maksimal 10.000 karakter dan pola tanggal maksimal 100 karakter tanpa karakter kontrol. Fallback multiple, key asing, atribut berulang, dan format pada atribut non-tanggal ditolak.
+- `GET /letter-templates/date-format` (`lt.date-format`) terautentikasi menerima query `date_format` opsional dan mengembalikan JSON `example` serta `locale`. Contoh memakai tanggal fiktif tetap 25 Oktober 2026, dengan formatter backend yang sama dengan resolver. Format default `d-m-Y`, nama hari/bulan mengikuti `config('app.locale')`, dan escape literal dipertahankan. Input menampilkan contoh serta tombol informasi pola PHP.
+- Seluruh token penandatangan opsional; DOCX dapat memakai pangkat/golongan tanpa nama, atau tidak memakai slot sama sekali. Benturan keluarga token otomatis pada konfigurasi existing juga menggagalkan validasi dengan pesan yang dapat ditindaklanjuti. Panduan memuat keluarga token dan pengaturan tanpa data pribadi pegawai nyata; fallback/penjelasan tidak menciptakan token tambahan.
+- Fingerprint memuat fallback, format tanggal, locale, dan revisi kontrak katalog/resolver. Bukti tahap 4 menjadi stale ketika hash tidak cocok; source tetap dipertahankan. Ini belum membekukan nilai master atau tanggal pemrosesan untuk surat historis.
+- Kartu awal dalam mode baca, satu kartu editable, serta Simpan/Batal hanya saat edit. Batal mereset form, galat, dan file melalui pembentukan ulang form dari props tersimpan tanpa navigasi; galat simpan mempertahankan edit. Validasi DOCX diblokir selama edit/upload untuk menjaga penggunaan konfigurasi tersimpan. Naik/turun memakai ikon outline kecil, hapus destructive, dan tombol berteks memakai ikon sebelum teks. Satu unduhan contoh versi saat ini berada ringkas pada ringkasan atas; unduhan historis tetap tersedia.
+- PHPUnit dan seluruh regresi Templat Surat lulus 229 test/1.460 assertion. Pint, TypeScript, lint file terkait, build produksi, dan pemeriksaan diff lulus. Browser/visual, test frontend, serta konkurensi tetap mengikuti jadwal akhir dan belum diklaim lulus. Endpoint generate, penerapan fallback pada hasil DOCX, dan penghapusan baris/tabel multiple kosong belum tersedia; tahap 5 wajib memakai kontrak/resolver tahap 4A.
+
 ### Kontrak DOCX yang diterapkan pada tahap 4
 
-Bagian ini mencatat perilaku pada commit tahap 4, bukan klaim bahwa perubahan tahap 4A sudah tersedia. Kewajiban placeholder slot, isi panduan, dan fingerprint di bawah akan diperbarui oleh tahap 4A sesuai bagian 2–4; aturan keamanan paket dan isolasi berkas tetap berlaku.
+Bagian ini mencatat perilaku pada commit tahap 4, bukan pengganti kontrak terbaru tahap 4A di atasnya. Kewajiban placeholder slot, isi panduan, dan fingerprint di bawah sudah diperbarui oleh tahap 4A sesuai bagian 2–4; aturan keamanan paket dan isolasi berkas tetap berlaku.
 
 - Endpoint terautentikasi dengan scoped binding templat/versi: `POST .../source` (`lt.source.store`), `GET .../source` (`lt.source.download`), `POST .../validate` (`lt.validation.store`), dan `GET .../example` (`lt.example.download`), dengan awalan `/letter-templates/{letterTemplate:uuid}/versions/{version:uuid}`. UUID versi asing/tidak dikenal/numerik ditolak 404. Upload menerima hanya file `docx`; field sistem tidak ditulis.
 - `config/letter-templates.php` menetapkan disk lokal privat, path sources/temporary/previews, upload 10.240 KB (10 MB), maksimal 1.000 entry ZIP, total dekompresi 50 MB, XML per entry 2 MB/total 8 MB, rasio kompresi maksimal 200, panjang placeholder 100 karakter, serta maksimal 1.000 kemunculan placeholder. Nilai expiry/generate belum ditetapkan karena belum digunakan.
@@ -357,7 +368,7 @@ Bagian ini mencatat kontrak awal tahap 3. Batas empat kolom Pegawai dan payload 
 
 ## 6. Kelanjutan perencanaan
 
-Keputusan atribut Pegawai, token otomatis/alias, token penandatangan opsional, fallback, format tanggal per atribut, masa kerja sampai hari, dan perbaikan UX sudah ditetapkan pada bagian 2 serta tahap 4A. Implementasikan tahap 4A sebelum memulai generate uji; tidak perlu mengulang keputusan produk tersebut.
+Keputusan atribut Pegawai, token otomatis/alias, token penandatangan opsional, fallback, format tanggal per atribut, masa kerja sampai hari, dan perbaikan UX sudah ditetapkan pada bagian 2 serta tahap 4A. Tahap 4A sudah selesai dan tahap 5 menjadi pekerjaan berikutnya; tidak perlu mengulang keputusan produk tersebut.
 
 Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
@@ -370,4 +381,4 @@ Rincian berikut masih perlu ditetapkan sebelum implementasi terkait:
 
 Jangan menganggap rincian yang belum ditetapkan sebagai keputusan final.
 
-Tahap 1–4 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL disposable. Dependency tidak berubah. Tahap 4 tidak menambah atau menjalankan migration database aplikasi; build frontend sudah diperbarui. Pembaruan rencana tahap 4A dan dampaknya pada tahap 5–7 hanya mengubah dokumentasi; belum menambah migration, mengubah perilaku aplikasi, atau menjalankan pengujian implementasi baru.
+Tahap 1–4 sudah mengubah kode dan menjalankan pengujian pada PostgreSQL disposable. Dependency tidak berubah. Tahap 4 tidak menambah atau menjalankan migration database aplikasi; build frontend sudah diperbarui. Tahap 4A menambah migration relasional dan sudah menerapkannya pada database aplikasi lokal. PHPUnit dijalankan pada PostgreSQL 18 sementara di `/tmp` dengan database disposable `tensura_test_stage4a` melalui override `TEST_DB_*`; konfigurasi `.env`/`.env.testing` tidak diubah. Build frontend sudah diperbarui. Pengujian browser/visual tetap mengikuti jadwal verifikasi akhir.
