@@ -73,8 +73,12 @@ export function LetterTemplateForm({
         return (
             <FormCard
                 title="Identitas Templat"
-                description="Nama dan klasifikasi draft yang tersimpan."
-                action={<TemplateEditAction label="identitas" disabled={disabled} onClick={() => onEdit?.()} />}
+                description={`${letterTemplate.draft ? `Draft versi ${letterTemplate.draft.number}` : 'Tidak ada draft yang dapat diubah'} · ${letterTemplate.is_active ? 'Aktif' : 'Nonaktif'}`}
+                action={
+                    letterTemplate.draft ? (
+                        <TemplateEditAction label="identitas" disabled={disabled} onClick={() => onEdit?.()} />
+                    ) : undefined
+                }
             >
                 <dl className="flex flex-col gap-3 text-sm">
                     <div>
@@ -85,7 +89,9 @@ export function LetterTemplateForm({
                         <dt className="text-muted-foreground">Klasifikasi</dt>
                         <dd>
                             {classifications.find((item) => item.id === letterTemplate.draft?.letter_number)?.label ??
-                                'Belum tersedia'}
+                                (letterTemplate.classification
+                                    ? `${letterTemplate.classification.code} — ${letterTemplate.classification.name}`
+                                    : 'Belum tersedia')}
                         </dd>
                     </div>
                 </dl>

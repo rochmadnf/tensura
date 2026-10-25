@@ -8,6 +8,7 @@ import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { CardAction } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { useValibotForm } from '@/hooks/use-valibot-form';
@@ -93,9 +94,21 @@ export function LetterTemplateDocumentForm({
             title="DOCX Sumber"
             description="Unduh contoh, sesuaikan dokumen, lalu unggah dan validasi. Panduan memakai konfigurasi yang sudah disimpan."
             action={
-                !editing && editable ? (
-                    <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} />
-                ) : undefined
+                <CardAction className="col-span-full col-start-1 row-span-1 row-start-3 flex flex-wrap gap-2 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end">
+                    <Button
+                        nativeButton={false}
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        render={<a href={exampleDownload(args).url} />}
+                    >
+                        <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
+                        Unduh DOCX Contoh
+                    </Button>
+                    {!editing && editable && (
+                        <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} inline />
+                    )}
+                </CardAction>
             }
             disabled={busy}
         >

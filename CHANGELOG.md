@@ -49,9 +49,14 @@
 
 ### Diubah
 
+- Halaman kelola Templat Surat memakai satu kartu Identitas Templat serta kartu terpisah Konfigurasi Formulir Surat dan Penandatangan. Unduh DOCX Contoh dipindahkan ke header DOCX Sumber di samping Edit, termasuk pada mode hanya-baca.
+- Variabel ditampilkan dalam tabel dengan editor per baris, Wajib/Opsional di samping jenis, detail combobox di bawahnya, serta urutan dan hapus yang langsung tersimpan. Penandatangan memiliki editor kandidat per slot; tambah membuka item lokal sampai disimpan.
+- Atribut Pegawai memakai tabel dengan edit fallback per atribut dan format untuk tanggal. Label Nama beserta gelar/Nama tanpa gelar diperjelas; token tetap sama. Hanya satu editor aktif, Batal/Escape tanpa navigasi, dan galat mempertahankan input.
+- Endpoint konfigurasi per item memeriksa kepemilikan, namespace global, dan status draft dalam transaksi; mempertahankan item lain serta fallback atribut terbaru ketika pemilik diedit. Kandidat tidak aktif di slot lain tidak memblokir edit variabel/atribut. Bukti pemeriksaan dibatalkan setelah perubahan konfigurasi.
+
 - Key kartu identitas, konfigurasi, dan DOCX Templat Surat dibedakan berdasarkan jenis kartu agar tidak mengganda saat Edit/Simpan/Batal meskipun memakai UUID versi yang sama. Reset form saat keluar dari mode edit tetap dipertahankan.
 - Kartu kelola Templat Surat dibuka dalam mode baca dan hanya satu kartu dapat diedit; Simpan/Batal hanya tampil saat edit. Batal memulihkan form tanpa navigasi, tombol urutan memakai ikon outline kecil, dan hapus memakai destructive.
-- Unduh DOCX Contoh versi saat ini hanya ditampilkan sekali secara ringkas pada ringkasan atas. Panduan memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Generate hasil DOCX tetap mengikuti tahap berikutnya.
+- Panduan DOCX memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Lokasi unduhan terbaru mengikuti header DOCX Sumber di atas.
 
 - Detail Pegawai disusun menjadi kartu ringkasan, data diri, pekerjaan, serta STR/SIP dengan kondisi kosong, tampilan responsif, dan dukungan mode gelap mengikuti tema yang ada.
 - Kolom jenis kelamin Pegawai menggunakan integer tetap 1/2; formulir dikelompokkan menjadi Data Diri, Data Kepegawaian, STR, dan SIP.

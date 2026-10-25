@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import { InformationCircleIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { dateFormat } from '@/routes/lt';
-import type { EmployeeAttributeOption, EmployeeAttributeSetting } from '@/schemas/letter-template-configuration';
-import { CopyPlaceholder } from './copy-placeholder';
 
 export function EmployeeDateFormat({
     id,
@@ -94,98 +92,5 @@ export function EmployeeDateFormat({
             <FieldDescription>Contoh tanggal 25 Oktober 2026: {example || 'Memuat…'}</FieldDescription>
             <FieldError>{error}</FieldError>
         </Field>
-    );
-}
-
-export function EmployeeAttributeFields({
-    prefix,
-    path,
-    attributes,
-    settings,
-    onChange,
-    disabled,
-    errors,
-    readOnly = false,
-}: {
-    prefix: string;
-    path: string;
-    attributes: EmployeeAttributeOption[];
-    settings: EmployeeAttributeSetting[];
-    onChange?: (settings: EmployeeAttributeSetting[]) => void;
-    disabled: boolean;
-    errors: Record<string, string | undefined>;
-    readOnly?: boolean;
-}) {
-    return (
-        <details className="text-sm" open={Object.keys(errors).some((key) => key.startsWith(path)) ? true : undefined}>
-            <summary className="cursor-pointer font-medium">Atribut Pegawai ({attributes.length})</summary>
-            <FieldGroup className="pt-4">
-                <p className="text-muted-foreground">
-                    Semua token mengambil data dari pegawai yang sama. Gunakan atribut yang dibutuhkan. Fallback berupa
-                    teks literal saat atribut kosong.
-                </p>
-                <FieldError>{errors[path]}</FieldError>
-                {attributes.map((attribute) => {
-                    const index = settings.findIndex((setting) => setting.source_attribute === attribute.id);
-                    const setting = settings[index] ?? {
-                        source_attribute: attribute.id,
-                        default_text: null,
-                        date_format: attribute.type === 'date' ? 'd-m-Y' : null,
-                    };
-                    const inputId = `${path}.${attribute.id}`;
-                    const fieldPath = `${path}.${index < 0 ? settings.length : index}`;
-                    function patch(changes: Partial<EmployeeAttributeSetting>) {
-                        onChange?.(
-                            index < 0
-                                ? [...settings, { ...setting, ...changes }]
-                                : settings.map((item, position) =>
-                                      position === index ? { ...setting, ...changes } : item,
-                                  ),
-                        );
-                    }
-                    return (
-                        <FieldGroup key={attribute.id}>
-                            <p className="font-medium">{attribute.label}</p>
-                            <CopyPlaceholder name={`${prefix}_${attribute.suffix}`} />
-                            {readOnly ? (
-                                <p className="text-muted-foreground">
-                                    Fallback: {setting.default_text ?? 'Kosong'}
-                                    {attribute.type === 'date' ? ` · Format: ${setting.date_format ?? 'd-m-Y'}` : ''}
-                                </p>
-                            ) : (
-                                <>
-                                    <Field>
-                                        <FieldLabel htmlFor={`${inputId}.default_text`}>
-                                            Fallback {attribute.label}
-                                        </FieldLabel>
-                                        <Input
-                                            id={`${inputId}.default_text`}
-                                            value={setting.default_text ?? ''}
-                                            maxLength={10000}
-                                            disabled={disabled}
-                                            placeholder="Kosong"
-                                            onChange={(event) => patch({ default_text: event.target.value || null })}
-                                        />
-                                        <FieldError>
-                                            {errors[`${fieldPath}.default_text`] ||
-                                                errors[`${fieldPath}.source_attribute`]}
-                                        </FieldError>
-                                    </Field>
-                                    {attribute.type === 'date' && (
-                                        <EmployeeDateFormat
-                                            id={`${inputId}.date_format`}
-                                            value={setting.date_format}
-                                            disabled={disabled}
-                                            onChange={(date_format) => patch({ date_format })}
-                                            error={errors[`${fieldPath}.date_format`]}
-                                        />
-                                    )}
-                                </>
-                            )}
-                        </FieldGroup>
-                    );
-                })}
-            </FieldGroup>
-        </details>
     );
 }

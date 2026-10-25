@@ -80,3 +80,12 @@ export type LetterTemplateConfiguration = {
     signer_slots: (ConfigurationSlot & { placeholder: string })[];
     warnings: { slot: number; employee: string; name: string }[];
 };
+
+export const letterTemplateVariableItemSchema = defineRequest(object({ item: variableSchema }));
+export const letterTemplateSlotItemSchema = defineRequest(object({ item: slotSchema }));
+export const letterTemplateAttributeItemSchema = defineRequest(
+    object({
+        default_text: nullable(pipe(string(), maxLength(10000, 'Fallback maksimal 10.000 karakter.'))),
+        date_format: nullable(pipe(string(), maxLength(100, 'Format tanggal maksimal 100 karakter.'))),
+    }),
+);
