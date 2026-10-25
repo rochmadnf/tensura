@@ -52,6 +52,7 @@ export function ConfigurationSlotRow({
                         <OptionSelect
                             id={`${id}-candidates`}
                             name="candidates"
+                            remote={{ source: 'employees' }}
                             multiple
                             forceCombobox
                             disabled={busy}
@@ -90,11 +91,11 @@ export function ConfigurationSlotRow({
                         </div>
                     ))}
                     <p className="text-sm text-muted-foreground">
-                        Simpan slot terlebih dahulu untuk mengatur fallback dan format atribut Pegawai.
+                        Simpan slot terlebih dahulu untuk mengatur teks alternatif dan format atribut Pegawai.
                     </p>
                 </FieldGroup>
             </TableCell>
-            <TableCell className="min-w-48">
+            <TableCell className="w-24">
                 <form
                     id={id}
                     noValidate

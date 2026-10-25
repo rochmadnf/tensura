@@ -86,6 +86,7 @@ export function LetterTemplateTestForm({
     return (
         <FormCard
             title="Generate dan Pemeriksaan DOCX"
+            step={5}
             description="Isi data contoh untuk token yang digunakan dalam DOCX tersimpan, lalu unduh hasilnya untuk diperiksa."
         >
             <FieldGroup>
@@ -132,6 +133,7 @@ export function LetterTemplateTestForm({
                                                         forceCombobox
                                                         id={`test-${path}`}
                                                         name={path}
+                                                        remote={{ source: 'variable-options', context: variable.id }}
                                                         items={variable.options.map((option) => ({
                                                             value: option.id,
                                                             label: option.label,
@@ -166,6 +168,7 @@ export function LetterTemplateTestForm({
                                                     forceCombobox
                                                     id={`test-${path}`}
                                                     name={path}
+                                                    remote={{ source: 'variable-options', context: variable.id }}
                                                     items={variable.options.map((option) => ({
                                                         value: option.id,
                                                         label: option.label,
@@ -214,6 +217,7 @@ export function LetterTemplateTestForm({
                                         forceCombobox
                                         id={`test-signers-${slot.id}`}
                                         name={`signers.${slot.id}`}
+                                        remote={{ source: 'signer-candidates', context: slot.id }}
                                         items={slot.options.map((option) => ({
                                             value: option.id,
                                             label: option.label,

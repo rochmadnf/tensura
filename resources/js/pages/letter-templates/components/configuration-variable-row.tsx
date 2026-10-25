@@ -8,7 +8,7 @@ import {
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { OptionSelect } from '@/components/option-select';
 import { FormActions } from '@/components/form-actions';
 import { gooeyToast } from '@/components/ui/goey-toaster';
@@ -44,7 +44,7 @@ export function ConfigurationVariableRow({
         form.setData('item', { ...value, ...changes });
         form.clearErrors();
     }
-    const error = () => gooeyToast.error('Galat', { description: 'Periksa isian variabel.' });
+    const error = () => gooeyToast.error('Galat', { description: 'Periksa isian pada formulir.' });
     return (
         <Fragment>
             <TableRow>
@@ -52,7 +52,7 @@ export function ConfigurationVariableRow({
                 <TableCell className="min-w-48">
                     <Field data-invalid={!!errors['item.name']}>
                         <FieldLabel className="sr-only" htmlFor={`${id}-name`}>
-                            Nama Placeholder
+                            Nama Variabel
                         </FieldLabel>
                         <Input
                             id={`${id}-name`}
@@ -63,7 +63,7 @@ export function ConfigurationVariableRow({
                             disabled={busy}
                             aria-invalid={!!errors['item.name']}
                             onChange={(event) => patch({ name: event.target.value })}
-                            placeholder="tujuan_perjalanan"
+                            placeholder="Cth: nama_variabel"
                         />
                         <FieldError>{errors['item.name']}</FieldError>
                     </Field>
@@ -71,7 +71,7 @@ export function ConfigurationVariableRow({
                 <TableCell className="min-w-48">
                     <Field data-invalid={!!errors['item.label']}>
                         <FieldLabel className="sr-only" htmlFor={`${id}-label`}>
-                            Label Variabel
+                            Pertanyaan
                         </FieldLabel>
                         <Input
                             id={`${id}-label`}
@@ -81,7 +81,7 @@ export function ConfigurationVariableRow({
                             disabled={busy}
                             aria-invalid={!!errors['item.label']}
                             onChange={(event) => patch({ label: event.target.value })}
-                            placeholder="Tujuan Perjalanan"
+                            placeholder="Cth: Kamu sehat hari ini?"
                         />
                         <FieldError>{errors['item.label']}</FieldError>
                     </Field>
@@ -90,12 +90,12 @@ export function ConfigurationVariableRow({
                     <div className="flex items-center gap-3">
                         <Field data-invalid={!!errors['item.type']}>
                             <FieldLabel className="sr-only" htmlFor={`${id}-type`}>
-                                Jenis Variabel
+                                Jenis Pertanyaan
                             </FieldLabel>
                             <OptionSelect
                                 id={`${id}-type`}
                                 name="type"
-                                placeholder="Pilih jenis variabel"
+                                placeholder="Pilih jenis pertanyaan"
                                 items={options.types.map((type) => ({ value: String(type.id), label: type.label }))}
                                 value={String(value.type)}
                                 disabled={busy}
@@ -113,15 +113,13 @@ export function ConfigurationVariableRow({
                             />
                         </Field>
                         <Field orientation="horizontal" className="w-auto">
-                            <Checkbox
+                            <FieldLabel htmlFor={`${id}-required`}>Wajib diisi</FieldLabel>
+                            <Switch
                                 id={`${id}-required`}
                                 checked={value.is_required}
                                 disabled={busy}
                                 onCheckedChange={(is_required) => patch({ is_required })}
                             />
-                            <FieldLabel htmlFor={`${id}-required`}>
-                                {value.is_required ? 'Wajib' : 'Opsional'}
-                            </FieldLabel>
                         </Field>
                     </div>
                     <FieldError>{errors['item.type'] || errors['item.is_required']}</FieldError>
@@ -134,7 +132,7 @@ export function ConfigurationVariableRow({
                     ) : (
                         <Field data-invalid={!!errors['item.default_text']}>
                             <FieldLabel className="sr-only" htmlFor={`${id}-fallback`}>
-                                Fallback teks
+                                Teks Alternatif
                             </FieldLabel>
                             <Input
                                 id={`${id}-fallback`}
@@ -150,7 +148,7 @@ export function ConfigurationVariableRow({
                         </Field>
                     )}
                 </TableCell>
-                <TableCell className="min-w-48">
+                <TableCell className="w-24">
                     <form
                         id={id}
                         noValidate
@@ -171,7 +169,7 @@ export function ConfigurationVariableRow({
                                     onSuccess: () => {
                                         onClose();
                                         gooeyToast.success('Berhasil', {
-                                            description: 'Variabel disimpan. Validasi ulang DOCX.',
+                                            description: 'Pertanyaan disimpan. Validasi ulang DOCX.',
                                         });
                                     },
                                 })
@@ -210,7 +208,7 @@ export function ConfigurationVariableRow({
                         />
                         {employee && (
                             <p className="mt-3 text-sm text-muted-foreground">
-                                Simpan variabel terlebih dahulu untuk mengatur fallback dan format setiap atribut
+                                Simpan variabel terlebih dahulu untuk mengatur teks alternatif dan format setiap atribut
                                 Pegawai.
                             </p>
                         )}

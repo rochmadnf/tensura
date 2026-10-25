@@ -55,9 +55,10 @@ class LetterTemplateTestController extends Controller
             if ($version->visually_confirmed_at !== null) {
                 return;
             }
+            $before = $audit->snapshot($letterTemplate, $version);
             $actor = $request->user();
             $version->fill(['visually_confirmed_at' => now(), 'visually_confirmed_by' => $actor->id, 'visually_confirmed_by_uuid' => $actor->uuid, 'visually_confirmed_by_name' => $actor->name])->save();
-            $audit->record($letterTemplate, $version, $actor, 'test.confirmed', 'Admin menyatakan DOCX hasil uji terbaru telah dibuka dan diperiksa secara visual.');
+            $audit->record($letterTemplate, $version, $actor, 'test.confirmed', 'Admin menyatakan DOCX hasil uji terbaru telah dibuka dan diperiksa secara visual.', $before);
         }, 5);
 
         return redirect()->route('lt.edit', $letterTemplate->uuid);

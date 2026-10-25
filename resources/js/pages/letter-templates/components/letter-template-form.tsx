@@ -77,6 +77,7 @@ export function LetterTemplateForm({
         return (
             <FormCard
                 title="Identitas Templat"
+                step={1}
                 description={`${selectedVersion ? `${selectedVersion.status_label} versi ${selectedVersion.number}` : letterTemplate.draft ? `Draft versi ${letterTemplate.draft.number}` : 'Tidak ada draft yang dapat diubah'} · ${letterTemplate.is_active ? 'Aktif' : 'Nonaktif'}`}
                 action={
                     canEdit ? (
@@ -109,6 +110,7 @@ export function LetterTemplateForm({
     return (
         <FormCard
             title={pageName}
+            step={letterTemplate ? 1 : undefined}
             description={
                 letterTemplate
                     ? 'Ubah identitas draft. Perubahan membatalkan bukti pemeriksaan sebelumnya.'
@@ -137,6 +139,7 @@ export function LetterTemplateForm({
                         <OptionSelect
                             id="letter_number"
                             name="letter_number"
+                            remote={{ source: 'classifications' }}
                             items={classificationItems}
                             value={form.data.letter_number}
                             placeholder="Pilih klasifikasi"

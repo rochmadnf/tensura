@@ -4,6 +4,10 @@
 
 ### Ditambahkan
 
+- Pencarian opsi database bersama dengan maksimal 10 hasil, penyegaran saat pilihan dibuka, dan pemuatan label pilihan tersimpan tanpa menghapus isian formulir.
+- Detail audit Templat Surat sebelum–sesudah dan timeline lintas versi berisi 10 aktivitas per halaman dengan navigasi Sebelumnya/Berikutnya.
+- Header tahap editor Templat Surat, switch Wajib diisi, kolom aksi yang mengikuti izin edit versi, serta tombol Simpan/Batal ikon dengan tooltip pada komponen bersama dan item referensi.
+
 - Publikasi Templat Surat setelah pemeriksaan sumber, konfigurasi, hasil uji terbaru yang belum kedaluwarsa, konfirmasi visual, dan seluruh kandidat penandatangan aktif; pointer versi terbit aktif diperbarui tanpa menghapus publikasi terdahulu.
 - Pembukaan kembali publikasi yang belum digunakan sebagai draft dengan nomor yang sama, serta penyalinan versi yang sudah digunakan atau diarsipkan menjadi draft bernomor baru. Seluruh konfigurasi/fallback/format disalin mandiri dan sumber DOCX memakai berkas terpisah; bukti pemeriksaan wajib dibuat ulang.
 - Arsip draft sebagai status versi serta aktif/nonaktif templat dengan konfirmasi dan audit, tanpa hapus permanen atau integrasi Arsip pusat. Publikasi mempertahankan status Nonaktif hingga admin mengaktifkannya secara terpisah.

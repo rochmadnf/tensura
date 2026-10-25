@@ -31,6 +31,7 @@ class StoreLetterTemplateDocx
             $old = DB::transaction(function () use ($template, $version, $file, $actor, $path, $diskName): array {
                 $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
                 $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+                $before = $this->audit->snapshot($template, $version);
                 if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                     throw ValidationException::withMessages(['docx' => 'DOCX hanya dapat diganti pada draft yang belum digunakan.']);
                 }
@@ -41,7 +42,7 @@ class StoreLetterTemplateDocx
                     'source_original_name' => mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))), 0, 255),
                     'source_size' => $file->getSize(), 'source_sha256' => hash_file('sha256', $file->getPathname()),
                 ])->save();
-                $this->audit->record($template, $version, $actor, 'source.uploaded', 'DOCX sumber disimpan; bukti pemeriksaan dibatalkan.');
+                $this->audit->record($template, $version, $actor, 'source.uploaded', 'DOCX sumber disimpan; bukti pemeriksaan dibatalkan.', $before);
 
                 return $old;
             }, 5);

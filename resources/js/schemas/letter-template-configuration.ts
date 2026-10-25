@@ -15,15 +15,15 @@ import {
 } from 'valibot';
 
 const placeholder = pipe(
-    string('Nama placeholder harus berupa teks.'),
+    string('Nama Variabel harus berupa teks.'),
     trim(),
-    nonEmpty('Nama placeholder wajib diisi.'),
-    maxLength(100, 'Nama placeholder maksimal 100 karakter.'),
+    nonEmpty('Nama Variabel wajib diisi.'),
+    maxLength(100, 'Nama Variabel maksimal 100 karakter.'),
     regex(/^[a-z][a-z0-9_]*$/, 'Gunakan huruf kecil, angka, dan garis bawah; awali dengan huruf.'),
 );
 const employeeAttributeSchema = object({
     source_attribute: string(),
-    default_text: nullable(pipe(string(), maxLength(10000, 'Fallback maksimal 10.000 karakter.'))),
+    default_text: nullable(pipe(string(), maxLength(10000, 'Teks alternatif maksimal 10.000 karakter.'))),
     date_format: nullable(pipe(string(), maxLength(100, 'Format tanggal maksimal 100 karakter.'))),
 });
 export type EmployeeAttributeSetting = InferInput<typeof employeeAttributeSchema>;
@@ -34,15 +34,15 @@ const variableSchema = object({
     label: pipe(
         string(),
         trim(),
-        nonEmpty('Label variabel wajib diisi.'),
-        maxLength(100, 'Label variabel maksimal 100 karakter.'),
+        nonEmpty('Pertanyaan wajib diisi.'),
+        maxLength(100, 'Pertanyaan maksimal 100 karakter.'),
     ),
     type: number(),
     is_required: boolean(),
     option_source: nullable(number()),
     reference_group: nullable(string()),
     is_multiple: boolean(),
-    default_text: nullable(pipe(string(), maxLength(10000, 'Fallback maksimal 10.000 karakter.'))),
+    default_text: nullable(pipe(string(), maxLength(10000, 'Teks alternatif maksimal 10.000 karakter.'))),
     employee_attributes: array(employeeAttributeSchema),
     columns: array(
         object({
@@ -85,7 +85,7 @@ export const letterTemplateVariableItemSchema = defineRequest(object({ item: var
 export const letterTemplateSlotItemSchema = defineRequest(object({ item: slotSchema }));
 export const letterTemplateAttributeItemSchema = defineRequest(
     object({
-        default_text: nullable(pipe(string(), maxLength(10000, 'Fallback maksimal 10.000 karakter.'))),
+        default_text: nullable(pipe(string(), maxLength(10000, 'Teks alternatif maksimal 10.000 karakter.'))),
         date_format: nullable(pipe(string(), maxLength(100, 'Format tanggal maksimal 100 karakter.'))),
     }),
 );

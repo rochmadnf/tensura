@@ -45,7 +45,7 @@ class ChangeLetterTemplateConfigurationItemRequest extends FormRequest
     public function attributes(): array
     {
         $prefix = $this->route('kind') === 'variable' ? 'variables.*' : 'signer_slots.*';
-        $attributes = ['default_text' => 'Fallback teks', 'date_format' => 'Format tanggal'];
+        $attributes = ['default_text' => 'Teks Alternatif', 'date_format' => 'Format tanggal'];
         foreach (app(LetterTemplateConfigurationRules::class)->attributes() as $key => $value) {
             if (str_starts_with($key, $prefix)) {
                 $attributes['item' . substr($key, strlen($prefix))] = $value;

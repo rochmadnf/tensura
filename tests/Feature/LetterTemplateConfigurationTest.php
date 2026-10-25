@@ -212,7 +212,8 @@ class LetterTemplateConfigurationTest extends TestCase
             ->where('configuration.data.warnings', [['slot' => 1, 'employee' => $employee->uuid, 'name' => 'dr. Budi Sp.PD']])
             ->where('configuration.data.signer_slots.0.candidates', [$employee->uuid])
             ->where('configuration.data.signer_slots.0.placeholder', 'penandatangan')
-            ->where('configurationOptions.employees.0.id', $active->uuid)->has('configurationOptions.employees', 1));
+            ->where('configurationOptions.employees.0.id', $employee->uuid)->has('configurationOptions.employees', 1));
+        $this->getJson(route('options.index', ['source' => 'employees']))->assertOk()->assertJsonPath('items.0.value', $active->uuid)->assertJsonMissing(['value' => $employee->uuid]);
         $this->assertModelExists($candidate);
     }
 

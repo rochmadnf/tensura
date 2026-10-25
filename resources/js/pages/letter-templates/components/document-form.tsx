@@ -92,6 +92,7 @@ export function LetterTemplateDocumentForm({
     return (
         <FormCard
             title="DOCX Sumber"
+            step={4}
             description="Unduh contoh, sesuaikan dokumen, lalu unggah dan validasi. Panduan memakai konfigurasi yang sudah disimpan."
             action={
                 <CardAction className="col-span-full col-start-1 row-span-1 row-start-3 flex flex-wrap gap-2 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end">

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\MasterData;
 
-use App\Enums\AsnStatusEnum;
 use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVariableTypeEnum;
 use App\Http\Controllers\Controller;
@@ -21,11 +20,13 @@ use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\ReferenceGroup;
 use App\Services\LetterTemplate\EmployeeAttributeCatalog;
+use App\Services\LetterTemplate\LetterTemplateAuditTimeline;
 use App\Services\LetterTemplate\SaveLetterTemplateIdentity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Response as InertiaResponse;
 
 class LetterTemplateController extends Controller
@@ -39,7 +40,7 @@ class LetterTemplateController extends Controller
         $parsed = FilterQuery::parse($request->query('filter'));
         $status = count($parsed['status'] ?? []) === 1 && in_array($parsed['status'][0], ['active', 'inactive'], true)
             ? $parsed['status'][0] : null;
-        $classifications = $this->classifications();
+        $classifications = $this->classifications($parsed['classification'] ?? []);
         $classification = count($parsed['classification'] ?? []) === 1
             && in_array($parsed['classification'][0], array_column($classifications, 'id'), true)
             ? $parsed['classification'][0] : null;
@@ -63,7 +64,7 @@ class LetterTemplateController extends Controller
     {
         return inertia('letter-templates/create', [
             'page' => ['id' => $this->pageId],
-            'classifications' => $this->classifications(),
+            'classifications' => [],
         ]);
     }
 
@@ -80,15 +81,16 @@ class LetterTemplateController extends Controller
 
         $selectedUuid = $request->validated('version');
         $version = $selectedUuid === null ? ($letterTemplate->draftVersion ?? $letterTemplate->displayVersion) : $letterTemplate->versions()->where('uuid', $selectedUuid)->firstOrFail();
-        $letterTemplate->load(['versions' => fn(HasMany $query): HasMany => $query->orderByDesc('version_number'), 'audits' => fn(HasMany $query): HasMany => $query->with('version:id,version_number')->orderByDesc('occurred_at')->orderByDesc('id')->limit(50)]);
+        $letterTemplate->load(['versions' => fn(HasMany $query): HasMany => $query->orderByDesc('version_number')]);
         $version?->setRelation('template', $letterTemplate);
         $version?->load(['letterNumber', 'variables.referenceGroup', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
         $version?->loadExists(['audits as configuration_saved' => fn(Builder $query): Builder => $query->whereIn('operation', ['configuration.updated', 'draft.copied'])]);
 
         return inertia('letter-templates/edit', [
             'page' => ['id' => $this->pageId],
-            'classifications' => $this->classifications(),
+            'classifications' => $version === null ? [] : $this->classifications([$version->letterNumber->uuid]),
             'resource' => LetterTemplateResource::make($letterTemplate),
+            'audits' => fn(): array => app(LetterTemplateAuditTimeline::class)->page($letterTemplate),
             'lifecycle' => $version === null ? null : LetterTemplateLifecycleResource::make($version),
             'configuration' => $version === null ? null : LetterTemplateConfigurationResource::make($version),
             'document' => $version === null ? null : LetterTemplateDocumentResource::make($version),
@@ -100,8 +102,8 @@ class LetterTemplateController extends Controller
                 'types' => LetterTemplateVariableTypeEnum::options(),
                 'sources' => LetterTemplateOptionSourceEnum::options(),
                 'columns' => collect(LetterTemplateOptionSourceEnum::cases())->mapWithKeys(fn(LetterTemplateOptionSourceEnum $source): array => [$source->value => $source->columnOptions()])->all(),
-                'referenceGroups' => ReferenceGroup::query()->orderBy('name')->orderBy('id')->get(['uuid', 'name'])->map(fn(ReferenceGroup $group): array => ['id' => $group->uuid, 'label' => $group->name])->all(),
-                'employees' => Employee::query()->where('status', AsnStatusEnum::AKTIF)->orderBy('name')->orderBy('id')->get(['id', 'uuid', 'name', 'front_title', 'back_title'])->map(fn(Employee $employee): array => ['id' => $employee->uuid, 'label' => LetterTemplateConfigurationResource::employeeName($employee)])->all(),
+                'referenceGroups' => ReferenceGroup::query()->whereIn('id', $version?->variables->pluck('reference_group_id')->filter()->all() ?? [])->orderBy('name')->orderBy('id')->get(['uuid', 'name'])->map(fn(ReferenceGroup $group): array => ['id' => $group->uuid, 'label' => $group->name])->all(),
+                'employees' => Employee::query()->whereIn('id', $version?->signerSlots->flatMap(fn($slot) => $slot->candidates->pluck('employee_id'))->all() ?? [])->orderBy('name')->orderBy('id')->get(['id', 'uuid', 'name', 'front_title', 'back_title'])->map(fn(Employee $employee): array => ['id' => $employee->uuid, 'label' => LetterTemplateConfigurationResource::employeeName($employee)])->all(),
             ],
         ]);
     }
@@ -114,9 +116,9 @@ class LetterTemplateController extends Controller
     }
 
     /** @return list<array{id: string, label: string}> */
-    private function classifications(): array
+    private function classifications(array $selected): array
     {
-        return LetterNumber::query()->orderBy('classification_code')->get(['uuid', 'classification_code', 'classification_name'])
+        return LetterNumber::query()->whereIn('uuid', array_filter($selected, fn($value): bool => is_string($value) && Str::isUuid($value)))->orderBy('classification_code')->get(['uuid', 'classification_code', 'classification_name'])
             ->map(fn(LetterNumber $number): array => ['id' => $number->uuid, 'label' => $number->classification_code . ' — ' . $number->classification_name])->all();
     }
 }

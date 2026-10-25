@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
+use App\Http\Controllers\MasterData\LetterTemplateAuditController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
 use App\Http\Controllers\MasterData\LetterTemplateController;
@@ -23,9 +24,12 @@ use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\LetterTemplateVersionController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
+use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('options', OptionController::class)->name('options.index');
+    Route::get('letter-templates/{letterTemplate:uuid}/audits', LetterTemplateAuditController::class)->whereUuid('letterTemplate')->name('lt.audits.index');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('archives', [ArchiveController::class, 'index'])->name('archives.index');

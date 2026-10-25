@@ -2,15 +2,10 @@
 
 namespace App\Http\Resources\MasterData;
 
-use App\Enums\AsnStatusEnum;
-use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVersionStatusEnum;
-use App\Models\MasterData\Employee;
-use App\Models\MasterData\LetterTemplateSignerCandidate;
 use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
-use App\Models\MasterData\ReferenceItem;
 use App\Services\LetterTemplate\LetterTemplateConfigurationHash;
 use App\Services\LetterTemplate\LetterTemplateTestEvidence;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
@@ -35,11 +30,6 @@ class LetterTemplateTestResource extends JsonResource
         $fields = new LetterTemplateTestFields();
         $variables = $fields->variables($version);
         $prefixes = $fields->slots($version);
-        $groupIds = $variables->where('option_source', LetterTemplateOptionSourceEnum::REFERENCE)->pluck('reference_group_id')->unique()->all();
-        $items = ReferenceItem::query()->whereIn('reference_group_id', $groupIds)->orderBy('sort_order')->orderBy('id')->get()->groupBy('reference_group_id');
-        $employees = $variables->contains('option_source', LetterTemplateOptionSourceEnum::EMPLOYEE)
-            ? Employee::query()->where('status', AsnStatusEnum::AKTIF)->orderBy('name')->orderBy('id')->get(['id', 'uuid', 'name', 'front_title', 'back_title'])->map(fn(Employee $employee): array => ['id' => $employee->uuid, 'label' => LetterTemplateConfigurationResource::employeeName($employee)])->all() : [];
-        $version->loadMissing('signerSlots.candidates.employee');
 
         return [
             'id' => $this->uuid,
@@ -52,13 +42,11 @@ class LetterTemplateTestResource extends JsonResource
             'variables' => $variables->map(fn(LetterTemplateVariable $variable): array => [
                 'id' => $variable->uuid, 'label' => $variable->label, 'type' => $variable->type->value, 'is_required' => $variable->is_required,
                 'is_multiple' => $variable->is_multiple,
-                'options' => $variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? $employees
-                    : ($items->get($variable->reference_group_id)?->map(fn(ReferenceItem $item): array => ['id' => $item->uuid, 'label' => $item->content])->all() ?? []),
+                'options' => [],
             ])->all(),
             'signer_slots' => $version->signerSlots->filter(fn(LetterTemplateSignerSlot $slot): bool => isset($prefixes[$slot->uuid]))->map(fn(LetterTemplateSignerSlot $slot): array => [
                 'id' => $slot->uuid, 'label' => 'Penandatangan Slot ' . $slot->sort_order,
-                'options' => $slot->candidates->filter(fn(LetterTemplateSignerCandidate $candidate): bool => $candidate->employee->status === AsnStatusEnum::AKTIF)
-                    ->map(fn(LetterTemplateSignerCandidate $candidate): array => ['id' => $candidate->employee->uuid, 'label' => LetterTemplateConfigurationResource::employeeName($candidate->employee)])->values()->all(),
+                'options' => [],
             ])->values()->all(),
         ];
     }

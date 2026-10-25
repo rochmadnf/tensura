@@ -15,6 +15,7 @@ import type { ClassificationOption, LetterTemplateResource } from '@/schemas/let
 
 const pageName = 'Ubah Templat Surat';
 export default function LetterTemplateEdit({
+    audits,
     classifications,
     resource,
     configuration,
@@ -25,6 +26,7 @@ export default function LetterTemplateEdit({
     test,
     lifecycle,
 }: {
+    audits: import('@/schemas/letter-template-lifecycle').LetterTemplateAuditPage;
     lifecycle?: { data: LetterTemplateLifecycle } | null;
     classifications: ClassificationOption[];
     resource: { data: LetterTemplateResource };
@@ -116,6 +118,7 @@ export default function LetterTemplateEdit({
                                 key={`timeline-${resource.data.id}`}
                                 templateId={resource.data.id}
                                 lifecycle={lifecycle.data}
+                                initialAudits={audits}
                                 disabled={isSaving || activeCard !== null}
                             />
                         </>

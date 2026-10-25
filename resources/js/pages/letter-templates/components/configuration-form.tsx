@@ -152,7 +152,8 @@ export function LetterTemplateConfigurationForm({
         >
             <FormCard
                 title="Konfigurasi Formulir Surat"
-                description="Atur pertanyaan yang akan diisi admin pada formulir surat. Urutan baris menjadi urutan isian. Simpan setiap item setelah mengedit."
+                step={2}
+                description="Atur pertanyaan yang akan diisi pada formulir surat. Urutan baris menjadi urutan isian. Simpan setiap item setelah mengedit."
                 action={
                     configuration.editable ? (
                         <CardAction
@@ -160,7 +161,7 @@ export function LetterTemplateConfigurationForm({
                             data-focus="variable:new"
                         >
                             <AddConfigurationItem
-                                label="Tambah Variabel"
+                                label="Pertanyaan"
                                 disabled={blocked}
                                 onClick={() => edit('variable:new')}
                             />
@@ -174,21 +175,23 @@ export function LetterTemplateConfigurationForm({
                         <TableRow>
                             {[
                                 'Nomor urut',
-                                'Nama Placeholder',
-                                'Label Variabel',
-                                'Jenis Variabel',
-                                'Fallback teks',
+                                'Nama Variabel',
+                                'Pertanyaan',
+                                'Jenis Pertanyaan',
+                                'Teks Alternatif',
                                 'Aksi',
-                            ].map((label) => (
-                                <TableHead key={label}>{label}</TableHead>
-                            ))}
+                            ]
+                                .filter((label) => configuration.editable || label !== 'Aksi')
+                                .map((label) => (
+                                    <TableHead key={label}>{label}</TableHead>
+                                ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {configuration.variables.length === 0 && activeEditor !== 'variable:new' && (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-muted-foreground">
-                                    Belum ada variabel.
+                                <TableCell colSpan={configuration.editable ? 6 : 5} className="text-muted-foreground">
+                                    Belum ada pertanyaan.
                                 </TableCell>
                             </TableRow>
                         )}
@@ -236,10 +239,10 @@ export function LetterTemplateConfigurationForm({
                                                 ? 'Tidak berlaku'
                                                 : variable.option_source === 2
                                                   ? 'Per atribut'
-                                                  : variable.default_text || 'Kosong'}
+                                                  : variable.default_text || '—'}
                                         </TableCell>
-                                        <TableCell>
-                                            {configuration.editable && (
+                                        {configuration.editable && (
+                                            <TableCell>
                                                 <div className="flex items-center gap-2" data-focus={key}>
                                                     <TableActionButton
                                                         type="button"
@@ -294,12 +297,15 @@ export function LetterTemplateConfigurationForm({
                                                         }
                                                     />
                                                 </div>
-                                            )}
-                                        </TableCell>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                     {variable.type === 4 && (
                                         <TableRow>
-                                            <TableCell colSpan={6} className="whitespace-normal">
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
                                                 <p className="mb-2 text-sm text-muted-foreground">
                                                     Sumber:{' '}
                                                     {
@@ -369,6 +375,7 @@ export function LetterTemplateConfigurationForm({
             </FormCard>
             <FormCard
                 title="Penandatangan"
+                step={3}
                 description="Tentukan kandidat pegawai aktif pada setiap slot. Token penandatangan opsional; perubahan jumlah slot dapat mengubah nama placeholder pada DOCX."
                 action={
                     configuration.editable ? (
@@ -377,7 +384,7 @@ export function LetterTemplateConfigurationForm({
                             data-focus="slot:new"
                         >
                             <AddConfigurationItem
-                                label="Tambah Penandatangan"
+                                label="Penandatangan"
                                 disabled={blocked}
                                 onClick={() => edit('slot:new')}
                             />
@@ -394,15 +401,17 @@ export function LetterTemplateConfigurationForm({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            {['Slot', 'Placeholder', 'Kandidat Penandatangan', 'Aksi'].map((label) => (
-                                <TableHead key={label}>{label}</TableHead>
-                            ))}
+                            {['Slot', 'Placeholder', 'Kandidat Penandatangan', 'Aksi']
+                                .filter((label) => configuration.editable || label !== 'Aksi')
+                                .map((label) => (
+                                    <TableHead key={label}>{label}</TableHead>
+                                ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {configuration.signer_slots.length === 0 && activeEditor !== 'slot:new' && (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-muted-foreground">
+                                <TableCell colSpan={configuration.editable ? 4 : 3} className="text-muted-foreground">
                                     Belum ada slot penandatangan.
                                 </TableCell>
                             </TableRow>
@@ -447,8 +456,8 @@ export function LetterTemplateConfigurationForm({
                                                 )
                                                 .join(', ')}
                                         </TableCell>
-                                        <TableCell>
-                                            {configuration.editable && (
+                                        {configuration.editable && (
+                                            <TableCell>
                                                 <div className="flex items-center gap-2" data-focus={key}>
                                                     <EditConfigurationItem
                                                         label={`penandatangan slot ${index + 1}`}
@@ -469,11 +478,14 @@ export function LetterTemplateConfigurationForm({
                                                         }
                                                     />
                                                 </div>
-                                            )}
-                                        </TableCell>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                     <TableRow>
-                                        <TableCell colSpan={4} className="whitespace-normal">
+                                        <TableCell
+                                            colSpan={configuration.editable ? 4 : 3}
+                                            className="whitespace-normal"
+                                        >
                                             {attributes('slot', slot.id!, slot.placeholder, slot.employee_attributes)}
                                         </TableCell>
                                     </TableRow>

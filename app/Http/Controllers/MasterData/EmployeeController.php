@@ -121,7 +121,7 @@ class EmployeeController extends Controller
                 'tenure_min' => $tenureMin,
                 'tenure_max' => $tenureMax,
             ],
-            ...$this->formOptions(),
+            ...$this->formOptions($jobTitles),
             'jobTitleGroups' => JobTitleGroupEnum::options(),
             'resources' => EmployeeResource::collection($records),
         ]);
@@ -156,7 +156,7 @@ class EmployeeController extends Controller
     {
         return inertia('employee/edit', [
             'page' => ['id' => $this->pageId],
-            ...$this->formOptions(),
+            ...$this->formOptions([$employee->jobTitle?->uuid]),
             'resource' => EmployeeResource::make($employee->load('jobTitle:id,uuid,name,group')),
         ]);
     }
@@ -184,10 +184,10 @@ class EmployeeController extends Controller
     }
 
     /** @return array{jobTitles: list<array{id: string, label: string, group: ?int}>, genders: list<array{id: int, label: string}>, strStatuses: list<array{id: int, label: string}>, contractStatuses: list<array{id: int, label: string}>, statuses: list<array{id: int, label: string}>, today: string} */
-    private function formOptions(): array
+    private function formOptions(array $selected = []): array
     {
         return [
-            'jobTitles' => JobTitle::query()
+            'jobTitles' => JobTitle::query()->whereIn('uuid', array_filter($selected))
                 ->orderBy('name')
                 ->get(['uuid', 'name', 'group'])
                 ->map(

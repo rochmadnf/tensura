@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogFooter } from '@/components/ui/alert-dialog';
 const state = vi.hoisted(() => ({ operation: null, form: null, data: null }));
 vi.mock('react', async (importOriginal) => ({
     ...(await importOriginal()),
+    useEffect: vi.fn(),
     useState: (initial) => [
         initial === null ? state.operation : initial,
         (value) => {

@@ -67,6 +67,7 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                                 forceCombobox
                                 id={`${prefix}.reference_group`}
                                 name={`${prefix}.reference_group`}
+                                remote={{ source: 'reference-groups' }}
                                 items={choices(options.referenceGroups)}
                                 value={variable.reference_group ?? ''}
                                 onValueChange={(value) => patch({ reference_group: value || null })}

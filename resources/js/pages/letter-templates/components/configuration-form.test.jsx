@@ -1,3 +1,6 @@
+import { TableActionButton } from '@/components/table-action-button';
+import { TableHead } from '@/components/ui/table';
+import { Switch } from '@/components/ui/switch';
 import { Children, isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { LetterTemplateConfigurationForm } from './configuration-form';
@@ -245,12 +248,36 @@ describe('Per-item configuration editing', () => {
             onProcessingChange: vi.fn(),
         });
         expect(byType(table, EditConfigurationItem).map((item) => item.props.label)).toContain(
-            'fallback Nama beserta gelar',
+            'teks alternatif Nama beserta gelar',
         );
         expect(byType(table, EditConfigurationItem).map((item) => item.props.label)).toContain(
-            'fallback Nama tanpa gelar',
+            'teks alternatif Nama tanpa gelar',
         );
         expect(byType(table, DeleteConfigurationItem)).toHaveLength(0);
         expect(byType(table, AddConfigurationItem)).toHaveLength(0);
+    });
+});
+
+describe('Editor UI regressions', () => {
+    it('disables only the unavailable directions at both ends of the question list', () => {
+        const actions = byType(manager(), TableActionButton);
+        const up = actions.filter((action) => action.props.tooltip === 'Naikkan');
+        const down = actions.filter((action) => action.props.tooltip === 'Turunkan');
+        expect(up.map((action) => action.props.disabled)).toEqual([true, false]);
+        expect(down.map((action) => action.props.disabled)).toEqual([false, true]);
+    });
+    it('removes action columns entirely from a published configuration', () => {
+        const page = manager({
+            configuration: { id: 'version', editable: false, variables: [variable()], signer_slots: [], warnings: [] },
+        });
+        expect(byType(page, TableHead).some((head) => head.props.children === 'Aksi')).toBe(false);
+        expect(byType(page, TableActionButton)).toHaveLength(0);
+    });
+    it('uses a switch whose value controls whether the question is required', () => {
+        const row = ConfigurationVariableRow(rowProps());
+        const control = byType(row, Switch)[0];
+        expect(control.props.checked).toBe(false);
+        control.props.onCheckedChange(true);
+        expect(state.form.data.item.is_required).toBe(true);
     });
 });

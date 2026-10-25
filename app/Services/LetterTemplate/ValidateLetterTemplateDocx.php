@@ -24,6 +24,7 @@ class ValidateLetterTemplateDocx
         return DB::transaction(function () use ($template, $version, $actor): array {
             $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
             $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+            $before = $this->audit->snapshot($template, $version);
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['docx' => 'Validasi hanya dapat dijalankan pada draft yang belum digunakan.']);
             }
@@ -51,7 +52,7 @@ class ValidateLetterTemplateDocx
             }
             $version->validation_result = $result;
             $version->save();
-            $this->audit->record($template, $version, $actor, 'source.validated', $result['valid'] ? 'Struktur dan placeholder DOCX valid.' : 'Validasi DOCX gagal; periksa hasil validasi.');
+            $this->audit->record($template, $version, $actor, 'source.validated', $result['valid'] ? 'Struktur dan placeholder DOCX valid.' : 'Validasi DOCX gagal; periksa hasil validasi.', $before);
 
             return $result;
         }, 5);

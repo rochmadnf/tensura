@@ -344,7 +344,7 @@ class LetterTemplateVersionLifecycleTest extends TestCase
             ->where('lifecycle.data.timezone', 'Asia/Makassar')
             ->where('lifecycle.data.can_start_draft', false)->where('lifecycle.data.draft.id', $draft->uuid)
             ->where('lifecycle.data.is_current', true)->where('lifecycle.data.versions.0.id', $draft->uuid)
-            ->has('lifecycle.data.versions', 2)->has('lifecycle.data.audits')
+            ->has('lifecycle.data.versions', 2)->has('audits.data')->missing('lifecycle.data.audits')
             ->missing('lifecycle.data.source_path')->missing('lifecycle.data.letter_template_id'));
         $this->get(route('lt.edit', $version->template->uuid))->assertOk()->assertInertia(fn(Assert $page) => $page->where('lifecycle.data.id', $draft->uuid)->where('configuration.data.editable', true));
         $foreign = LetterTemplateVersion::factory()->create();

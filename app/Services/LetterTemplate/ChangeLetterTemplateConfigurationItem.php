@@ -28,6 +28,7 @@ class ChangeLetterTemplateConfigurationItem
         DB::transaction(function () use ($template, $version, $kind, $operation, $uuid, $attribute, $data, $actor): void {
             $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
             $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+            $before = $this->audit->snapshot($template, $version);
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['configuration' => 'Konfigurasi hanya dapat diubah pada draft yang belum digunakan.']);
             }
@@ -120,7 +121,12 @@ class ChangeLetterTemplateConfigurationItem
             }
             $this->evidence->invalidate($version);
             $version->save();
-            $this->audit->record($template, $version, $actor, 'configuration.updated', 'Konfigurasi per item diperbarui; bukti pemeriksaan dibatalkan.');
+            $this->audit->record($template, $version, $actor, 'configuration.updated', match ($operation) {
+                'delete' => $kind === 'variable' ? 'Pertanyaan dihapus.' : 'Slot penandatangan dihapus.',
+                'move' => 'Urutan pertanyaan diubah.',
+                'attribute' => 'Teks alternatif atau format atribut Pegawai diubah.',
+                default => $kind === 'variable' ? ($owner === null ? 'Pertanyaan ditambahkan.' : 'Pertanyaan diubah.') : ($owner === null ? 'Slot penandatangan ditambahkan.' : 'Kandidat penandatangan diubah.'),
+            }, $before);
         }, 5);
     }
 

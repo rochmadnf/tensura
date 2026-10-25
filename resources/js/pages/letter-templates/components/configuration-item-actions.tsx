@@ -23,7 +23,7 @@ export function AddConfigurationItem({
     onClick: () => void;
 }) {
     return (
-        <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={onClick}>
+        <Button type="button" variant="default" size="sm" className="h-8.5" disabled={disabled} onClick={onClick}>
             <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
             {label}
         </Button>

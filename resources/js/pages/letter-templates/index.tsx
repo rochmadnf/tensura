@@ -81,6 +81,7 @@ export default function LetterTemplateIndex({ resources, filters, classification
                                         <OptionSelect
                                             id="filter-classification"
                                             name="classification"
+                                            remote={{ source: 'classifications' }}
                                             forceCombobox
                                             items={classifications.map((item) => ({
                                                 value: item.id,

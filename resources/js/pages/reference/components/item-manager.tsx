@@ -1,3 +1,4 @@
+import { FormActions } from '@/components/form-actions';
 import { Accessibility, Feedback, PointerActivationConstraints, PointerSensor } from '@dnd-kit/dom';
 import { DragDropProvider, type DragStartEvent, type DragOverEvent, type DragEndEvent } from '@dnd-kit/react';
 import { isSortable, useSortable } from '@dnd-kit/react/sortable';
@@ -9,8 +10,6 @@ import {
     DragDropVerticalIcon,
     Edit04Icon,
     LoaderIcon,
-    SaveIcon,
-    XIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { router } from '@inertiajs/react';
@@ -394,20 +393,11 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                                                         <FieldError>{edit.form.errors.content}</FieldError>
                                                     )}
                                                     <div className="flex gap-2">
-                                                        <Button type="submit" size="sm" disabled={busy}>
-                                                            <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" />
-                                                            Simpan
-                                                        </Button>
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant="outline"
-                                                            disabled={busy}
-                                                            onClick={cancelEdit}
-                                                        >
-                                                            <HugeiconsIcon icon={XIcon} data-icon="inline-start" />
-                                                            Batal
-                                                        </Button>
+                                                        <FormActions
+                                                            cancelUrl=""
+                                                            processing={busy}
+                                                            onCancel={cancelEdit}
+                                                        />
                                                     </div>
                                                 </Field>
                                             </FieldGroup>

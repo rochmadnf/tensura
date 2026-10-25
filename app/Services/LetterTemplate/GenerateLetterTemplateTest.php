@@ -41,6 +41,7 @@ class GenerateLetterTemplateTest
                 $started = microtime(true);
                 $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
                 $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+                $before = $this->audit->snapshot($template, $version);
                 $this->evidence->assertDraft($version);
                 $this->evidence->assertValidated($version);
                 if (!hash_equals($this->evidence->validationToken($version), $data['validation_token'])) {
@@ -146,7 +147,7 @@ class GenerateLetterTemplateTest
                         'tested_source_sha256' => $version->source_sha256, 'tested_configuration_sha256' => $version->validated_configuration_sha256,
                         'visually_confirmed_at' => null, 'visually_confirmed_by' => null, 'visually_confirmed_by_uuid' => null, 'visually_confirmed_by_name' => null,
                     ])->save();
-                    $this->audit->record($template, $version, $actor, 'test.generated', 'DOCX hasil uji dibuat dari data contoh; pemeriksaan visual perlu dilakukan ulang.');
+                    $this->audit->record($template, $version, $actor, 'test.generated', 'DOCX hasil uji dibuat dari data contoh; pemeriksaan visual perlu dilakukan ulang.', $before);
 
                     return ['disk' => $diskName, 'path' => $path, 'old' => $old];
                 } finally {

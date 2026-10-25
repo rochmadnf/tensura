@@ -25,10 +25,8 @@ class LetterTemplateStoreTest extends TestCase
             ->assertOk()->assertInertia(fn(Assert $page) => $page
             ->component('letter-templates/create')
             ->where('page.id', 'a3063dc3-7414-4385-bf3f-0cf0742e3980')
-            ->where('classifications', [
-                ['id' => $first->uuid, 'label' => '007 — ' . $first->classification_name],
-                ['id' => $last->uuid, 'label' => '020 — ' . $last->classification_name],
-            ]));
+            ->where('classifications', []));
+        $this->getJson(route('options.index', ['source' => 'classifications']))->assertOk()->assertJsonPath('items.0.value', $first->uuid)->assertJsonPath('items.1.value', $last->uuid);
     }
 
     public function test_store_creates_only_initial_identity_and_draft_without_changing_counters(): void

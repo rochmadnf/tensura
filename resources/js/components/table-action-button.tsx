@@ -9,20 +9,32 @@ type TableActionButtonProps = Omit<ComponentProps<typeof Button>, 'children' | '
     label: string;
     tooltip: string;
     href?: ComponentProps<typeof Link>['href'];
+    loading?: boolean;
 };
 
-export function TableActionButton({ icon, label, tooltip, href, ...props }: TableActionButtonProps) {
+export function TableActionButton({ icon, label, tooltip, href, loading = false, ...props }: TableActionButtonProps) {
     return (
         <Tooltip>
-            <Button
-                {...props}
-                size="icon-sm"
-                aria-label={label}
-                nativeButton={!href}
-                render={<TooltipTrigger render={href ? <Link href={href} /> : undefined} />}
+            <TooltipTrigger
+                disabled={props.disabled}
+                render={
+                    <Button
+                        {...props}
+                        size="icon-sm"
+                        aria-label={label}
+                        aria-busy={loading || undefined}
+                        nativeButton={!href}
+                        render={href ? <Link href={href} /> : undefined}
+                    />
+                }
             >
-                <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" />
-            </Button>
+                <HugeiconsIcon
+                    icon={icon}
+                    strokeWidth={2}
+                    className={loading ? 'animate-spin' : undefined}
+                    aria-hidden="true"
+                />
+            </TooltipTrigger>
             <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
     );

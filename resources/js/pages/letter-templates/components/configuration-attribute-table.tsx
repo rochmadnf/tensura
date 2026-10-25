@@ -46,7 +46,7 @@ function AttributeRowEditor({
     const busy = props.disabled || form.processing;
     const errors: Record<string, string | undefined> = form.errors;
     const id = `attribute-form-${props.ownerId}-${attribute.id}`;
-    const error = () => gooeyToast.error('Galat', { description: 'Periksa fallback dan format atribut.' });
+    const error = () => gooeyToast.error('Galat', { description: 'Periksa teks alternatif dan format atribut.' });
     return (
         <TableRow>
             <TableCell>{attributeLabel(attribute)}</TableCell>
@@ -56,7 +56,7 @@ function AttributeRowEditor({
             <TableCell className="min-w-48">
                 <Field data-invalid={!!errors.default_text}>
                     <FieldLabel className="sr-only" htmlFor={`${id}-fallback`}>
-                        Fallback {attributeLabel(attribute)}
+                        Teks Alternatif {attributeLabel(attribute)}
                     </FieldLabel>
                     <Input
                         id={`${id}-fallback`}
@@ -85,7 +85,7 @@ function AttributeRowEditor({
                     '—'
                 )}
             </TableCell>
-            <TableCell className="min-w-48">
+            <TableCell className="w-24">
                 <form
                     id={id}
                     noValidate
@@ -148,14 +148,16 @@ export function ConfigurationAttributeTable(props: AttributeTableProps) {
             <summary className="cursor-pointer py-2 font-medium">Atribut Pegawai ({props.attributes.length})</summary>
             <p className="my-3 text-sm text-muted-foreground">
                 Semua placeholder mengambil data dari pegawai yang sama. Pilih nama beserta gelar atau nama tanpa gelar
-                sesuai kebutuhan surat. Fallback digunakan jika atribut kosong.
+                sesuai kebutuhan surat. Teks alternatif digunakan jika atribut kosong.
             </p>
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {['Atribut', 'Placeholder', 'Fallback teks', 'Format tanggal', 'Aksi'].map((label) => (
-                            <TableHead key={label}>{label}</TableHead>
-                        ))}
+                        {['Atribut', 'Placeholder', 'Teks Alternatif', 'Format tanggal', 'Aksi']
+                            .filter((label) => props.editable || label !== 'Aksi')
+                            .map((label) => (
+                                <TableHead key={label}>{label}</TableHead>
+                            ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -187,15 +189,15 @@ export function ConfigurationAttributeTable(props: AttributeTableProps) {
                                 <TableCell>
                                     {attribute.type === 'date' ? setting.date_format || 'd-m-Y' : '—'}
                                 </TableCell>
-                                <TableCell data-focus={editorId}>
-                                    {props.editable && (
+                                {props.editable && (
+                                    <TableCell data-focus={editorId}>
                                         <EditConfigurationItem
-                                            label={`fallback ${attributeLabel(attribute)}`}
+                                            label={`teks alternatif ${attributeLabel(attribute)}`}
                                             disabled={props.disabled || props.activeEditor !== null}
                                             onClick={() => props.onEdit(editorId)}
                                         />
-                                    )}
-                                </TableCell>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         );
                     })}

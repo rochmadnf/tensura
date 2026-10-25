@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { EmployeeDataTable } from './components/data-table';
 import type { PaginationMeta } from '@/components/data-table';
@@ -61,6 +62,7 @@ export default function EmployeeIndex({
     statuses,
 }: EmployeeIndexProps) {
     const isLoading = useTableLoading('resources');
+    const selectedJobGroups = useRef(new Map<string, number | null>());
     const draft: EmployeeFilterDraft = {
         job_title: filters.job_title,
         job_group: filters.job_group.map(String),
@@ -153,6 +155,11 @@ export default function EmployeeIndex({
                                                 forceCombobox
                                                 id={`filter-${name}`}
                                                 name={name}
+                                                remote={
+                                                    name === 'job_title'
+                                                        ? { source: 'job-titles', groups: value.job_group }
+                                                        : undefined
+                                                }
                                                 items={items
                                                     .filter(
                                                         (item) =>
@@ -167,20 +174,30 @@ export default function EmployeeIndex({
                                                         label: item.label,
                                                     }))}
                                                 value={value[name]}
-                                                onValueChange={(selected) => {
+                                                onValueChange={(selected, selectedItems) => {
+                                                    if (name === 'job_title') {
+                                                        for (const item of selectedItems ?? []) {
+                                                            selectedJobGroups.current.set(
+                                                                item.value,
+                                                                item.group ?? null,
+                                                            );
+                                                        }
+                                                    }
                                                     if (name === 'job_group') {
-                                                        const available = jobTitles.filter(
-                                                            (item) =>
-                                                                selected.length === 0 ||
-                                                                (item.group !== null &&
-                                                                    selected.includes(String(item.group))),
-                                                        );
                                                         onValueChange({
                                                             ...value,
                                                             job_group: selected,
-                                                            job_title: value.job_title.filter((id) =>
-                                                                available.some((item) => item.id === id),
-                                                            ),
+                                                            job_title: value.job_title.filter((id) => {
+                                                                if (selected.length === 0) return true;
+                                                                const group =
+                                                                    selectedJobGroups.current.get(id) ??
+                                                                    jobTitles.find((item) => item.id === id)?.group;
+                                                                return (
+                                                                    group !== null &&
+                                                                    group !== undefined &&
+                                                                    selected.includes(String(group))
+                                                                );
+                                                            }),
                                                         });
                                                     } else {
                                                         onValueChange({ ...value, [name]: selected });

@@ -26,12 +26,19 @@ export type LetterTemplateLifecycle = {
         published_at: string | null;
         first_used_at: string | null;
     }[];
-    audits: {
-        id: string;
-        version: number | null;
-        actor: string;
-        occurred_at: string;
-        operation: string;
-        description: string;
-    }[];
+};
+
+export type LetterTemplateAudit = {
+    id: string;
+    version: number | null;
+    actor: string;
+    occurred_at: string;
+    operation: string;
+    description: string;
+    changes: { field: string; label: string; before: string | null; after: string | null }[] | null;
+};
+export type LetterTemplateAuditPage = {
+    data: LetterTemplateAudit[];
+    previous_cursor: string | null;
+    next_cursor: string | null;
 };

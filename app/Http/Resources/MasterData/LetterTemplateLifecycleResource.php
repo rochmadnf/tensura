@@ -3,7 +3,6 @@
 namespace App\Http\Resources\MasterData;
 
 use App\Enums\LetterTemplateVersionStatusEnum;
-use App\Models\MasterData\LetterTemplateAudit;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Services\LetterTemplate\LetterTemplatePublicationReadiness;
 use App\Services\LetterTemplate\LetterTemplateVersionState;
@@ -19,8 +18,7 @@ class LetterTemplateLifecycleResource extends JsonResource
      *   published_at: ?string, first_used_at: ?string, classification: array{id: string, code: string, name: string},
      *   version_token: string, readiness: array{ready: bool, checks: list<array{key: string, label: string, passed: bool, message: string}>},
      *   can_start_draft: bool, draft_mode: string, can_archive: bool, draft: ?array{id: string, number: int},
-     *   versions: list<array{id: string, number: int, status: int, status_label: string, is_current: bool, created_at: ?string, published_at: ?string, first_used_at: ?string}>,
-     *   audits: list<array{id: string, version: ?int, actor: string, occurred_at: string, operation: string, description: string}>
+     *   versions: list<array{id: string, number: int, status: int, status_label: string, is_current: bool, created_at: ?string, published_at: ?string, first_used_at: ?string}>
      * }
      */
     public function toArray(Request $request): array
@@ -45,11 +43,6 @@ class LetterTemplateLifecycleResource extends JsonResource
                 'id' => $version->uuid, 'number' => $version->version_number, 'status' => $version->status->value, 'status_label' => $version->status->label(),
                 'is_current' => $template->active_version_id === $version->id,
                 'created_at' => $version->created_at?->toIso8601String(), 'published_at' => $version->published_at?->toIso8601String(), 'first_used_at' => $version->first_used_at?->toIso8601String(),
-            ])->all(),
-            'audits' => $template->audits->map(fn(LetterTemplateAudit $audit): array => [
-                'id' => $audit->uuid, 'version' => $audit->version?->version_number,
-                'actor' => $audit->actor_name, 'occurred_at' => $audit->occurred_at->toIso8601String(),
-                'operation' => $audit->operation, 'description' => $audit->description,
             ])->all(),
         ];
     }

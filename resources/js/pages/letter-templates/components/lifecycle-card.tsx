@@ -165,6 +165,7 @@ export function LetterTemplateLifecycleCard({
     }
     return (
         <FormCard
+            sectioned
             title="Publikasi dan Status"
             description={`Kelola versi ${lifecycle.number} serta ketersediaan templat untuk surat baru.`}
         >
