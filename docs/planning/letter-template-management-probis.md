@@ -1,6 +1,6 @@
 # Templat Surat MVP 1 — Proses Bisnis
 
-Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–5 dan tambahan 4A sudah diimplementasikan; publikasi, siklus versi, serta cleanup menunggu tahap 6–7.
+Status: proses bisnis yang disepakati, diselaraskan dengan kondisi aplikasi pada 25 Oktober 2026. Tahap teknis 1–6 beserta tambahan 4A dan perapihan 5A sudah diimplementasikan; cleanup, konkurensi, dan verifikasi akhir menunggu tahap 7.
 
 Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi database dan tujuh tahap implementasi beserta tahap tambahan 4A dan aturan test/commit ada di [letter-template-proposed-plan.md](letter-template-proposed-plan.md). Pola implementasi mengikuti [FEATURE_WORKFLOW.md](../../FEATURE_WORKFLOW.md) dan [LARAVEL_PATTERNS.md](../../LARAVEL_PATTERNS.md) yang sudah diperbarui.
 
@@ -8,15 +8,15 @@ Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi d
 
 | Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
 | --- | --- | --- |
-| Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Kontrol pengelolaan tahap berikutnya |
-| Domain templat | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, dan test tahap 1–5/4A | Publikasi, perubahan versi, dan nonaktifkan |
-| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat | Pemeriksaan kelayakan saat publikasi |
-| Arsip | Arsip pusat, arsip/pemulihan Reference, serta penolakan arsip grup yang dirujuk templat | Operasi arsip draft templat sebagai status versi |
-| Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Komposisi halaman serta konfigurasi dan operasi khusus templat |
-| DOCX | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin | Publikasi dan cleanup terjadwal |
-| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Test perilaku templat dan konkurensi yang relevan |
+| Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Verifikasi akhir browser/visual |
+| Domain templat | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, publikasi, perubahan versi, arsip draft, aktif/nonaktif, timeline, dan test tahap 1–6/4A/5A | Cleanup dan regresi integrasi/konkurensi |
+| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat serta pemeriksaan kandidat saat publikasi | Konkurensi pada tahap 7 |
+| Arsip | Arsip pusat, arsip/pemulihan Reference, penolakan arsip grup yang dirujuk templat, dan status arsip draft templat | Tidak ada integrasi Arsip pusat untuk templat dalam lingkup ini |
+| Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Verifikasi akhir interaksi dan responsivitas |
+| DOCX | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin | Cleanup terjadwal |
+| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Konkurensi antarkoneksi dan regresi integrasi tahap 7 |
 
-Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–5 dan 4A diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
+Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–6 beserta 4A dan 5A diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
 ## 1. Tujuan dan akses
 
@@ -101,7 +101,7 @@ Contoh Surat Tugas Perjalanan:
 
 ## 4. Penandatangan
 
-- Form menyediakan satu slot secara default; admin dapat menonaktifkannya jika tidak diperlukan.
+- Slot ditambahkan secara eksplisit melalui Tambah Penandatangan; item baru baru tersimpan setelah kandidat dipilih dan disimpan. Slot kosong tidak dibuat otomatis.
 - Kandidat dan penandatangan yang digunakan untuk pengujian atau surat baru wajib berasal dari pegawai dengan status `AsnStatusEnum::AKTIF`.
 - Jika kandidat yang sudah dikonfigurasi berubah menjadi tidak aktif, tampilkan peringatan kepada admin pada halaman kelola templat, termasuk nama pegawai dan slot terkait, dengan arahan untuk mengganti atau menghapus kandidat tersebut dari konfigurasi.
 - Publikasi ditolak selama masih ada kandidat tidak aktif dalam konfigurasi. Kandidat tidak aktif tidak dapat dipilih atau digunakan untuk generate uji maupun surat baru, meskipun sebelumnya aktif atau masih tersimpan pada formulir lama. Status harus diperiksa kembali di backend saat operasi dijalankan.
@@ -121,7 +121,7 @@ Contoh Surat Tugas Perjalanan:
 - Pengujian tahap 4 membuktikan kemampuan PHPWord yang dipin untuk pengulangan baris, penggantian teks panjang/paragraf/header/footer, serta placeholder terpecah antar text run. Endpoint generate uji sudah tersedia pada tahap 5.
 - Alur upload, validasi, unduhan sumber/contoh, dan fixture DOCX nyata sudah tersedia. Aturan struktur yang didukung/ditolak dirinci pada kontrak tahap 4 rencana teknis; validasi struktur belum menggantikan generate uji dan pemeriksaan visual.
 - Struktur berbahaya atau tidak didukung harus ditolak dengan keterangan jelas.
-- Publikasi memerlukan hasil uji generate dan konfirmasi pemeriksaan visual admin setelah membuka DOCX. Generate, unduhan hasil, serta pencatatan konfirmasi sudah tersedia; operasi publikasi menyusul tahap 6.
+- Publikasi memerlukan hasil uji generate dan konfirmasi pemeriksaan visual admin setelah membuka DOCX. Generate, unduhan hasil, serta pencatatan konfirmasi sudah tersedia; operasi publikasi sudah tersedia pada tahap 6.
 - Form data contoh hanya meminta variabel dan slot yang tokennya digunakan. Penandatangan yang dipakai wajib kandidat aktif dan berbeda antar-slot. Pilihan Referensi harus berasal dari grup yang dikonfigurasi; pilihan Pegawai harus aktif. Isian wajib tidak dapat diganti fallback.
 - Hasil uji berlaku 24 jam dan terikat pada hash sumber, konfigurasi, serta berkas hasil. Generate sukses mengganti hasil sebelumnya dan membatalkan konfirmasi; token hasil lama tidak dapat dipakai mengonfirmasi atau mengunduh hasil baru. Sumber/hasil yang hilang atau berubah, konfigurasi/locale yang berubah, dan expiry membuat bukti tidak layak dipakai.
 - Perubahan nama/jabatan/nilai master setelah generate tidak membatalkan hasil yang masih berlaku: berkas menyimpan nilai saat dibuat. Status aktif penandatangan terpilih tetap diperiksa saat generate, unduh, dan konfirmasi; publikasi juga wajib memeriksa kandidat sesuai aturan sebelumnya.
@@ -143,12 +143,22 @@ Seluruh versi tetap terhubung ke satu identitas templat. Timeline versi ditampil
 - Maksimal satu draft berjalan per templat.
 - Hanya satu versi terbit aktif untuk pembuatan surat baru.
 - DOCX dan konfigurasi versi yang sudah digunakan tetap tersedia untuk generate ulang surat historis.
-- Konfigurasi historis mencakup variabel, pemetaan tabel, klasifikasi, penandatangan, fallback, serta format tanggal per atribut/kolom. Tahap 6 menyalin seluruh pengaturan ke draft baru tanpa mengubah versi asal.
+- Konfigurasi historis mencakup variabel, pemetaan tabel, klasifikasi, penandatangan, fallback, serta format tanggal per atribut/kolom. Tahap 6 sudah menyalin seluruh pengaturan ke draft baru tanpa mengubah versi asal; seluruh anak serta berkas sumber salinan berdiri sendiri dan bukti pemeriksaan harus dibuat ulang.
 - Draft dapat diarsipkan dengan status Diarsipkan pada versi templat; baris versi dan konfigurasinya tetap disimpan dalam domain templat.
-- Templat dapat dinonaktifkan tanpa menghapus riwayat.
+- Templat dapat dinonaktifkan tanpa menghapus riwayat atau pointer versi terbit. Publikasi mempertahankan status Nonaktif; admin mengaktifkannya secara terpisah.
 - Tidak ada hapus permanen.
 - Operasi penting dicatat dalam audit.
 - Master klasifikasi, grup referensi, dan pegawai kandidat tidak dapat dihapus selama masih dirujuk, termasuk oleh versi historis atau arsip.
+
+### Operasi versi yang tersedia
+
+- Publikasikan tersedia setelah checklist sumber/konfigurasi, hasil uji yang masih berlaku, konfirmasi visual, dan seluruh kandidat aktif terpenuhi. Backend memeriksa ulang semuanya pada saat operasi, termasuk kandidat slot yang tokennya tidak digunakan.
+- Ubah Versi Ini membuka publikasi yang belum digunakan menjadi draft dengan nomor yang sama; publikasi serta bukti pemeriksaan dibatalkan. Jika versi tersebut merupakan versi terbit aktif, pointer dikosongkan sampai publikasi ulang. Versi terbit lain tidak diaktifkan otomatis.
+- Buat Draft Versi Baru menyalin publikasi yang sudah digunakan tanpa mengubah versi asal. Buat Draft dari Arsip melakukan penyalinan serupa dengan nomor baru, termasuk ketika belum ada publikasi. Ini tidak memulihkan status arsip asal.
+- Maksimal satu draft berjalan. Bila masih ada draft lain, admin diarahkan melanjutkannya atau mengarsipkannya terlebih dahulu. Penomoran draft baru selalu melewati nomor tertinggi yang pernah disimpan, termasuk versi arsip.
+- Arsipkan Draft hanya berlaku untuk draft belum digunakan dan tidak menghapus data atau memindahkannya ke Arsip pusat. Aktifkan/Nonaktifkan tidak memublikasikan draft dan tidak mengubah bukti pemeriksaan.
+- Operasi penting memakai dialog konfirmasi; request usang ditolak agar perubahan setelah halaman dibuka tidak tertimpa. Kegagalan salinan membatalkan record baru dan membersihkan berkas percobaannya.
+- Timeline menampilkan seluruh versi dan 50 aktivitas terbaru. Lihat Versi membuka identitas, klasifikasi, konfigurasi, serta dokumen versi itu dalam mode yang sesuai; adanya draft lain tidak membuat versi historis dapat diedit. Link timeline dan operasi lain diblokir selama editor/dialog/request aktif.
 
 ### Hubungan dengan Arsip dan perubahan master
 
@@ -196,7 +206,7 @@ letter-templates/
 - Urutan default nama A–Z dengan id sebagai penentu akhir agar pagination stabil.
 - Filter status dan klasifikasi, masing-masing pilihan tunggal.
 - Paginasi server mengikuti pola repository: default 10, pilihan 5/10/15/20/50/100, serta mempertahankan keyword dan filter.
-- Halaman kelola memuat empat tahap pengelolaan serta timeline versi yang menyusul tahap 6. Kartu Generate dan Pemeriksaan DOCX memuat isian sesuai token, urutan baris pilihan, unduhan hasil, status/expiry, dan konfirmasi visual; operasinya diblokir selama kartu lain sedang diedit atau request berjalan. Kartu awal dalam mode baca; hanya satu editor kartu/item dapat aktif. Simpan/Batal hanya tampil saat edit, dan Batal memulihkan nilai/galat/file tanpa navigasi. Form tambah identitas tetap langsung dapat diisi. Tombol naik/turun mengikuti Reference, hapus memakai destructive, dan tombol berteks memiliki ikon di depan.
+- Halaman kelola memuat empat tahap pengelolaan serta kartu Publikasi dan Status dan Timeline Versi yang tersedia sejak tahap 6. Kartu Generate dan Pemeriksaan DOCX memuat isian sesuai token, urutan baris pilihan, unduhan hasil, status/expiry, dan konfirmasi visual; operasinya diblokir selama kartu lain sedang diedit atau request berjalan. Kartu awal dalam mode baca; hanya satu editor kartu/item dapat aktif. Simpan/Batal hanya tampil saat edit, dan Batal memulihkan nilai/galat/file tanpa navigasi. Form tambah identitas tetap langsung dapat diisi. Tombol naik/turun mengikuti Reference, hapus memakai destructive, dan tombol berteks memiliki ikon di depan.
 
 ### Perapihan editor setelah tahap 5
 
@@ -245,10 +255,11 @@ Perapihan editor 5A berikutnya lulus 282 test PHPUnit/1.873 assertion dan 24 tes
 
 Sebelum pekerjaan terkait dimulai, rincikan:
 
-- Endpoint operasi, props/payload/error, dan aturan publikasi/perubahan versi/arsip/nonaktifkan tahap 6; kontrak generate/unduh hasil/konfirmasi tahap 5 sudah dirinci pada rencana teknis.
+- Kontrak tahap 6 sudah diterapkan dan dirinci pada rencana teknis; keputusan penyalinan arsip dan publikasi tanpa aktivasi otomatis tetap dipertahankan.
 - Jadwal dan mekanisme cleanup hasil uji kedaluwarsa/yatim serta runner konkurensi tahap 7; timeout, expiry, dan batas hasil uji sudah ditetapkan tahap 5.
 - Snapshot surat historis nanti harus mempertahankan urutan pilihan, atribut, tanggal acuan masa kerja, serta locale/format efektif. Keluaran Referensi/Pegawai, fallback, format, dan masa kerja sudah diterapkan pada generate uji; tidak perlu mengulang keputusan tersebut.
-- Rincian publikasi saat seluruh prasyarat terpenuhi; perubahan nilai master tidak membatalkan hasil uji yang masih berlaku, tetapi status aktif penandatangan tetap wajib diperiksa. Pemilihan klasifikasi daftar sudah dirinci pada bagian 8.
 - Snapshot nilai surat historis pada fitur Surat, termasuk atribut Pegawai, tanggal acuan masa kerja, serta locale/format efektif; tanpa menambahkan tabel Surat pada tahap ini.
 
 Alokasi nomor, pembuatan surat sebenarnya, revisi surat, dan penyerahan kepada pemohon belum masuk pekerjaan ini. Rincian teknis yang belum diputuskan tetap harus dirinci sebelum implementasi terkait.
+
+Tahap 6 lulus 34 test PHPUnit/445 assertion khusus publikasi dan versi; bersama regresi Templat Surat lulus 316 test/2.318 assertion. Sebanyak 38 test frontend terarah, TypeScript, lint terkait, Pint, formatter, serta build produksi lulus. Tidak ada migration atau dependency baru. Browser, pemeriksaan visual DOCX, dan konkurensi antarkoneksi belum dijalankan dan tetap mengikuti tahap akhir/7. Fitur Surat masih belum tersedia; pemakaian pertama diuji melalui data test, tanpa alokasi nomor.

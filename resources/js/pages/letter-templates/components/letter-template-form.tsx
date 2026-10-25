@@ -1,3 +1,4 @@
+import type { LetterTemplateLifecycle } from '@/schemas/letter-template-lifecycle';
 import { TemplateEditAction } from './edit-action';
 import { OptionSelect } from '@/components/option-select';
 import { FormCard } from '@/components/form-card';
@@ -17,6 +18,7 @@ import type { SubmitEventHandler } from 'react';
 export function LetterTemplateForm({
     classifications,
     letterTemplate,
+    selectedVersion,
     disabled = false,
     onProcessingChange,
     editing = true,
@@ -25,6 +27,7 @@ export function LetterTemplateForm({
 }: {
     classifications: ClassificationOption[];
     letterTemplate?: LetterTemplateResource;
+    selectedVersion?: Pick<LetterTemplateLifecycle, 'id' | 'number' | 'status_label' | 'editable' | 'classification'>;
     disabled?: boolean;
     onProcessingChange?: (processing: boolean) => void;
     editing?: boolean;
@@ -34,15 +37,16 @@ export function LetterTemplateForm({
     const pageName = letterTemplate ? 'Ubah Templat Surat' : 'Tambah Templat Surat';
     const { form, submit, bind } = useValibotForm(createLetterTemplateSchema(classifications), {
         name: letterTemplate?.name ?? '',
-        letter_number: letterTemplate?.draft?.letter_number ?? '',
+        letter_number: selectedVersion?.classification.id ?? letterTemplate?.draft?.letter_number ?? '',
     });
+    const canEdit = selectedVersion?.editable ?? !!letterTemplate?.draft;
     const busy = disabled || form.processing;
     const classificationItems = classifications.map((item) => ({ value: item.id, label: item.label }));
 
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
 
-        if (busy) return;
+        if (busy || (letterTemplate && !canEdit)) return;
         const action = letterTemplate ? lt.update(letterTemplate.id) : lt.store();
         const submitted = submit(action.method, action.url, {
             onStart: () => onProcessingChange?.(true),
@@ -69,13 +73,13 @@ export function LetterTemplateForm({
         }
     };
 
-    if (letterTemplate && !editing) {
+    if (letterTemplate && (!editing || !canEdit)) {
         return (
             <FormCard
                 title="Identitas Templat"
-                description={`${letterTemplate.draft ? `Draft versi ${letterTemplate.draft.number}` : 'Tidak ada draft yang dapat diubah'} · ${letterTemplate.is_active ? 'Aktif' : 'Nonaktif'}`}
+                description={`${selectedVersion ? `${selectedVersion.status_label} versi ${selectedVersion.number}` : letterTemplate.draft ? `Draft versi ${letterTemplate.draft.number}` : 'Tidak ada draft yang dapat diubah'} · ${letterTemplate.is_active ? 'Aktif' : 'Nonaktif'}`}
                 action={
-                    letterTemplate.draft ? (
+                    canEdit ? (
                         <TemplateEditAction label="identitas" disabled={disabled} onClick={() => onEdit?.()} />
                     ) : undefined
                 }
@@ -88,10 +92,13 @@ export function LetterTemplateForm({
                     <div>
                         <dt className="text-muted-foreground">Klasifikasi</dt>
                         <dd>
-                            {classifications.find((item) => item.id === letterTemplate.draft?.letter_number)?.label ??
-                                (letterTemplate.classification
-                                    ? `${letterTemplate.classification.code} — ${letterTemplate.classification.name}`
-                                    : 'Belum tersedia')}
+                            {selectedVersion
+                                ? `${selectedVersion.classification.code} — ${selectedVersion.classification.name}`
+                                : (classifications.find((item) => item.id === letterTemplate.draft?.letter_number)
+                                      ?.label ??
+                                  (letterTemplate.classification
+                                      ? `${letterTemplate.classification.code} — ${letterTemplate.classification.name}`
+                                      : 'Belum tersedia'))}
                         </dd>
                     </div>
                 </dl>

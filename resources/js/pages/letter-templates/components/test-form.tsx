@@ -32,7 +32,9 @@ export function LetterTemplateTestForm({
     test,
     disabled,
     onProcessingChange,
+    readOnly = false,
 }: {
+    readOnly?: boolean;
     templateId: string;
     test: LetterTemplateTest;
     disabled: boolean;
@@ -90,7 +92,9 @@ export function LetterTemplateTestForm({
                 <Badge variant={test.state === 'confirmed' ? 'secondary' : 'outline'}>{states[test.state]}</Badge>
                 {!test.can_generate && (
                     <p className="text-sm text-muted-foreground">
-                        Selesaikan validasi DOCX pada draft sebelum menjalankan pengujian.
+                        {readOnly
+                            ? 'Versi ini hanya dapat dibaca. Buat atau buka draft untuk melakukan pengujian baru.'
+                            : 'Selesaikan validasi DOCX pada draft sebelum menjalankan pengujian.'}
                     </p>
                 )}
                 <FieldError>{errors.test || errors.docx || confirmErrors.test}</FieldError>

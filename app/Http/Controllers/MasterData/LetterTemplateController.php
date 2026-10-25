@@ -9,8 +9,10 @@ use App\Http\Controllers\Controller;
 use App\Http\FilterQuery;
 use App\Http\Requests\StoreLetterTemplateRequest;
 use App\Http\Requests\UpdateLetterTemplateRequest;
+use App\Http\Requests\ViewLetterTemplateVersionRequest;
 use App\Http\Resources\MasterData\LetterTemplateConfigurationResource;
 use App\Http\Resources\MasterData\LetterTemplateDocumentResource;
+use App\Http\Resources\MasterData\LetterTemplateLifecycleResource;
 use App\Http\Resources\MasterData\LetterTemplateResource;
 use App\Http\Resources\MasterData\LetterTemplateTestResource;
 use App\Models\LetterNumber;
@@ -21,6 +23,7 @@ use App\Models\MasterData\ReferenceGroup;
 use App\Services\LetterTemplate\EmployeeAttributeCatalog;
 use App\Services\LetterTemplate\SaveLetterTemplateIdentity;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Response as InertiaResponse;
@@ -71,23 +74,27 @@ class LetterTemplateController extends Controller
         return redirect()->route('lt.edit', $template->uuid);
     }
 
-    public function edit(LetterTemplate $letterTemplate): InertiaResponse
+    public function edit(ViewLetterTemplateVersionRequest $request, LetterTemplate $letterTemplate): InertiaResponse
     {
         $letterTemplate->load(['activeVersion', 'displayVersion.letterNumber', 'draftVersion.letterNumber']);
 
-        $version = $letterTemplate->draftVersion ?? $letterTemplate->displayVersion;
-        $version?->load(['variables.referenceGroup', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
-        $version?->loadExists(['audits as configuration_saved' => fn(Builder $query): Builder => $query->where('operation', 'configuration.updated')]);
+        $selectedUuid = $request->validated('version');
+        $version = $selectedUuid === null ? ($letterTemplate->draftVersion ?? $letterTemplate->displayVersion) : $letterTemplate->versions()->where('uuid', $selectedUuid)->firstOrFail();
+        $letterTemplate->load(['versions' => fn(HasMany $query): HasMany => $query->orderByDesc('version_number'), 'audits' => fn(HasMany $query): HasMany => $query->with('version:id,version_number')->orderByDesc('occurred_at')->orderByDesc('id')->limit(50)]);
+        $version?->setRelation('template', $letterTemplate);
+        $version?->load(['letterNumber', 'variables.referenceGroup', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
+        $version?->loadExists(['audits as configuration_saved' => fn(Builder $query): Builder => $query->whereIn('operation', ['configuration.updated', 'draft.copied'])]);
 
         return inertia('letter-templates/edit', [
             'page' => ['id' => $this->pageId],
             'classifications' => $this->classifications(),
             'resource' => LetterTemplateResource::make($letterTemplate),
+            'lifecycle' => $version === null ? null : LetterTemplateLifecycleResource::make($version),
             'configuration' => $version === null ? null : LetterTemplateConfigurationResource::make($version),
             'document' => $version === null ? null : LetterTemplateDocumentResource::make($version),
             'test' => $version === null ? null : LetterTemplateTestResource::make($version),
             'documentUploadLimitKb' => config('letter-templates.max_upload_kb'),
-            'documentVersions' => $letterTemplate->versions()->orderByDesc('version_number')->get(['uuid', 'version_number', 'status', 'source_path'])->map(fn(LetterTemplateVersion $item): array => ['id' => $item->uuid, 'number' => $item->version_number, 'status' => $item->status->label(), 'has_source' => $item->source_path !== null])->all(),
+            'documentVersions' => $letterTemplate->versions->map(fn(LetterTemplateVersion $item): array => ['id' => $item->uuid, 'number' => $item->version_number, 'status' => $item->status->label(), 'has_source' => $item->source_path !== null])->all(),
             'configurationOptions' => [
                 'employeeAttributes' => EmployeeAttributeCatalog::options(),
                 'types' => LetterTemplateVariableTypeEnum::options(),

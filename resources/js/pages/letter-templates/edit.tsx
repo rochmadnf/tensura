@@ -1,3 +1,6 @@
+import { LetterTemplateLifecycleCard } from './components/lifecycle-card';
+import { LetterTemplateVersionTimeline } from './components/version-timeline';
+import type { LetterTemplateLifecycle } from '@/schemas/letter-template-lifecycle';
 import { LetterTemplateTestForm } from './components/test-form';
 import type { LetterTemplateTest } from '@/schemas/letter-template-test';
 import { useState } from 'react';
@@ -20,7 +23,9 @@ export default function LetterTemplateEdit({
     documentUploadLimitKb,
     documentVersions,
     test,
+    lifecycle,
 }: {
+    lifecycle?: { data: LetterTemplateLifecycle } | null;
     classifications: ClassificationOption[];
     resource: { data: LetterTemplateResource };
     configuration: { data: LetterTemplateConfiguration } | null;
@@ -46,12 +51,13 @@ export default function LetterTemplateEdit({
                         Kembali ke daftar templat
                     </Link>
                     <LetterTemplateForm
-                        key={`identity-${resource.data.id}-${activeCard === 'identity'}`}
+                        key={`identity-${lifecycle?.data.id ?? resource.data.id}-${activeCard === 'identity'}`}
                         classifications={classifications}
                         editing={activeCard === 'identity'}
                         onEdit={() => setActiveCard('identity')}
                         onClose={() => setActiveCard(null)}
                         letterTemplate={resource.data}
+                        selectedVersion={lifecycle?.data}
                         disabled={isSaving || (activeCard !== null && activeCard !== 'identity')}
                         onProcessingChange={setIsSaving}
                     />
@@ -88,9 +94,31 @@ export default function LetterTemplateEdit({
                             key={`test-${test.data.id}-${test.data.validation_token}-${test.data.can_generate}`}
                             templateId={resource.data.id}
                             test={test.data}
+                            readOnly={lifecycle ? !lifecycle.data.editable : false}
                             disabled={isSaving || activeCard !== null}
                             onProcessingChange={setIsSaving}
                         />
+                    )}
+                    {lifecycle && (
+                        <>
+                            <LetterTemplateLifecycleCard
+                                key={`lifecycle-${lifecycle.data.id}`}
+                                templateId={resource.data.id}
+                                lifecycle={lifecycle.data}
+                                testToken={test?.data.test_token ?? null}
+                                isActive={resource.data.is_active}
+                                disabled={isSaving || (activeCard !== null && activeCard !== 'lifecycle')}
+                                onOpen={() => setActiveCard('lifecycle')}
+                                onClose={() => setActiveCard(null)}
+                                onProcessingChange={setIsSaving}
+                            />
+                            <LetterTemplateVersionTimeline
+                                key={`timeline-${resource.data.id}`}
+                                templateId={resource.data.id}
+                                lifecycle={lifecycle.data}
+                                disabled={isSaving || activeCard !== null}
+                            />
+                        </>
                     )}
                 </div>
             </div>

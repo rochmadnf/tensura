@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import LetterTemplateEdit from './edit';
 import { LetterTemplateTestForm } from './components/test-form';
 import { LetterTemplateForm } from './components/letter-template-form';
+import { LetterTemplateLifecycleCard } from './components/lifecycle-card';
+import { LetterTemplateVersionTimeline } from './components/version-timeline';
 import { LetterTemplateConfigurationForm } from './components/configuration-form';
 
 const state = vi.hoisted(() => ({ activeCard: null }));
@@ -97,6 +99,40 @@ describe('Letter template card identity', () => {
         expect(after.props.activeEditor).toBe(state.activeCard);
         expect(findTestCard(page).props.disabled).toBe(true);
         expect(findTestCard(page, LetterTemplateForm).props.disabled).toBe(true);
+    });
+
+    it('blocks editing and timeline navigation while a lifecycle dialog is open', () => {
+        state.activeCard = 'lifecycle';
+        const page = createPage(
+            {},
+            { lifecycle: { data: { id: 'selected', version_token: 'token', editable: true } } },
+        );
+        expect(findTestCard(page, LetterTemplateForm).props.disabled).toBe(true);
+        expect(findTestCard(page, LetterTemplateVersionTimeline).props.disabled).toBe(true);
+        expect(findTestCard(page).props.disabled).toBe(true);
+        expect(findTestCard(page, LetterTemplateLifecycleCard).props.disabled).toBe(false);
+        checkSiblingKeys(page);
+    });
+
+    it('preserves a lifecycle dialog when refreshed evidence changes the version token', () => {
+        state.activeCard = 'lifecycle';
+        const before = findTestCard(
+            createPage({}, { lifecycle: { data: { id: 'selected', version_token: 'old' } } }),
+            LetterTemplateLifecycleCard,
+        );
+        const after = findTestCard(
+            createPage({}, { lifecycle: { data: { id: 'selected', version_token: 'latest' } } }),
+            LetterTemplateLifecycleCard,
+        );
+        expect(after.key).toBe(before.key);
+    });
+
+    it('binds identity and test read-only state to the selected version', () => {
+        state.activeCard = null;
+        const selected = { id: 'history', version_token: 'token', editable: false };
+        const page = createPage({}, { lifecycle: { data: selected } });
+        expect(findTestCard(page, LetterTemplateForm).props.selectedVersion).toBe(selected);
+        expect(findTestCard(page).props.readOnly).toBe(true);
     });
 
     it('reinitializes sample inputs when first validation makes the form available', () => {

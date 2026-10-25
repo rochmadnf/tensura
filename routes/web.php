@@ -20,6 +20,7 @@ use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
 use App\Http\Controllers\MasterData\LetterTemplateTestController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
+use App\Http\Controllers\MasterData\LetterTemplateVersionController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,10 @@ Route::middleware('auth')->group(function () {
         Route::put('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.slots.update');
         Route::delete('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'delete')->whereUuid('item')->name('lt.configuration.slots.destroy');
         Route::patch('configuration/slots/{item}/attributes/{attribute}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'attribute')->whereUuid('item')->name('lt.configuration.slots.attribute');
+        Route::post('publish', [LetterTemplateVersionController::class, 'publish'])->name('lt.versions.publish');
+        Route::post('draft', [LetterTemplateVersionController::class, 'draft'])->name('lt.versions.draft');
+        Route::post('archive', [LetterTemplateVersionController::class, 'archive'])->name('lt.versions.archive');
+        Route::patch('activation', [LetterTemplateVersionController::class, 'activation'])->name('lt.activation.update');
         Route::post('test', [LetterTemplateTestController::class, 'store'])->name('lt.test.store');
         Route::get('test', [LetterTemplateTestController::class, 'show'])->name('lt.test.download');
         Route::post('test/confirm', [LetterTemplateTestController::class, 'confirm'])->name('lt.test.confirm');

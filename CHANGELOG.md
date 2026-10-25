@@ -4,6 +4,12 @@
 
 ### Ditambahkan
 
+- Publikasi Templat Surat setelah pemeriksaan sumber, konfigurasi, hasil uji terbaru yang belum kedaluwarsa, konfirmasi visual, dan seluruh kandidat penandatangan aktif; pointer versi terbit aktif diperbarui tanpa menghapus publikasi terdahulu.
+- Pembukaan kembali publikasi yang belum digunakan sebagai draft dengan nomor yang sama, serta penyalinan versi yang sudah digunakan atau diarsipkan menjadi draft bernomor baru. Seluruh konfigurasi/fallback/format disalin mandiri dan sumber DOCX memakai berkas terpisah; bukti pemeriksaan wajib dibuat ulang.
+- Arsip draft sebagai status versi serta aktif/nonaktif templat dengan konfirmasi dan audit, tanpa hapus permanen atau integrasi Arsip pusat. Publikasi mempertahankan status Nonaktif hingga admin mengaktifkannya secara terpisah.
+- Kartu kesiapan Publikasi dan Status, pemilihan versi historis melalui Timeline Versi, dan 50 aktivitas terbaru. Identitas/klasifikasi/konfigurasi/DOCX mengikuti versi terpilih dan versi historis tetap hanya-baca walaupun templat memiliki draft lain.
+- Perlindungan satu draft berjalan, penolakan token versi/hasil yang usang, serta rollback database dan pembersihan berkas pada kegagalan salinan. Dialog serta navigasi versi menghormati editor aktif agar perubahan lokal tidak hilang.
+
 - Generate DOCX hasil uji dari data contoh sesuai token yang dipakai, termasuk fallback, tanggal, seluruh atribut Pegawai, penandatangan berbeda per slot, header/footer, dan tabel berulang dengan urutan pemilihan admin.
 - Unduhan hasil uji privat dan konfirmasi pemeriksaan visual yang terikat pada hasil terbaru, hash sumber/konfigurasi/hasil, serta masa berlaku 24 jam. Generate ulang menghapus konfirmasi lama; hasil usang, hilang, berubah, kedaluwarsa, atau memakai penandatangan tidak aktif ditolak.
 - Batas isian, jumlah baris, ekspansi XML, ukuran hasil, serta pemeriksaan batas waktu generate dipusatkan dalam konfigurasi. Penyimpanan gagal mempertahankan bukti dan berkas sebelumnya serta membersihkan hasil baru.
