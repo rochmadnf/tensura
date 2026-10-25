@@ -17,6 +17,7 @@ use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
+use App\Http\Controllers\MasterData\LetterTemplateTestController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
@@ -53,6 +54,9 @@ Route::middleware('auth')->group(function () {
     Route::get('letter-templates/date-format', LetterTemplateDateFormatController::class)->name('lt.date-format');
 
     Route::prefix('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}')->scopeBindings()->whereUuid(['letterTemplate', 'version'])->group(function (): void {
+        Route::post('test', [LetterTemplateTestController::class, 'store'])->name('lt.test.store');
+        Route::get('test', [LetterTemplateTestController::class, 'show'])->name('lt.test.download');
+        Route::post('test/confirm', [LetterTemplateTestController::class, 'confirm'])->name('lt.test.confirm');
         Route::post('source', [LetterTemplateSourceController::class, 'store'])->name('lt.source.store');
         Route::get('source', [LetterTemplateSourceController::class, 'show'])->name('lt.source.download');
         Route::post('validate', LetterTemplateValidationController::class)->name('lt.validation.store');

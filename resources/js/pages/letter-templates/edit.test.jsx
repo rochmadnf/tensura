@@ -40,6 +40,7 @@ describe('Letter template card identity', () => {
                 configuration: { data: { id: versionId } },
                 configurationOptions: {},
                 document: { data: { id: versionId } },
+                test: { data: { id: versionId, validation_token: 'validation-token' } },
                 documentUploadLimitKb: 10240,
                 documentVersions: [],
             });

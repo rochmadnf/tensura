@@ -84,7 +84,7 @@ class BuildLetterTemplateExample
                 'Fallback dipakai sebagai teks literal saat nilai kosong; tidak menggantikan isian wajib. Multiple opsional tanpa pilihan menghapus baris contoh, mempertahankan header/baris statis.',
                 'Format tanggal memakai pola PHP dengan bahasa aplikasi. Masa kerja ditampilkan sampai hari tanpa bagian nol, berdasarkan tanggal pemrosesan.',
                 '3. Unggah DOCX sumber dan jalankan validasi struktur serta placeholder. Perbaiki pesan galat bila ada.',
-                '4. Setelah fitur pengujian tersedia, isi data contoh fiktif (misalnya Pegawai Contoh), generate hasil uji, buka DOCX, lalu konfirmasi pemeriksaan visual.',
+                '4. Isi data contoh fiktif (misalnya Pegawai Contoh), generate hasil uji, buka DOCX, lalu konfirmasi pemeriksaan visual.',
                 '5. Publikasikan setelah validasi, generate uji, dan konfirmasi terpenuhi. Perubahan konfigurasi atau DOCX mengharuskan pemeriksaan ulang.',
                 'Panduan tidak memuat data pribadi kandidat pegawai. Admin berikutnya dapat mengunduh ulang panduan dari versi yang sama.',
             ] as $instruction) {

@@ -1,3 +1,5 @@
+import { LetterTemplateTestForm } from './components/test-form';
+import type { LetterTemplateTest } from '@/schemas/letter-template-test';
 import { Download04Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useState } from 'react';
@@ -22,6 +24,7 @@ export default function LetterTemplateEdit({
     document,
     documentUploadLimitKb,
     documentVersions,
+    test,
 }: {
     classifications: ClassificationOption[];
     resource: { data: LetterTemplateResource };
@@ -30,6 +33,7 @@ export default function LetterTemplateEdit({
     document: { data: LetterTemplateDocument } | null;
     documentUploadLimitKb: number;
     documentVersions: LetterTemplateDocumentVersion[];
+    test?: { data: LetterTemplateTest } | null;
 }) {
     const [isSaving, setIsSaving] = useState(false);
     const [activeCard, setActiveCard] = useState<'identity' | 'configuration' | 'document' | null>(null);
@@ -130,6 +134,15 @@ export default function LetterTemplateEdit({
                             maxKb={documentUploadLimitKb}
                             versions={documentVersions}
                             disabled={isSaving || (activeCard !== null && activeCard !== 'document')}
+                            onProcessingChange={setIsSaving}
+                        />
+                    )}
+                    {test && (
+                        <LetterTemplateTestForm
+                            key={`test-${test.data.id}-${test.data.validation_token}`}
+                            templateId={resource.data.id}
+                            test={test.data}
+                            disabled={isSaving || activeCard !== null}
                             onProcessingChange={setIsSaving}
                         />
                     )}

@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateLetterTemplateRequest;
 use App\Http\Resources\MasterData\LetterTemplateConfigurationResource;
 use App\Http\Resources\MasterData\LetterTemplateDocumentResource;
 use App\Http\Resources\MasterData\LetterTemplateResource;
+use App\Http\Resources\MasterData\LetterTemplateTestResource;
 use App\Models\LetterNumber;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\LetterTemplate;
@@ -84,6 +85,7 @@ class LetterTemplateController extends Controller
             'resource' => LetterTemplateResource::make($letterTemplate),
             'configuration' => $version === null ? null : LetterTemplateConfigurationResource::make($version),
             'document' => $version === null ? null : LetterTemplateDocumentResource::make($version),
+            'test' => $version === null ? null : LetterTemplateTestResource::make($version),
             'documentUploadLimitKb' => config('letter-templates.max_upload_kb'),
             'documentVersions' => $letterTemplate->versions()->orderByDesc('version_number')->get(['uuid', 'version_number', 'status', 'source_path'])->map(fn(LetterTemplateVersion $item): array => ['id' => $item->uuid, 'number' => $item->version_number, 'status' => $item->status->label(), 'has_source' => $item->source_path !== null])->all(),
             'configurationOptions' => [

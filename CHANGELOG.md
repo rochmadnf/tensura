@@ -4,6 +4,11 @@
 
 ### Ditambahkan
 
+- Generate DOCX hasil uji dari data contoh sesuai token yang dipakai, termasuk fallback, tanggal, seluruh atribut Pegawai, penandatangan berbeda per slot, header/footer, dan tabel berulang dengan urutan pemilihan admin.
+- Unduhan hasil uji privat dan konfirmasi pemeriksaan visual yang terikat pada hasil terbaru, hash sumber/konfigurasi/hasil, serta masa berlaku 24 jam. Generate ulang menghapus konfirmasi lama; hasil usang, hilang, berubah, kedaluwarsa, atau memakai penandatangan tidak aktif ditolak.
+- Batas isian, jumlah baris, ekspansi XML, ukuran hasil, serta pemeriksaan batas waktu generate dipusatkan dalam konfigurasi. Penyimpanan gagal mempertahankan bukti dan berkas sebelumnya serta membersihkan hasil baru.
+- Kartu Generate dan Pemeriksaan DOCX menampilkan isian yang diperlukan saja, urutan baris pilihan, unduhan hasil, dan pernyataan pemeriksaan visual. Tahap publikasi dan cleanup terjadwal tetap mengikuti tahap berikutnya.
+
 - Katalog bersama 25 atribut Pegawai untuk variabel tunggal, kolom tabel berulang, dan penandatangan; token atribut otomatis serta alias nama lengkap tetap tersedia. Pemetaan mencakup pangkat, golongan, masa kerja sampai hari, status, serta STR/SIP.
 - Fallback teks literal variabel tunggal/per atribut Pegawai dan format tanggal per atribut/kolom, disimpan relasional per versi. Format default `d-m-Y`, nama bulan/hari mengikuti locale aplikasi, dan input menyediakan bantuan pola PHP serta contoh dari backend.
 - Fingerprint konfigurasi mencakup fallback, format, locale, dan revisi kontrak katalog agar bukti lama harus diperiksa ulang tanpa menghapus DOCX sumber. Payload konfigurasi lama tetap dapat disimpan tanpa kehilangan pengaturan tambahan.

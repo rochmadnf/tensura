@@ -190,8 +190,8 @@ export function LetterTemplateDocumentForm({
                         </Button>
                         <FieldError>{validation.errors.docx}</FieldError>
                         <FieldDescription>
-                            Validasi ini memeriksa struktur dan placeholder. Generate hasil uji, konfirmasi visual, dan
-                            publikasi tersedia pada tahap berikutnya.
+                            Validasi ini memeriksa struktur dan placeholder. Lanjutkan generate dan pemeriksaan visual
+                            pada kartu di bawah. Publikasi tersedia pada tahap berikutnya.
                         </FieldDescription>
                     </Field>
                 )}
