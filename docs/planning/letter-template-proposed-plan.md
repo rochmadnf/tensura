@@ -279,7 +279,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | 4. Upload/validasi DOCX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplateDocxTest.php tests/Feature/LetterTemplateExampleTest.php tests/Feature/LetterTemplateConfigurationTest.php tests/Feature/LetterTemplateMasterProtectionTest.php tests/Feature/LetterTemplateStorageTest.php tests/Feature/LetterTemplateStoreTest.php tests/Feature/LetterTemplateEditTest.php tests/Feature/LetterTemplateIndexTest.php` — 197 test, 1.305 assertion lulus | `8dd1f0c` |
 | 4A. Katalog Pegawai/fallback/format/UX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 229 test, 1.460 assertion lulus | `1341301` |
 | 5. Generate/konfirmasi | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 265 test, 1.753 assertion lulus | `b05dac1`, perbaikan transisi form `581ce3f` |
-| 5A. Perapihan editor per item | Selesai implementasi; browser belum diverifikasi | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 282 test, 1.873 assertion lulus | Commit perbaikan ini; hash dicatat setelah commit |
+| 5A. Perapihan editor per item | Selesai implementasi; browser belum diverifikasi | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 282 test, 1.873 assertion lulus | `844bafd` |
 | 6. Publikasi/versi | Belum dimulai | — | — |
 | 7. Cleanup/integrasi | Belum dimulai | — | — |
 
