@@ -280,7 +280,7 @@ Hasil diisi setelah pekerjaan dan test dilaksanakan. Hash di bawah menunjuk comm
 | 4A. Katalog Pegawai/fallback/format/UX | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 229 test, 1.460 assertion lulus | `1341301` |
 | 5. Generate/konfirmasi | Selesai | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 265 test, 1.753 assertion lulus | `b05dac1`, perbaikan transisi form `581ce3f` |
 | 5A. Perapihan editor per item | Selesai implementasi; browser belum diverifikasi | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 282 test, 1.873 assertion lulus | `844bafd` |
-| 6. Publikasi/versi | Selesai implementasi; browser/konkurensi mengikuti tahap akhir | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 316 test, 2.318 assertion lulus; 34 test/445 assertion khusus siklus versi | Commit tahap ini; hash dicatat setelah commit |
+| 6. Publikasi/versi | Selesai implementasi; browser/konkurensi mengikuti tahap akhir | `vendor/bin/phpunit tests/Feature/LetterTemplate*.php` dengan override `TEST_DB_*` ke PostgreSQL disposable — 316 test, 2.318 assertion lulus; 34 test/445 assertion khusus siklus versi | `7b7b4c0` |
 | 7. Cleanup/integrasi | Belum dimulai | — | — |
 
 ### Verifikasi akhir — Setelah tahap 1–7 termasuk 4A selesai dan di-commit
