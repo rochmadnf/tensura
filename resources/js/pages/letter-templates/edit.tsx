@@ -139,7 +139,7 @@ export default function LetterTemplateEdit({
                     )}
                     {test && (
                         <LetterTemplateTestForm
-                            key={`test-${test.data.id}-${test.data.validation_token}`}
+                            key={`test-${test.data.id}-${test.data.validation_token}-${test.data.can_generate}`}
                             templateId={resource.data.id}
                             test={test.data}
                             disabled={isSaving || activeCard !== null}

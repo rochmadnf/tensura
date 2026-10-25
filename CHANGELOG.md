@@ -8,6 +8,7 @@
 - Unduhan hasil uji privat dan konfirmasi pemeriksaan visual yang terikat pada hasil terbaru, hash sumber/konfigurasi/hasil, serta masa berlaku 24 jam. Generate ulang menghapus konfirmasi lama; hasil usang, hilang, berubah, kedaluwarsa, atau memakai penandatangan tidak aktif ditolak.
 - Batas isian, jumlah baris, ekspansi XML, ukuran hasil, serta pemeriksaan batas waktu generate dipusatkan dalam konfigurasi. Penyimpanan gagal mempertahankan bukti dan berkas sebelumnya serta membersihkan hasil baru.
 - Kartu Generate dan Pemeriksaan DOCX menampilkan isian yang diperlukan saja, urutan baris pilihan, unduhan hasil, dan pernyataan pemeriksaan visual. Tahap publikasi dan cleanup terjadwal tetap mengikuti tahap berikutnya.
+- Form data contoh dibentuk ulang setelah validasi pertama berhasil agar daftar isian baru, termasuk multiple, tersedia tanpa memuat ulang halaman; generate ulang hasil tetap mempertahankan isian contoh.
 
 - Katalog bersama 25 atribut Pegawai untuk variabel tunggal, kolom tabel berulang, dan penandatangan; token atribut otomatis serta alias nama lengkap tetap tersedia. Pemetaan mencakup pangkat, golongan, masa kerja sampai hari, status, serta STR/SIP.
 - Fallback teks literal variabel tunggal/per atribut Pegawai dan format tanggal per atribut/kolom, disimpan relasional per versi. Format default `d-m-Y`, nama bulan/hari mengikuti locale aplikasi, dan input menyediakan bantuan pola PHP serta contoh dari backend.
