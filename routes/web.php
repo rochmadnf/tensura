@@ -10,6 +10,7 @@ use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
+use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
 use App\Http\Controllers\MasterData\LetterTemplateAuditController;
@@ -45,6 +46,10 @@ Route::middleware('auth')->group(function () {
     Route::put('account/password', [AccountPasswordController::class, 'update'])->name('account.password.update');
     Route::post('account/avatar', [AccountAvatarController::class, 'store'])->name('account.avatar.store');
     Route::delete('account/avatar', [AccountAvatarController::class, 'destroy'])->name('account.avatar.destroy');
+
+    Route::get('employees/import', [EmployeeImportController::class, 'create'])->name('empl.import.create');
+    Route::get('employees/import/template', [EmployeeImportController::class, 'template'])->name('empl.import.template');
+    Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('empl.import.store');
 
     Route::resource('employees', EmployeeController::class)
         ->parameters(['employees' => 'employee'])

@@ -4,6 +4,8 @@ import { EmployeeDataTable } from './components/data-table';
 import type { PaginationMeta } from '@/components/data-table';
 import { SectionData } from '@/components/section-data';
 import empl from '@/routes/empl';
+import employeeImport from '@/routes/empl/import';
+import { Button } from '@/components/ui/button';
 import { DataFilterDialog } from '@/components/data-filter-dialog';
 import { OptionSelect } from '@/components/option-select';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -129,123 +131,135 @@ export default function EmployeeIndex({
                     searchUrl={empl.index().url}
                     defaultKeyword={filters.keyword}
                     filterAction={
-                        <DataFilterDialog
-                            title="Filter Pegawai"
-                            value={draft}
-                            emptyValue={emptyValue}
-                            activeCount={
-                                draft.job_title.length +
-                                draft.job_group.length +
-                                draft.gender.length +
-                                draft.contract_status.length +
-                                draft.status.length +
-                                Number(draft.tenure_min !== '') +
-                                Number(draft.tenure_max !== '')
-                            }
-                            onApply={applyFilters}
-                            disabled={isLoading}
-                        >
-                            {({ value, onValueChange, disabled }) => (
-                                <div className="flex flex-col gap-6">
-                                    {selections.map(({ name, label, items }) => (
-                                        <Field key={name} data-disabled={disabled}>
-                                            <FieldLabel htmlFor={`filter-${name}`}>{label}</FieldLabel>
-                                            <OptionSelect
-                                                multiple
-                                                forceCombobox
-                                                id={`filter-${name}`}
-                                                name={name}
-                                                remote={
-                                                    name === 'job_title'
-                                                        ? { source: 'job-titles', groups: value.job_group }
-                                                        : undefined
-                                                }
-                                                items={items
-                                                    .filter(
-                                                        (item) =>
-                                                            name !== 'job_title' ||
-                                                            value.job_group.length === 0 ||
-                                                            ('group' in item &&
-                                                                item.group !== null &&
-                                                                value.job_group.includes(String(item.group))),
-                                                    )
-                                                    .map((item) => ({
-                                                        value: String(item.id),
-                                                        label: item.label,
-                                                    }))}
-                                                value={value[name]}
-                                                onValueChange={(selected, selectedItems) => {
-                                                    if (name === 'job_title') {
-                                                        for (const item of selectedItems ?? []) {
-                                                            selectedJobGroups.current.set(
-                                                                item.value,
-                                                                item.group ?? null,
-                                                            );
-                                                        }
-                                                    }
-                                                    if (name === 'job_group') {
-                                                        onValueChange({
-                                                            ...value,
-                                                            job_group: selected,
-                                                            job_title: value.job_title.filter((id) => {
-                                                                if (selected.length === 0) return true;
-                                                                const group =
-                                                                    selectedJobGroups.current.get(id) ??
-                                                                    jobTitles.find((item) => item.id === id)?.group;
-                                                                return (
-                                                                    group !== null &&
-                                                                    group !== undefined &&
-                                                                    selected.includes(String(group))
-                                                                );
-                                                            }),
-                                                        });
-                                                    } else {
-                                                        onValueChange({ ...value, [name]: selected });
-                                                    }
-                                                }}
-                                                placeholder={`Semua ${label.toLowerCase()}`}
-                                                resetLabel={`Reset ${label.toLowerCase()}`}
-                                                disabled={disabled}
-                                            />
-                                        </Field>
-                                    ))}
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        {(['tenure_min', 'tenure_max'] as const).map((name) => (
-                                            <Field
-                                                key={name}
-                                                data-invalid={!!rangeError(value)}
-                                                data-disabled={disabled}
-                                            >
-                                                <FieldLabel htmlFor={`filter-${name}`}>
-                                                    Masa Kerja {name === 'tenure_min' ? 'Minimum' : 'Maksimum'} (Tahun)
-                                                </FieldLabel>
-                                                <Input
-                                                    ref={(input) => {
-                                                        input?.setCustomValidity(rangeError(value) ?? '');
-                                                    }}
+                        <>
+                            <Button
+                                variant="secondary"
+                                nativeButton={false}
+                                render={<Link href={employeeImport.create().url} />}
+                            >
+                                Impor Excel
+                            </Button>
+                            <DataFilterDialog
+                                title="Filter Pegawai"
+                                value={draft}
+                                emptyValue={emptyValue}
+                                activeCount={
+                                    draft.job_title.length +
+                                    draft.job_group.length +
+                                    draft.gender.length +
+                                    draft.contract_status.length +
+                                    draft.status.length +
+                                    Number(draft.tenure_min !== '') +
+                                    Number(draft.tenure_max !== '')
+                                }
+                                onApply={applyFilters}
+                                disabled={isLoading}
+                            >
+                                {({ value, onValueChange, disabled }) => (
+                                    <div className="flex flex-col gap-6">
+                                        {selections.map(({ name, label, items }) => (
+                                            <Field key={name} data-disabled={disabled}>
+                                                <FieldLabel htmlFor={`filter-${name}`}>{label}</FieldLabel>
+                                                <OptionSelect
+                                                    multiple
+                                                    forceCombobox
                                                     id={`filter-${name}`}
                                                     name={name}
-                                                    type="number"
-                                                    min={0}
-                                                    step={1}
-                                                    value={value[name]}
-                                                    placeholder="Tanpa batas"
-                                                    aria-invalid={!!rangeError(value)}
-                                                    aria-describedby={rangeError(value) ? 'tenure-error' : undefined}
-                                                    disabled={disabled}
-                                                    onChange={(event) =>
-                                                        onValueChange({ ...value, [name]: event.target.value })
+                                                    remote={
+                                                        name === 'job_title'
+                                                            ? { source: 'job-titles', groups: value.job_group }
+                                                            : undefined
                                                     }
+                                                    items={items
+                                                        .filter(
+                                                            (item) =>
+                                                                name !== 'job_title' ||
+                                                                value.job_group.length === 0 ||
+                                                                ('group' in item &&
+                                                                    item.group !== null &&
+                                                                    value.job_group.includes(String(item.group))),
+                                                        )
+                                                        .map((item) => ({
+                                                            value: String(item.id),
+                                                            label: item.label,
+                                                        }))}
+                                                    value={value[name]}
+                                                    onValueChange={(selected, selectedItems) => {
+                                                        if (name === 'job_title') {
+                                                            for (const item of selectedItems ?? []) {
+                                                                selectedJobGroups.current.set(
+                                                                    item.value,
+                                                                    item.group ?? null,
+                                                                );
+                                                            }
+                                                        }
+                                                        if (name === 'job_group') {
+                                                            onValueChange({
+                                                                ...value,
+                                                                job_group: selected,
+                                                                job_title: value.job_title.filter((id) => {
+                                                                    if (selected.length === 0) return true;
+                                                                    const group =
+                                                                        selectedJobGroups.current.get(id) ??
+                                                                        jobTitles.find((item) => item.id === id)?.group;
+                                                                    return (
+                                                                        group !== null &&
+                                                                        group !== undefined &&
+                                                                        selected.includes(String(group))
+                                                                    );
+                                                                }),
+                                                            });
+                                                        } else {
+                                                            onValueChange({ ...value, [name]: selected });
+                                                        }
+                                                    }}
+                                                    placeholder={`Semua ${label.toLowerCase()}`}
+                                                    resetLabel={`Reset ${label.toLowerCase()}`}
+                                                    disabled={disabled}
                                                 />
                                             </Field>
                                         ))}
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            {(['tenure_min', 'tenure_max'] as const).map((name) => (
+                                                <Field
+                                                    key={name}
+                                                    data-invalid={!!rangeError(value)}
+                                                    data-disabled={disabled}
+                                                >
+                                                    <FieldLabel htmlFor={`filter-${name}`}>
+                                                        Masa Kerja {name === 'tenure_min' ? 'Minimum' : 'Maksimum'}{' '}
+                                                        (Tahun)
+                                                    </FieldLabel>
+                                                    <Input
+                                                        ref={(input) => {
+                                                            input?.setCustomValidity(rangeError(value) ?? '');
+                                                        }}
+                                                        id={`filter-${name}`}
+                                                        name={name}
+                                                        type="number"
+                                                        min={0}
+                                                        step={1}
+                                                        value={value[name]}
+                                                        placeholder="Tanpa batas"
+                                                        aria-invalid={!!rangeError(value)}
+                                                        aria-describedby={
+                                                            rangeError(value) ? 'tenure-error' : undefined
+                                                        }
+                                                        disabled={disabled}
+                                                        onChange={(event) =>
+                                                            onValueChange({ ...value, [name]: event.target.value })
+                                                        }
+                                                    />
+                                                </Field>
+                                            ))}
+                                        </div>
+                                        {rangeError(value) && (
+                                            <FieldError id="tenure-error">{rangeError(value)}</FieldError>
+                                        )}
                                     </div>
-                                    {rangeError(value) && (
-                                        <FieldError id="tenure-error">{rangeError(value)}</FieldError>
-                                    )}
-                                </div>
-                            )}
-                        </DataFilterDialog>
+                                )}
+                            </DataFilterDialog>
+                        </>
                     }
                     dataTable={<EmployeeDataTable data={resources.data} meta={resources.meta} />}
                 />
