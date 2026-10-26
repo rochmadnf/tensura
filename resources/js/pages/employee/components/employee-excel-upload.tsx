@@ -1,28 +1,29 @@
 import { useEffect, type ChangeEvent, type DragEvent } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-    Delete02Icon,
-    FileSyncIcon,
-    Folder02Icon,
-    FolderOpenIcon,
-    Upload04Icon,
-    Xls01Icon,
-} from '@hugeicons/core-free-icons';
+import { Delete02Icon, FileSyncIcon, Folder02Icon, Xls01Icon } from '@hugeicons/core-free-icons';
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { formatBytes, useFileUpload } from '@/hooks/use-file-upload';
+import type { ExcelImportSettings } from '@/types/import-excel';
 
 interface EmployeeExcelUploadProps {
+    importSettings: ExcelImportSettings;
     disabled: boolean;
     invalid: boolean;
     onChange: (file: File | null) => void;
     onError: (message: string) => void;
 }
 
-export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: EmployeeExcelUploadProps) {
+export function EmployeeExcelUpload({
+    importSettings,
+    disabled,
+    invalid,
+    onChange,
+    onError,
+}: EmployeeExcelUploadProps) {
     const [{ files, isDragging }, actions] = useFileUpload({
         accept: '.xlsx',
-        maxSize: 5 * 1024 * 1024,
+        maxSize: importSettings.maxSizeBytes,
         multiple: false,
         maxFiles: 1,
         onFilesAdded: ([item]) => {
@@ -50,8 +51,8 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
             onError('Gunakan file Excel berformat .xlsx.');
             return;
         }
-        if (chosen[0].size > 5 * 1024 * 1024) {
-            onError('Ukuran file maksimal 5 MB.');
+        if (chosen[0].size > importSettings.maxSizeBytes) {
+            onError(`Ukuran file maksimal ${importSettings.maxSizeLabel}.`);
             return;
         }
         actions.addFiles(chosen);
@@ -104,10 +105,10 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
                     <p className="text-sm font-medium wrap-anywhere">
                         {selected ? selected.file.name : 'Seret file Excel ke sini'}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p id="employee-file-help" className="text-sm text-muted-foreground">
                         {selected
                             ? formatBytes(selected.file.size)
-                            : 'Atau pilih satu file .xlsx dari perangkat Anda. Maksimal 5 MB.'}
+                            : `Satu file .xlsx, maksimal ${importSettings.maxSizeLabel}.`}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

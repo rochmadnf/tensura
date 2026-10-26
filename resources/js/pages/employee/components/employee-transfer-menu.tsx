@@ -109,8 +109,8 @@ export function EmployeeTransferMenu() {
                             </FieldDescription>
                         </Field>
                         <p className="text-sm">
-                            Ekspor tetap satu file Excel. Jika lebih dari 1.000 baris atau 2 MB, bagi menjadi beberapa
-                            file sebelum impor ulang. Pegawai tanpa jabatan perlu dilengkapi sebelum diimpor.
+                            Untuk impor ulang, bagi file sesuai batas pada halaman impor. Pegawai tanpa jabatan perlu
+                            dilengkapi sebelum diimpor.
                         </p>
                     </FieldGroup>
                     <DialogFooter>

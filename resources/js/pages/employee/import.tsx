@@ -11,6 +11,7 @@ import {
     BadgeXIcon,
     Copy02Icon,
     IdVerifiedIcon,
+    InformationCircleIcon,
     LoaderIcon,
     PlusSignIcon,
     Upload01Icon,
@@ -27,6 +28,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import empl from '@/routes/empl';
 import employeeImport from '@/routes/empl/import';
 import jt from '@/routes/jt';
+import type { ExcelImportInstructionSection, ExcelImportSettings } from '@/types/import-excel';
 
 type ImportResult = {
     total: number;
@@ -43,10 +45,12 @@ const pageSize = 10;
 
 export default function EmployeeImport({
     hasJobTitles,
-    instructions,
+    importSettings,
+    instructionSections,
 }: {
     hasJobTitles: boolean;
-    instructions: string[];
+    importSettings: ExcelImportSettings;
+    instructionSections: ExcelImportInstructionSection[];
 }) {
     const http = useHttp<{ file: File | null }, ImportResult>({ file: null });
     const [result, setResult] = useState<ImportResult | null>(null);
@@ -56,7 +60,7 @@ export default function EmployeeImport({
 
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault();
-        if (http.processing || !hasJobTitles) return;
+        if (http.processing || !hasJobTitles || result) return;
         http.clearErrors();
         setRequestError('');
         setResult(null);
@@ -69,8 +73,8 @@ export default function EmployeeImport({
             http.setError('file', 'Gunakan file Excel berformat .xlsx.');
             return;
         }
-        if (http.data.file.size > 5 * 1024 * 1024) {
-            http.setError('file', 'Ukuran file maksimal 5 MB.');
+        if (http.data.file.size > importSettings.maxSizeBytes) {
+            http.setError('file', `Ukuran file maksimal ${importSettings.maxSizeLabel}.`);
             return;
         }
         try {
@@ -118,25 +122,25 @@ export default function EmployeeImport({
                                     </AlertDescription>
                                 </Alert>
                             )}
-                            <Field>
-                                <FieldLabel>Template Pegawai</FieldLabel>
-                                <EmployeeImportHelp
-                                    instructions={instructions}
-                                    hasJobTitles={hasJobTitles}
-                                    processing={http.processing}
-                                />
-                            </Field>
+                            <EmployeeImportHelp
+                                instructionSections={instructionSections}
+                                hasJobTitles={hasJobTitles}
+                                processing={http.processing}
+                            />
                             <Field data-invalid={!!http.errors.file} data-disabled={!hasJobTitles || http.processing}>
                                 <FieldLabel id="employee-file-label" htmlFor="employee-file">
                                     File Excel
                                 </FieldLabel>
                                 <EmployeeExcelUpload
+                                    importSettings={importSettings}
                                     disabled={!hasJobTitles || http.processing}
                                     invalid={!!http.errors.file}
                                     onChange={(file) => {
                                         http.setData('file', file);
                                         http.clearErrors();
                                         setRequestError('');
+                                        setResult(null);
+                                        setIssuePage(1);
                                     }}
                                     onError={(message) => http.setError('file', message)}
                                 />
@@ -149,16 +153,27 @@ export default function EmployeeImport({
                                     {requestError}
                                 </p>
                             )}
+                            {result && (
+                                <Alert variant="info" role="status">
+                                    <HugeiconsIcon icon={InformationCircleIcon} aria-hidden="true" />
+                                    <AlertDescription>
+                                        File ini sudah diproses. Ganti atau pilih ulang file Excel terlebih dahulu untuk
+                                        mengimpor kembali.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <div className="flex flex-wrap items-center gap-3">
-                                <Button type="submit" disabled={!hasJobTitles || http.processing}>
-                                    <HugeiconsIcon
-                                        icon={http.processing ? LoaderIcon : Upload01Icon}
-                                        data-icon="inline-start"
-                                        aria-hidden="true"
-                                        className={http.processing ? 'animate-spin' : undefined}
-                                    />
-                                    {http.processing ? 'Memproses Impor…' : 'Impor'}
-                                </Button>
+                                {!result && (
+                                    <Button type="submit" disabled={!hasJobTitles || http.processing}>
+                                        <HugeiconsIcon
+                                            icon={http.processing ? LoaderIcon : Upload01Icon}
+                                            data-icon="inline-start"
+                                            aria-hidden="true"
+                                            className={http.processing ? 'animate-spin' : undefined}
+                                        />
+                                        {http.processing ? 'Memproses Impor…' : 'Impor'}
+                                    </Button>
+                                )}
                                 <Button
                                     variant="secondary"
                                     nativeButton={false}

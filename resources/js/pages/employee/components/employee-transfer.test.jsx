@@ -95,22 +95,34 @@ beforeEach(() => {
 });
 
 describe('petunjuk impor', () => {
-    const props = { instructions: ['NIK harus berupa teks.'], hasJobTitles: true, processing: false };
+    const props = {
+        instructionSections: [
+            { id: 'data-format', title: 'Format Pengisian', items: ['NIK harus berupa teks.'] },
+            { id: 'import-behavior', title: 'Cara Impor Bekerja', items: ['Data lama tidak diperbarui.'] },
+        ],
+        hasJobTitles: true,
+        processing: false,
+    };
     it('opens guidance without downloading and requires the dialog download action', () => {
         let tree = render(EmployeeImportHelp, props);
         expect(tree.props.open).toBe(false);
-        const trigger = button(tree, 'Unduh Template');
+        const trigger = button(tree, 'Template & Petunjuk');
+        expect(findAll(tree, (item) => item.type === Button && text(item) === 'Template & Petunjuk')).toHaveLength(1);
         expect(trigger.props.href).toBeUndefined();
         expect(trigger.props.render).toBeUndefined();
         trigger.props.onClick();
         tree = render(EmployeeImportHelp, props);
         expect(tree.props.open).toBe(true);
         expect(text(tree)).toContain('NIK harus berupa teks.');
+        expect(text(tree)).toContain('Format Pengisian');
+        expect(text(tree)).toContain('Panduan pengisian');
+        expect(text(tree)).toContain('Data lama tidak diperbarui.');
+        expect(text(tree)).toContain('Informasi proses');
         const download = findAll(tree, (item) => item.type === Button && item.props.render?.type === 'a')[0];
         expect(download.props.render.props.href).toContain('/employees/import/template');
         download.props.onClick();
         expect(render(EmployeeImportHelp, props).props.open).toBe(false);
-        button(render(EmployeeImportHelp, props), 'Petunjuk').props.onClick();
+        button(render(EmployeeImportHelp, props), 'Template & Petunjuk').props.onClick();
         expect(render(EmployeeImportHelp, props).props.open).toBe(true);
         expect(findAll(tree, (item) => item.type === DialogClose)).toHaveLength(1);
     });
@@ -118,15 +130,27 @@ describe('petunjuk impor', () => {
         const unavailable = { ...props, hasJobTitles: false };
         let tree = render(EmployeeImportHelp, unavailable);
         expect(button(tree, 'Unduh Template').props.disabled).toBe(true);
-        button(tree, 'Petunjuk').props.onClick();
+        button(tree, 'Template & Petunjuk').props.onClick();
         tree = render(EmployeeImportHelp, unavailable);
         expect(tree.props.open).toBe(true);
+        expect(findAll(tree, (item) => item.props.render?.type === 'a')).toHaveLength(0);
+    });
+    it('disables the guidance entry and download while importing', () => {
+        const tree = render(EmployeeImportHelp, { ...props, processing: true });
+        expect(button(tree, 'Template & Petunjuk').props.disabled).toBe(true);
+        expect(button(tree, 'Unduh Template').props.disabled).toBe(true);
         expect(findAll(tree, (item) => item.props.render?.type === 'a')).toHaveLength(0);
     });
 });
 
 describe('satu file Excel', () => {
-    const props = () => ({ disabled: false, invalid: false, onChange: vi.fn(), onError: vi.fn() });
+    const props = () => ({
+        importSettings: { maxSizeBytes: 5 * 1024 * 1024, maxSizeLabel: '5 MB', maxRows: 1000 },
+        disabled: false,
+        invalid: false,
+        onChange: vi.fn(),
+        onError: vi.fn(),
+    });
     const file = (name = 'pegawai.xlsx', size = 20) => new File(['x'.repeat(size)], name);
     it('passes the selected file to the form, replaces it, and clears it on removal', () => {
         const callbacks = props();
@@ -148,12 +172,12 @@ describe('satu file Excel', () => {
         button(tree, 'Hapus File').props.onClick();
         expect(callbacks.onChange).toHaveBeenLastCalledWith(null);
         expect(state.clear).toHaveBeenCalledOnce();
-        expect(button(render(EmployeeExcelUpload, callbacks), 'Pilih File Excel')).toBeDefined();
+        expect(button(render(EmployeeExcelUpload, callbacks), 'Cari File')).toBeDefined();
     });
     it.each([
         ['beberapa file', () => [file(), file('dua.xlsx')], 'satu file Excel'],
         ['tipe salah', () => [file('pegawai.csv')], '.xlsx'],
-        ['terlalu besar', () => [file('besar.xlsx', 2 * 1024 * 1024 + 1)], '2 MB'],
+        ['terlalu besar', () => [file('besar.xlsx', 5 * 1024 * 1024 + 1)], '5 MB'],
     ])('rejects %s without replacing the current file', (_, files, message) => {
         const callbacks = props();
         const original = file();
@@ -163,6 +187,24 @@ describe('satu file Excel', () => {
         expect(state.add).not.toHaveBeenCalled();
         expect(callbacks.onChange).not.toHaveBeenCalled();
         expect(state.files[0].file).toBe(original);
+    });
+    it('accepts the exact limit and uses a configured limit for rejection and guidance', () => {
+        const callbacks = {
+            ...props(),
+            importSettings: { maxSizeBytes: 1536 * 1024, maxSizeLabel: '1.5 MB', maxRows: 25 },
+        };
+        let tree = render(EmployeeExcelUpload, callbacks);
+        expect(text(tree)).toContain('maksimal 1.5 MB');
+        expect(state.options.maxSize).toBe(1536 * 1024);
+        const accepted = file('batas.xlsx', 1536 * 1024);
+        drop(tree, [accepted]);
+        expect(callbacks.onChange).toHaveBeenLastCalledWith(accepted);
+
+        tree = render(EmployeeExcelUpload, callbacks);
+        drop(tree, [file('terlalu-besar.xlsx', 1536 * 1024 + 1)]);
+        expect(callbacks.onError).toHaveBeenCalledWith('Ukuran file maksimal 1.5 MB.');
+        expect(callbacks.onChange).toHaveBeenCalledOnce();
+        expect(state.files[0].file).toBe(accepted);
     });
     it('ignores selection, replacement, removal, and drop while disabled', () => {
         const callbacks = { ...props(), disabled: true };
@@ -184,7 +226,7 @@ describe('menu impor/ekspor', () => {
     it('offers two actions and exports all data by default without sending filters', () => {
         let tree = render(EmployeeTransferMenu);
         const items = findAll(tree, (item) => item.type === DropdownMenuItem);
-        expect(items.map(text)).toEqual(['Impor Data Pegawai', 'Ekspor Data Pegawai']);
+        expect(items.map(text)).toEqual(['Impor', 'Ekspor']);
         expect(items[0].props.render.props.href).toContain('/employees/import');
         items[1].props.onClick();
         tree = render(EmployeeTransferMenu);

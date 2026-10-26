@@ -6,6 +6,7 @@ use App\Models\MasterData\JobTitle;
 use App\Services\Employee\EmployeeImportTemplate;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Validator;
 
 class ImportEmployeeRequest extends FormRequest
@@ -26,7 +27,7 @@ class ImportEmployeeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'mimes:xlsx', 'extensions:xlsx', 'max:2048'],
+            'file' => ['required', 'file', 'mimes:xlsx', 'extensions:xlsx', 'max:' . Config::integer('import-excel.employee.max_upload_kb')],
         ];
     }
 
@@ -38,7 +39,7 @@ class ImportEmployeeRequest extends FormRequest
             'file.file' => 'File gagal diunggah. Silakan pilih ulang file.',
             'file.mimes' => 'Gunakan file Excel berformat .xlsx.',
             'file.extensions' => 'Gunakan file Excel berformat .xlsx.',
-            'file.max' => 'Ukuran file maksimal 2 MB.',
+            'file.max' => 'Ukuran file maksimal ' . EmployeeImportTemplate::settings()['maxSizeLabel'] . '.',
         ];
     }
 

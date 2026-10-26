@@ -7,6 +7,8 @@ use App\Enums\ContractStatusEnum;
 use App\Enums\StrStatusEnum;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\JobTitle;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Number;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -19,8 +21,6 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class EmployeeImportTemplate implements FromArray, WithEvents
 {
-    public const int MAX_ROWS = 1000;
-
     public const string JOB_TITLE_REQUIRED = 'Tambahkan minimal satu jabatan sebelum mengunduh templat dan mengimpor pegawai.';
 
     /** @return array<string, string> */
@@ -60,23 +60,70 @@ class EmployeeImportTemplate implements FromArray, WithEvents
         ];
     }
 
-    /** @return list<string> */
-    public static function instructions(): array
+    /** @return array{maxSizeBytes: int, maxSizeLabel: string, maxRows: int} */
+    public static function settings(): array
     {
+        $maxSizeBytes = Config::integer('import-excel.employee.max_upload_kb') * 1024;
+
         return [
-            'Gunakan sheet Pegawai, jangan mengubah header. Maksimal 1.000 baris pengisian (baris 2–1001), ukuran file 5 MB.',
-            'Wajib: NIK, Nama, Jenis Kelamin, Jabatan, Tanggal Bergabung, Status Kontrak, Status Pegawai. Kolom lain boleh kosong.',
-            'Pilih Jabatan, Jenis Kelamin, dan Status menggunakan dropdown. Jabatan harus tersedia di aplikasi saat impor.',
-            'Unduh ulang template setelah master jabatan berubah; daftar dalam file tidak diperbarui otomatis.',
-            'NIK 16 digit dan NIP 18 digit harus berupa teks. Salin dari sumber asli agar digit tidak hilang.',
-            'NIK, NIP, Nomor STR, dan Nomor SIP menggunakan format teks, bukan angka.',
-            'Tanggal: gunakan tanggal Excel atau teks YYYY-MM-DD. Tanggal bergabung/terbit maksimal hari ini.',
-            'STR: isi Nomor STR (16 karakter), Status STR, dan Tanggal Terbit STR bersama-sama atau kosongkan semuanya.',
-            'SIP: isi Nomor SIP, Tanggal Terbit SIP, dan Tanggal Berakhir SIP bersama-sama atau kosongkan semuanya.',
-            'Tanggal Berakhir SIP harus setelah Tanggal Terbit SIP.',
-            'Baris valid disimpan. Duplikat NIK/NIP/email/STR/SIP dan baris tidak valid dilewati dengan laporan.',
-            'Data lama tidak diperbarui. Unggah ulang aman; baris yang sudah tersimpan akan dilewati.',
-            'Baris kosong diabaikan. Formula pada data pegawai tidak diperbolehkan.',
+            'maxSizeBytes' => $maxSizeBytes,
+            'maxSizeLabel' => Number::fileSize($maxSizeBytes, maxPrecision: 2),
+            'maxRows' => Config::integer('import-excel.employee.max_rows'),
+        ];
+    }
+
+    /** @return list<array{id: string, title: string, items: list<string>}> */
+    public static function instructionSections(): array
+    {
+        $settings = self::settings();
+        $maxRows = number_format($settings['maxRows'], 0, ',', '.');
+        $lastRow = $settings['maxRows'] + 1;
+
+        return [
+            [
+                'id' => 'file-limits',
+                'title' => 'Batas File',
+                'items' => [
+                    "Satu file .xlsx, maksimal {$settings['maxSizeLabel']} dan {$maxRows} baris pengisian (baris Excel 2–{$lastRow}).",
+                    'Isi sheet Pegawai tanpa mengubah nama, urutan, atau jumlah kolom header.',
+                    'Unduh ulang template setelah master jabatan berubah; daftar dalam file tidak diperbarui otomatis.',
+                ],
+            ],
+            [
+                'id' => 'required-columns',
+                'title' => 'Kolom Wajib',
+                'items' => [
+                    'NIK, Nama, Jenis Kelamin, Jabatan, Tanggal Bergabung, Status Kontrak, dan Status Pegawai wajib diisi.',
+                    'Kolom lainnya boleh kosong, kecuali kelengkapan STR/SIP jika salah satu kolomnya diisi.',
+                ],
+            ],
+            [
+                'id' => 'data-format',
+                'title' => 'Format Pengisian',
+                'items' => [
+                    'Pilih Jabatan, Jenis Kelamin, Status Kontrak, Status Pegawai, dan Status STR melalui dropdown. Jabatan harus tersedia di aplikasi saat impor.',
+                    'NIK (16 digit), NIP (18 digit), Nomor STR, dan Nomor SIP harus berupa teks. Salin dari sumber asli agar digit tidak hilang.',
+                    'Gunakan tanggal Excel atau teks YYYY-MM-DD. Tanggal bergabung dan tanggal terbit maksimal hari ini.',
+                    'Isi nilai langsung tanpa formula. Baris kosong diabaikan.',
+                ],
+            ],
+            [
+                'id' => 'str-sip',
+                'title' => 'Ketentuan STR/SIP',
+                'items' => [
+                    'Isi Nomor STR (16 karakter), Status STR, dan Tanggal Terbit STR bersama-sama atau kosongkan semuanya.',
+                    'Isi Nomor SIP, Tanggal Terbit SIP, dan Tanggal Berakhir SIP bersama-sama atau kosongkan semuanya.',
+                    'Tanggal Berakhir SIP harus setelah Tanggal Terbit SIP.',
+                ],
+            ],
+            [
+                'id' => 'import-behavior',
+                'title' => 'Cara Impor Bekerja',
+                'items' => [
+                    'Baris valid disimpan. Duplikat NIK/NIP/email/STR/SIP dan baris tidak valid dilewati dengan laporan.',
+                    'Data lama tidak diperbarui. Periksa alasan pada hasil impor, perbaiki baris yang dilewati, lalu unggah ulang; data yang sudah tersimpan akan dilewati.',
+                ],
+            ],
         ];
     }
 
@@ -95,7 +142,7 @@ class EmployeeImportTemplate implements FromArray, WithEvents
                 $sheet->setTitle('Pegawai');
                 $sheet->freezePane('D2');
                 $sheet->getStyle('A1:S1')->getFont()->setBold(true);
-                $lastRow = max(self::MAX_ROWS + 1, $sheet->getHighestDataRow());
+                $lastRow = max(Config::integer('import-excel.employee.max_rows') + 1, $sheet->getHighestDataRow());
                 $sheet->setAutoFilter('A1:S' . $lastRow);
 
                 $workbook = $sheet->getParent();
@@ -159,10 +206,17 @@ class EmployeeImportTemplate implements FromArray, WithEvents
                     $sheet->setDataValidation($column . '2:' . $column . $lastRow, $validation);
                 }
 
-                $instructions->fromArray(
-                    array_map(fn(string $line): array => [$line], ['Petunjuk Impor Pegawai', ...self::instructions()]),
-                );
-                $instructionRow = 16;
+                $instructions->setCellValueExplicit('A1', 'Petunjuk Impor Pegawai', DataType::TYPE_STRING);
+                $instructions->getStyle('A1')->getFont()->setBold(true);
+                $instructionRow = 3;
+                foreach (self::instructionSections() as $section) {
+                    $instructions->setCellValueExplicit('A' . $instructionRow, $section['title'], DataType::TYPE_STRING);
+                    $instructions->getStyle('A' . $instructionRow++)->getFont()->setBold(true);
+                    foreach ($section['items'] as $instruction) {
+                        $instructions->setCellValueExplicit('A' . $instructionRow++, $instruction, DataType::TYPE_STRING);
+                    }
+                    $instructionRow++;
+                }
                 foreach ($lists as $field => $labels) {
                     $instructions->setCellValueExplicit(
                         'A' . $instructionRow++,

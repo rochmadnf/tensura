@@ -70,7 +70,7 @@ class EmployeeImportTest extends TestCase
             $this->assertSame('hidden', $workbook->getSheetByName('Referensi')->getSheetState());
             $this->assertSame('Dokter', $range->getWorksheet()->getCell('A1')->getValue());
             $this->assertSame('Perawat', $range->getWorksheet()->getCell('A2')->getValue());
-            $this->assertStringContainsString('Wajib:', $workbook->getSheetByName('Petunjuk')->getCell('A3')->getValue());
+            $this->assertSame('Batas File', $workbook->getSheetByName('Petunjuk')->getCell('A3')->getValue());
         } finally {
             $workbook->disconnectWorksheets();
             unlink($response->baseResponse->getFile()->getPathname());
@@ -306,9 +306,101 @@ class EmployeeImportTest extends TestCase
             ->assertUnprocessable()->assertInvalid(['file' => 'File Excel tidak dapat dibaca']);
         $this->postJson(route('empl.import.store'), ['file' => UploadedFile::fake()->createWithContent('pegawai.csv', 'nik,nama')])
             ->assertUnprocessable()->assertInvalid(['file' => 'berformat .xlsx']);
-        $this->postJson(route('empl.import.store'), ['file' => $this->file([$this->row()])->size(2049)])
-            ->assertUnprocessable()->assertInvalid(['file' => 'maksimal 2 MB']);
+        $this->postJson(route('empl.import.store'), ['file' => $this->file([$this->row()])->size(5121)])
+            ->assertUnprocessable()->assertInvalid(['file' => 'maksimal 5 MB']);
         $this->assertDatabaseCount('employees', 0);
+    }
+
+    public function test_upload_accepts_a_file_at_the_five_megabyte_limit(): void
+    {
+        JobTitle::factory()->create(['name' => 'Dokter']);
+        $this->actingAs(UserFactory::new()->create());
+
+        $this->postJson(route('empl.import.store'), ['file' => $this->file([$this->row()])->size(5120)])
+            ->assertOk()->assertJsonPath('imported', 1)->assertJsonPath('issues', []);
+
+        $this->assertDatabaseHas('employees', ['nik' => '0000000000000001']);
+    }
+
+    public function test_configured_limits_are_shared_by_the_page_and_template_without_overwriting_instructions(): void
+    {
+        config(['import-excel.employee.max_upload_kb' => 1536, 'import-excel.employee.max_rows' => 2]);
+        JobTitle::factory()->create(['name' => 'Dokter']);
+        $this->actingAs(UserFactory::new()->create())->withoutVite();
+
+        $pageResponse = $this->get(route('empl.import.create'))->assertOk()->assertInertia(fn(Assert $page) => $page
+            ->where('importSettings.maxSizeBytes', 1572864)
+            ->where('importSettings.maxSizeLabel', '1.5 MB')
+            ->where('importSettings.maxRows', 2)
+            ->has('instructionSections', 5)
+            ->missing('instructions'));
+        $sections = $pageResponse->inertiaProps('instructionSections');
+        $this->assertSame(
+            ['Batas File', 'Kolom Wajib', 'Format Pengisian', 'Ketentuan STR/SIP', 'Cara Impor Bekerja'],
+            array_column($sections, 'title'),
+        );
+        $this->assertStringContainsString('1.5 MB dan 2 baris pengisian (baris Excel 2–3)', $sections[0]['items'][0]);
+
+        $response = $this->get(route('empl.import.template'))->assertOk()->assertDownload('template-impor-pegawai.xlsx');
+        $workbook = IOFactory::load($response->baseResponse->getFile()->getPathname());
+        try {
+            $sheet = $workbook->getSheetByName('Pegawai');
+            $this->assertSame('A1:S3', $sheet->getAutoFilter()->getRange());
+            $this->assertSame('@', $sheet->getStyle('B3')->getNumberFormat()->getFormatCode());
+            $this->assertSame('list', $sheet->getDataValidation('G3')->getType());
+
+            $instructions = $workbook->getSheetByName('Petunjuk');
+            $lines = array_column($instructions->toArray(), 0);
+            $lastInstructionRow = 0;
+            foreach ($sections as $section) {
+                foreach ([$section['title'], ...$section['items']] as $line) {
+                    $this->assertContains($line, $lines);
+                    $row = array_search($line, $lines, true);
+                    $this->assertGreaterThan($lastInstructionRow, $row);
+                    $lastInstructionRow = $row;
+                }
+            }
+            $this->assertGreaterThan($lastInstructionRow, array_search('Jabatan', $lines, true));
+            $this->assertContains('Dokter', $lines);
+        } finally {
+            $workbook->disconnectWorksheets();
+            unlink($response->baseResponse->getFile()->getPathname());
+        }
+    }
+
+    public function test_configured_size_limit_accepts_the_boundary_and_rejects_larger_files(): void
+    {
+        config(['import-excel.employee.max_upload_kb' => 1536]);
+        JobTitle::factory()->create(['name' => 'Dokter']);
+        $this->actingAs(UserFactory::new()->create());
+
+        $this->postJson(route('empl.import.store'), ['file' => $this->file([$this->row()])->size(1537)])
+            ->assertUnprocessable()->assertInvalid(['file' => 'Ukuran file maksimal 1.5 MB.']);
+        $this->assertDatabaseCount('employees', 0);
+
+        $this->postJson(route('empl.import.store'), ['file' => $this->file([$this->row()])->size(1536)])
+            ->assertOk()->assertJsonPath('imported', 1);
+        $this->assertDatabaseHas('employees', ['nik' => '0000000000000001']);
+    }
+
+    public function test_configured_row_limit_rejects_excess_rows_and_accepts_the_boundary(): void
+    {
+        config(['import-excel.employee.max_rows' => 2]);
+        JobTitle::factory()->create(['name' => 'Dokter']);
+        $this->actingAs(UserFactory::new()->create());
+        $rows = [
+            $this->row(),
+            $this->row(['nik' => '0000000000000002', 'nip' => null]),
+            $this->row(['nik' => '0000000000000003', 'nip' => null]),
+        ];
+
+        $this->postJson(route('empl.import.store'), ['file' => $this->file($rows)])
+            ->assertUnprocessable()->assertInvalid(['file' => 'Maksimal 2 baris pengisian pada sheet Pegawai (baris 2–3).']);
+        $this->assertDatabaseCount('employees', 0);
+
+        $this->postJson(route('empl.import.store'), ['file' => $this->file(array_slice($rows, 0, 2))])
+            ->assertOk()->assertJsonPath('imported', 2)->assertJsonPath('issues', []);
+        $this->assertDatabaseCount('employees', 2);
     }
 
     public function test_server_failure_preserves_completed_rows_and_reports_interruption(): void
