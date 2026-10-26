@@ -13,6 +13,7 @@ use App\Http\Controllers\DocumentFontController;
 use App\Http\Controllers\LetterController;
 use App\Http\Controllers\LetterDraftChangeController;
 use App\Http\Controllers\MasterData\EmployeeController;
+use App\Http\Controllers\MasterData\EmployeeExportController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
@@ -62,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::post('account/avatar', [AccountAvatarController::class, 'store'])->name('account.avatar.store');
     Route::delete('account/avatar', [AccountAvatarController::class, 'destroy'])->name('account.avatar.destroy');
 
+    Route::get('employees/export', EmployeeExportController::class)->name('empl.export');
     Route::get('employees/import', [EmployeeImportController::class, 'create'])->name('empl.import.create');
     Route::get('employees/import/template', [EmployeeImportController::class, 'template'])->name('empl.import.template');
     Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('empl.import.store');

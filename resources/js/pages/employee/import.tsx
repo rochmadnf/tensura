@@ -2,9 +2,19 @@ import { useState, type SubmitEventHandler } from 'react';
 import { Head, Link, useHttp } from '@inertiajs/react';
 import { FormCard } from '@/components/form-card';
 import { Button } from '@/components/ui/button';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Alert, AlertDescription, AlertTitle } from '@/components/reui/alert';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+    AlertCircleIcon,
+    ArrowLeft01Icon,
+    InformationCircleIcon,
+    LoaderIcon,
+    PlusSignIcon,
+    Upload04Icon,
+} from '@hugeicons/core-free-icons';
+import { EmployeeExcelUpload } from './components/employee-excel-upload';
+import { EmployeeImportHelp } from './components/employee-import-help';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import empl from '@/routes/empl';
 import employeeImport from '@/routes/empl/import';
@@ -23,7 +33,13 @@ type ImportResult = {
 const pageName = 'Impor Pegawai';
 const pageSize = 10;
 
-export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean }) {
+export default function EmployeeImport({
+    hasJobTitles,
+    instructions,
+}: {
+    hasJobTitles: boolean;
+    instructions: string[];
+}) {
     const http = useHttp<{ file: File | null }, ImportResult>({ file: null });
     const [result, setResult] = useState<ImportResult | null>(null);
     const [requestError, setRequestError] = useState('');
@@ -69,59 +85,59 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                     cancelUrl={empl.index().url}
                     disabled={http.processing}
                 >
-                    {!hasJobTitles && (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyTitle>Master jabatan belum tersedia</EmptyTitle>
-                                <EmptyDescription>
-                                    Tambahkan minimal satu jabatan sebelum mengunduh template dan mengimpor pegawai.
-                                </EmptyDescription>
-                            </EmptyHeader>
-                            <Button nativeButton={false} render={<Link href={jt.create().url} />}>
-                                Tambah Jabatan
-                            </Button>
-                        </Empty>
-                    )}
                     <form onSubmit={handleSubmit} noValidate aria-busy={http.processing}>
                         <FieldGroup>
-                            <Field>
-                                <FieldLabel>Template pegawai</FieldLabel>
-                                <FieldDescription>
-                                    Pilih jabatan dan status dari dropdown Excel. Simpan NIK/NIP sebagai teks agar digit
-                                    tetap utuh. Unduh ulang template setelah master jabatan berubah.
-                                </FieldDescription>
-                                <div>
-                                    {hasJobTitles ? (
+                            {!hasJobTitles && (
+                                <Alert variant="destructive">
+                                    <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
+                                    <AlertTitle>Master jabatan belum tersedia</AlertTitle>
+                                    <AlertDescription>
+                                        Template dan impor belum dapat digunakan. Tambahkan minimal satu jabatan
+                                        terlebih dahulu.
                                         <Button
+                                            type="button"
                                             variant="secondary"
                                             nativeButton={false}
-                                            disabled={http.processing}
-                                            render={<a href={employeeImport.template().url} download />}
+                                            render={<Link href={jt.create().url} />}
                                         >
-                                            Unduh Template Excel
+                                            <HugeiconsIcon
+                                                icon={PlusSignIcon}
+                                                data-icon="inline-start"
+                                                aria-hidden="true"
+                                            />
+                                            Tambah Jabatan
                                         </Button>
-                                    ) : (
-                                        <Button variant="secondary" disabled>
-                                            Unduh Template Excel
-                                        </Button>
-                                    )}
-                                </div>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            <Field>
+                                <FieldLabel>Template Pegawai</FieldLabel>
+                                <Alert variant="info" role="note">
+                                    <HugeiconsIcon icon={InformationCircleIcon} aria-hidden="true" />
+                                    <AlertDescription>
+                                        Pilih jabatan dan status dari dropdown Excel. Simpan NIK/NIP sebagai teks agar
+                                        digit tetap utuh. Unduh ulang template setelah master jabatan berubah.
+                                    </AlertDescription>
+                                </Alert>
+                                <EmployeeImportHelp
+                                    instructions={instructions}
+                                    hasJobTitles={hasJobTitles}
+                                    processing={http.processing}
+                                />
                             </Field>
                             <Field data-invalid={!!http.errors.file} data-disabled={!hasJobTitles || http.processing}>
-                                <FieldLabel htmlFor="employee-file">File Excel</FieldLabel>
-                                <Input
-                                    id="employee-file"
-                                    name="file"
-                                    type="file"
-                                    accept=".xlsx"
+                                <FieldLabel id="employee-file-label" htmlFor="employee-file">
+                                    File Excel
+                                </FieldLabel>
+                                <EmployeeExcelUpload
                                     disabled={!hasJobTitles || http.processing}
-                                    aria-invalid={!!http.errors.file}
-                                    aria-describedby="employee-file-help employee-file-error"
-                                    onChange={(event) => {
-                                        http.setData('file', event.target.files?.[0] ?? null);
+                                    invalid={!!http.errors.file}
+                                    onChange={(file) => {
+                                        http.setData('file', file);
                                         http.clearErrors();
                                         setRequestError('');
                                     }}
+                                    onError={(message) => http.setError('file', message)}
                                 />
                                 <FieldDescription id="employee-file-help">
                                     Maksimal 2 MB dan 1.000 baris pengisian (baris Excel 2–1001). Baris valid disimpan;
@@ -138,6 +154,12 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                             )}
                             <div className="flex flex-wrap items-center gap-3">
                                 <Button type="submit" disabled={!hasJobTitles || http.processing}>
+                                    <HugeiconsIcon
+                                        icon={http.processing ? LoaderIcon : Upload04Icon}
+                                        data-icon="inline-start"
+                                        aria-hidden="true"
+                                        className={http.processing ? 'animate-spin' : undefined}
+                                    />
                                     {http.processing ? 'Memproses Impor…' : 'Impor Pegawai'}
                                 </Button>
                                 <Button
@@ -146,6 +168,7 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                                     disabled={http.processing}
                                     render={<Link href={empl.index().url} />}
                                 >
+                                    <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" aria-hidden="true" />
                                     Kembali ke Pegawai
                                 </Button>
                             </div>
