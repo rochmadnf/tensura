@@ -3,6 +3,7 @@ import { CheckmarkCircle02Icon, Download04Icon, PlayCircle02Icon } from '@hugeic
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { SubmitEventHandler } from 'react';
 import { FormCard } from '@/components/form-card';
+import { DocxPreview } from '@/components/docx-preview';
 import { OptionSelect } from '@/components/option-select';
 import { DatePickerInput } from '@/components/date-picker-input';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +67,7 @@ export function LetterTemplateTestForm({
                 confirmation.setData('confirmed', false);
                 confirmation.clearErrors();
                 gooeyToast.success('Berhasil', {
-                    description: 'Hasil uji dibuat. Unduh, buka DOCX, dan periksa tata letaknya.',
+                    description: 'Hasil uji dibuat. Buka preview atau unduh DOCX untuk memeriksa tata letaknya.',
                 });
             },
         });
@@ -87,7 +88,7 @@ export function LetterTemplateTestForm({
         <FormCard
             title="Generate dan Pemeriksaan DOCX"
             step={5}
-            description="Isi data contoh untuk token yang digunakan dalam DOCX tersimpan, lalu unduh hasilnya untuk diperiksa."
+            description="Isi data contoh untuk token yang digunakan dalam DOCX tersimpan, lalu buka preview atau unduh hasilnya untuk diperiksa."
         >
             <FieldGroup>
                 <Badge variant={test.state === 'confirmed' ? 'secondary' : 'outline'}>{states[test.state]}</Badge>
@@ -246,6 +247,13 @@ export function LetterTemplateTestForm({
                 )}
                 {(test.state === 'ready' || test.state === 'confirmed') && test.test_token && (
                     <FieldGroup>
+                        <div className="self-start">
+                            <DocxPreview
+                                url={download(args, { query: { test_token: test.test_token } }).url}
+                                maxBytes={test.limits.max_output_bytes}
+                                disabled={busy}
+                            />
+                        </div>
                         <Button
                             nativeButton={false}
                             variant="outline"

@@ -1,6 +1,6 @@
 # Tahap 1 — Viewer DOCX dan Cetak
 
-Status implementasi: direncanakan. Status uji mandiri pengguna: belum dijalankan.
+Status implementasi: selesai; pemeriksaan visual dan cetak belum dinilai. Status uji mandiri pengguna: belum dijalankan.
 
 Acuan: [rencana teknis](../../planning/letter/teknis.md). Agent tidak menjalankan pemeriksaan visual atau cetak dan tidak mengisi hasil checklist ini.
 

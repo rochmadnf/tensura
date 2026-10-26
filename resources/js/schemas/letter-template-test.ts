@@ -9,7 +9,13 @@ export type LetterTemplateTest = {
     expires_at: string | null;
     confirmed_at: string | null;
     confirmed_by: string | null;
-    limits: { short_text_max: number; long_text_max: number; max_rows: number; expires_hours: number };
+    limits: {
+        short_text_max: number;
+        long_text_max: number;
+        max_rows: number;
+        expires_hours: number;
+        max_output_bytes: number;
+    };
     variables: {
         id: string;
         label: string;

@@ -1,6 +1,8 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: rencana implementasi; seluruh tahap masih belum dikerjakan. Acuan bisnis: [probis Surat](probis.md). Dokumen ini mencatat keputusan teknis dan default implementasi; bukan laporan fitur yang sudah tersedia.
+Status: tahap 1 selesai diimplementasikan dan diverifikasi nonvisual; tahap 2–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
+
+Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
 ## 1. Aturan pelaksanaan
 
