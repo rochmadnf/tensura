@@ -35,7 +35,7 @@ export function LetterPreviewPanel({
     useEffect(() => {
         function changed(event: Event) {
             const result = (event as CustomEvent<LetterOperation>).detail;
-            if (result.letter_id !== letterId) return;
+            if (result.kind !== 'preview' || result.letter_id !== letterId) return;
             setOperation((previous) =>
                 previous?.id === result.id && previous.status_revision >= result.status_revision ? previous : result,
             );

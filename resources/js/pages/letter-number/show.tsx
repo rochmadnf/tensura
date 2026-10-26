@@ -9,12 +9,29 @@ import type { LetterNumberPeriod } from '@/schemas/letter-number-period';
 import type { LetterNumberColumns } from './components/data-table/column';
 import { PeriodForm } from './components/period-form';
 
-const helper = createDataTableColumnHelper<LetterNumberPeriod>();
+const helper = createDataTableColumnHelper<LetterNumberPeriod & { classification: string }>();
 const columns = helper.columns([
     helper.accessor('label', { header: 'Periode' }),
     helper.accessor('last_position', {
         header: 'Posisi urutan otomatis',
         cell: ({ cell }) => <span className="tabular-nums">{cell.getValue() ?? 'Belum digunakan'}</span>,
+    }),
+    helper.display({
+        id: 'usage',
+        header: 'Pemakaian',
+        cell: ({ row }) => (
+            <Link
+                href={
+                    ln.periods.usage({
+                        letterNumber: row.original.classification,
+                        period: row.original.id,
+                    }).url
+                }
+                className="text-primary underline underline-offset-4"
+            >
+                Lihat pemakaian
+            </Link>
+        ),
     }),
     helper.accessor('next_position', {
         header: 'Perkiraan berikutnya',
@@ -66,7 +83,7 @@ export default function LetterNumberShow({
                 >
                     <div className="flex min-w-0 flex-col gap-4">
                         <ResourceDataTable
-                            data={resources.data}
+                            data={resources.data.map((period) => ({ ...period, classification: record.id }))}
                             meta={resources.meta}
                             columns={columns}
                             url={ln.show(record.id).url}
@@ -74,8 +91,8 @@ export default function LetterNumberShow({
                             emptyMessage="Belum ada periode. Siapkan periode pertama di bawah."
                         />
                         <FieldDescription>
-                            Daftar pemakaian surat akan tersedia setelah fitur penerbitan selesai. Posisi tersimpan
-                            tidak dapat diedit di tahap ini.
+                            Lihat pemakaian menampilkan klaim nomor dan surat terkait. Perkiraan di atas mengikuti
+                            counter; penerbitan akan melewati nomor manual yang telah dipakai.
                         </FieldDescription>
                     </div>
                 </FormCard>

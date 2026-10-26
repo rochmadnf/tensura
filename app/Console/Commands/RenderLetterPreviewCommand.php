@@ -12,7 +12,7 @@ class RenderLetterPreviewCommand extends Command
 {
     protected $signature = 'letters:render-preview {directory}';
 
-    protected $description = 'Render an internal staged letter preview within a bounded subprocess';
+    protected $description = 'Render an internal staged letter document within a bounded subprocess';
 
     public function handle(RenderLetterDocument $renderer): int
     {
@@ -27,7 +27,7 @@ class RenderLetterPreviewCommand extends Command
             return self::INVALID;
         }
         try {
-            $usage = $renderer->render($input['source'], [...$input['snapshot'], 'draft_preview' => true], $disk->path($directory . '/preview.docx'));
+            $usage = $renderer->render($input['source'], [...$input['snapshot'], 'draft_preview' => $input['draft_preview'] ?? true], $disk->path($directory . '/preview.docx'));
             if (!$disk->put($directory . '/result.json', json_encode($usage, JSON_THROW_ON_ERROR))) {
                 throw new RuntimeException('Cannot save render manifest.');
             }

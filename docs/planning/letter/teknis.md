@@ -1,6 +1,6 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: tahap 1–6 selesai diimplementasikan dan diverifikasi nonvisual; tahap 7–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
+Status: tahap 1–7 selesai diimplementasikan dan diverifikasi nonvisual; tahap 8–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Pengguna mengizinkan dropdown Unduh tetap dibuat pada tahap 7 dan akan melaporkan hasil uji viewer kemudian. Acuan bisnis: [probis Surat](probis.md).
 
 Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
@@ -41,6 +41,21 @@ Development Linux: jalankan ulang `composer run dev` setelah pembaruan agar pros
 
 Verifikasi tahap 6: 94 test PHPUnit/849 assertion terkait dan 367 test frontend lulus; Pint, lint global, pemeriksaan tipe standar, serta build produksi lulus. LISTEN/NOTIFY antarkoneksi dan subprocess render nyata diuji nonvisual. Rincian dicatat pada [checklist tahap 6](../../tests/letter/tahap-6.md). Kelayakan tampilan dan hasil cetak DOCX tetap menunggu pengujian mandiri pengguna; penggunaan viewer ini tidak menyatakan layout sudah setara Word. PDF, nomor resmi, dan unduhan resmi mengikuti tahap 7–8.
 
+
+Tahap 7 menyediakan penerbitan awal idempoten melalui antrean `letters`, alokasi otomatis/manual, klaim aktif, versi resmi, Word resmi, serta dropdown Unduh. PDF ditandai belum tersedia dan diimplementasikan pada tahap 8. Pengguna secara eksplisit mengizinkan dropdown dibuat sebelum penilaian visual viewer; izin ini tidak menyatakan kesetiaan tampilan sudah terbukti. Detail surat terbit menyediakan viewer dengan nomor resmi tanpa penanda DRAFT, nilai yang benar-benar dipakai pada dokumen, penerbit/waktu/versi, dan riwayat penerbitan.
+
+Migration lokal sudah menambahkan `letter_number_assignments`, `letter_versions`, pointer versi/tanggal resmi pada `letters`, dan kepemilikan artefak resmi yang terpisah dari draft. `letter_number_periods` tetap sembilan kolom. Partial unique index PostgreSQL melindungi satu klaim aktif per posisi/periode dan satu klaim aktif per surat, sekaligus mempertahankan klaim yang sudah dilepas. Surat terbit tidak dapat diubah/dihapus lewat endpoint draft. Draft awal disimpan sebagai data internal hanya-baca; artefak resmi berelasi ke versi resmi, tanpa expiry draft.
+
+Penerbitan memeriksa bukti milik operator, fingerprint/revision, sumber, kandidat, templat aktif, serta tanggal/periode. Dialog menyebut tanggal dan periode yang dipakai. Draft yang melewati pergantian bulan memerlukan pilihan eksplisit mempertahankannya; bulan saat konfirmasi ikut diikat sehingga pekerjaan yang melintasi bulan harus dikonfirmasi lagi. Perubahan tanggal tetap melalui simpan/preview/pemeriksaan ulang. Pilihan manual bentrok ditolak dengan saran posisi tersedia sesudahnya, tanpa mengganti pilihan otomatis.
+
+Urutan lock: templat → surat → draft → klasifikasi → operasi. `AllocateLetterNumber` menghitung kandidat tanpa reservasi, melewati klaim aktif dan riwayat manual yang dilepas, lalu hanya mengubah counter periode saat commit otomatis. Manual tidak menggeser counter. Klasifikasi existing yang belum memindahkan angka lama ditahan. Kode klasifikasi yang sudah memiliki riwayat klaim dilindungi dari perubahan; nama masih dapat diubah. Ini mencegah kode lama dipakai master baru dan menggandakan nomor resmi. **Penomoran Surat → detail → Lihat pemakaian** menyediakan daftar klaim pada periode yang benar dan tautan suratnya.
+
+`RenderLetterOperation` dipakai bersama oleh preview dan penerbitan; subprocess tetap memakai perintah internal `letters:render-preview` dengan flag draft eksplisit. Word resmi dirender dari snapshot yang diperiksa; hanya token nomor sistem diganti. Render berlangsung di luar transaksi, dan kandidat otomatis diperiksa ulang sebelum commit. Kandidat yang berubah dirender ulang maksimal tiga kali dalam anggaran render 30 detik. Klaim, counter, versi/pointer resmi, pemakaian pertama templat, audit, serta status operasi disimpan bersama. Rollback membersihkan hasil baru tanpa mengambil nomor. Retry sesudah commit mengembalikan hasil yang sama. Pemulihan scheduler sudah mendukung operasi `issue` maupun `preview`.
+
+Unduh Word memeriksa autentikasi, induk versi/artefak, keberadaan, ukuran, dan hash berkas resmi. Perubahan master/templat/font atau kedaluwarsa preview tidak meregenerasi atau mengganti Word resmi. SSE mengenali penerbitan dan menyegarkan detail yang terkait. Editor menyimpan objek/formulir yang dibuka sampai ditutup secara eksplisit, termasuk ketika operator lain sudah menerbitkan surat; input penolakan tetap dapat disalin. Respons HTTP yang lebih lama tidak menimpa status SSE terbaru, dan retry request yang responsnya terputus mempertahankan kunci idempotensi.
+
+Fingerprint preview sekarang juga mengikat kode klasifikasi (kontrak 2). Setelah pembaruan ini, preview lama perlu digenerate dan dikonfirmasi ulang; isian draft tetap tersedia. Jalankan ulang proses development/worker setelah deploy. Revisi, pembatalan, dan pemulihan surat belum tersedia sampai tahap 9; cleanup/konkurensi menyeluruh tetap tahap 10. Verifikasi: 189 test PHPUnit/1.743 assertion terkait, tambahan 3 regresi SSE, 372 test frontend, Pint, lint global, pemeriksaan tipe standar, serta build produksi lulus. Checklist mandiri ada di [tahap 7](../../tests/letter/tahap-7.md).
+
 ## 1. Aturan pelaksanaan
 
 - Ikuti [FEATURE_WORKFLOW.md](../../../FEATURE_WORKFLOW.md), [LARAVEL_PATTERNS.md](../../../LARAVEL_PATTERNS.md), aturan proyek, dan skill yang relevan. Periksa ulang versi paket serta skema aktif sebelum implementasi tahap terkait.
@@ -49,7 +64,7 @@ Verifikasi tahap 6: 94 test PHPUnit/849 assertion terkait dan 367 test frontend 
 - Setelah setiap tahap, sampaikan: hasil implementasi, hal yang sudah bisa dilakukan melalui web beserta pintu masuknya, hasil pemeriksaan otomatis, hash/pesan commit, dan tautan checklist manual. Bila tahap belum menyediakan fungsi web tertentu, nyatakan dengan jelas.
 - Pengguna melakukan seluruh pemeriksaan visual, browser manual, perbandingan Word/PDF, dan cetak secara mandiri. Agent tidak menjalankan screenshot, browser visual, atau inspeksi visual dokumen. Checklist ada di `docs/tests/letter/tahap-*.md`; jangan menandai item pengguna lulus tanpa laporannya.
 - PHPUnit, test frontend nonvisual, pemeriksaan tipe, lint, formatter, build, dan pengujian konkurensi tetap dilakukan sesuai perubahan. Test render/interaksi berbasis DOM boleh dipakai tanpa inspeksi visual. Perubahan dokumentasi saja tidak memerlukan test aplikasi.
-- Hasil tahap dapat disampaikan sebelum checklist manual pengguna selesai. Pengecualian: penggunaan DOCX sebagai preview utama dan dropdown unduhan bersifat kondisional pada hasil uji viewer tahap 1 oleh pengguna; jangan mengklaim kesetiaan tampilan sudah terbukti lewat build/test otomatis.
+- Hasil tahap dapat disampaikan sebelum checklist manual pengguna selesai. Penggunaan DOCX sebagai preview utama dan dropdown semula bersyarat hasil uji viewer. Pada tahap 7 pengguna mengizinkan dropdown tetap dibuat sambil menunggu penilaiannya; jangan mengklaim kesetiaan tampilan sudah terbukti lewat build/test otomatis.
 - Dependensi viewer yang direncanakan: `docx-preview` dan paket EmbedPDF headless yang diperlukan. Verifikasi versi/API dan persetujuan dependensi menurut aturan proyek sebelum pemasangan. Rencana ini tidak memasang paket atau mengubah konfigurasi server.
 
 ## 2. Keputusan arsitektur

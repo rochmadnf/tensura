@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\LetterDraftKindEnum;
 use App\Enums\LetterStatusEnum;
 use App\Models\Letter;
+use App\Services\Letter\DocumentFontRegistry;
 use App\Services\Letter\LetterFormDefinition;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -14,7 +15,8 @@ class LetterResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $draft = $this->draft;
+        $draft = $this->status === LetterStatusEnum::DRAFT ? $this->draft : null;
+        $official = $this->currentVersion;
         $detail = $request->routeIs('ltr.show', 'ltr.edit');
         $editable = $this->status === LetterStatusEnum::DRAFT && $draft?->kind === LetterDraftKindEnum::INITIAL;
         $current = $draft?->template_version_id === $this->template->active_version_id;
@@ -32,7 +34,7 @@ class LetterResource extends JsonResource
         return [
             'id' => $this->uuid, 'subject' => $this->subject, 'number' => $this->official_number,
             'template' => ['id' => $this->template->uuid, 'name' => $this->template->name, 'active' => $this->template->is_active],
-            'letter_date' => $draft?->letter_date->toDateString(), 'status' => $this->status->value, 'status_label' => $this->status->label(),
+            'letter_date' => $this->official_date?->toDateString() ?? $this->draft?->letter_date->toDateString(), 'status' => $this->status->value, 'status_label' => $this->status->label(),
             'creator' => $this->creator_name, 'creator_id' => $this->creator_uuid, 'updated_at' => $this->updated_at->toIso8601String(),
             'revision' => $draft?->revision, 'editable' => $editable,
             'draft' => $this->when($detail && $draft !== null, fn(): array => [
@@ -43,6 +45,7 @@ class LetterResource extends JsonResource
                 'current_template' => $current, 'can_adjust' => $editable && !$current && $this->template->is_active && $this->template->active_version_id !== null,
                 'can_refresh' => $editable && ($draft->snapshot['complete'] ?? false), 'reasons' => $reasons,
             ]),
+            'official' => $this->when($detail && $official !== null, fn(): array => ['id' => $official->uuid, 'version' => $official->version_number, 'number' => $official->number, 'subject' => $official->subject, 'letter_date' => $official->letter_date->toDateString(), 'issued_at' => $official->issued_at->toIso8601String(), 'issued_by' => $official->actor_name, 'resolved' => array_filter($official->snapshot['values'], fn(string $token): bool => in_array(preg_replace('/#\d+$/', '', $token), $official->snapshot['used_tokens'] ?? [], true), ARRAY_FILTER_USE_KEY), 'max_bytes' => config('letters.max_output_bytes'), 'font_report' => [...app(DocumentFontRegistry::class)->report($official->wordArtifact?->font_usage['requirements'] ?? []), 'limitations' => $official->wordArtifact?->font_usage['limitations'] ?? []]]),
             'configuration' => $this->when($detail && $draft !== null, fn(): array => app(LetterFormDefinition::class)->make($draft->templateVersion, $draft->snapshot)),
         ];
     }

@@ -2,7 +2,7 @@
 
 return [
     'disk' => 'local',
-    'paths' => ['previews' => 'letters/previews', 'staging' => 'letters/staging'],
+    'paths' => ['previews' => 'letters/previews', 'staging' => 'letters/staging', 'official' => 'letters/official'],
     'preview_hours' => 24,
     'max_output_bytes' => 20 * 1024 * 1024,
     'render_timeout' => 30,

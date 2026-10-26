@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
-class RenderLetterPreview
+class RenderLetterOperation
 {
     public function directory(LetterOperation $operation, string $lease): string
     {
@@ -16,7 +16,7 @@ class RenderLetterPreview
     }
 
     /** @return array{path: string, sha256: string, size: int, usage: array} */
-    public function render(LetterOperation $operation, string $lease): array
+    public function render(LetterOperation $operation, string $lease, ?array $snapshot = null, bool $draft = true, ?float $timeout = null): array
     {
         $disk = Storage::disk(config('letters.disk'));
         $directory = $this->directory($operation, $lease);
@@ -25,10 +25,10 @@ class RenderLetterPreview
         if (!$source->exists($operation->payload['source_path']) || hash_file('sha256', $source->path($operation->payload['source_path'])) !== $operation->payload['source_sha256']) {
             throw ValidationException::withMessages(['preview' => 'DOCX sumber hilang atau berubah.']);
         }
-        if (!$disk->put($directory . '/input.json', json_encode(['source' => $source->path($operation->payload['source_path']), 'source_sha256' => $operation->payload['source_sha256'], 'snapshot' => $operation->payload['snapshot']], JSON_THROW_ON_ERROR))) {
+        if (!$disk->put($directory . '/input.json', json_encode(['source' => $source->path($operation->payload['source_path']), 'source_sha256' => $operation->payload['source_sha256'], 'snapshot' => $snapshot ?? $operation->payload['snapshot'], 'draft_preview' => $draft], JSON_THROW_ON_ERROR))) {
             throw new RuntimeException('Cannot save preview input.');
         }
-        $result = Process::path(base_path())->timeout(config('letters.render_timeout'))->run([PHP_BINARY, base_path('artisan'), 'letters:render-preview', $directory, '--no-interaction']);
+        $result = Process::path(base_path())->timeout($timeout ?? config('letters.render_timeout'))->run([PHP_BINARY, base_path('artisan'), 'letters:render-preview', $directory, '--no-interaction']);
         if ($result->exitCode() === 2) {
             throw ValidationException::withMessages(['preview' => 'DOCX draft tidak dapat dirender. Periksa isian dan templat.']);
         }

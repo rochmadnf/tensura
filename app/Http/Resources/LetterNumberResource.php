@@ -25,6 +25,7 @@ class LetterNumberResource extends JsonResource
             'page_number' => $this->page_number,
             'sequence_number' => $this->sequence_number,
             'needs_initialization' => $this->resource->needsPeriodInitialization(),
+            'code_locked' => $this->when($request->routeIs('ln.edit'), fn(): bool => $this->periods()->whereHas('assignments')->exists()),
         ];
     }
 }

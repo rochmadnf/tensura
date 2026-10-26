@@ -16,7 +16,7 @@ class LetterArtifact extends Model
     /** @use HasFactory<LetterArtifactFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_id', 'letter_draft_id', 'letter_operation_id', 'kind', 'draft_revision', 'state_fingerprint', 'disk', 'path', 'sha256', 'size', 'font_fingerprint', 'font_usage', 'expires_at'];
+    protected $fillable = ['letter_id', 'letter_draft_id', 'letter_version_id', 'letter_operation_id', 'kind', 'draft_revision', 'state_fingerprint', 'disk', 'path', 'sha256', 'size', 'font_fingerprint', 'font_usage', 'expires_at'];
 
     protected function casts(): array
     {
@@ -41,6 +41,11 @@ class LetterArtifact extends Model
     public function operation(): BelongsTo
     {
         return $this->belongsTo(LetterOperation::class, 'letter_operation_id');
+    }
+
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(LetterVersion::class, 'letter_version_id');
     }
 
     public function checks(): HasMany

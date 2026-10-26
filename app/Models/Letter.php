@@ -20,7 +20,7 @@ class Letter extends Model
     /** @use HasFactory<LetterFactory> */
     use HasFactory, HasUuids, Searchable;
 
-    protected $fillable = ['subject', 'letter_template_id', 'created_by', 'creator_uuid', 'creator_name', 'status', 'official_number'];
+    protected $fillable = ['subject', 'letter_template_id', 'created_by', 'creator_uuid', 'creator_name', 'status', 'official_number', 'official_date', 'current_version_id'];
 
     public function uniqueIds(): array
     {
@@ -29,7 +29,7 @@ class Letter extends Model
 
     protected function casts(): array
     {
-        return ['status' => LetterStatusEnum::class];
+        return ['status' => LetterStatusEnum::class, 'official_date' => 'immutable_date'];
     }
 
     protected function searchableColumns(): array
@@ -50,6 +50,21 @@ class Letter extends Model
     public function draft(): HasOne
     {
         return $this->hasOne(LetterDraft::class);
+    }
+
+    public function currentVersion(): BelongsTo
+    {
+        return $this->belongsTo(LetterVersion::class, 'current_version_id');
+    }
+
+    public function versions(): HasMany
+    {
+        return $this->hasMany(LetterVersion::class);
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(LetterNumberAssignment::class);
     }
 
     public function audits(): HasMany

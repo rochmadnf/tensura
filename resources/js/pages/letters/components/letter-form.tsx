@@ -195,7 +195,7 @@ export function LetterForm({
                     <FieldError>
                         {errors.revision || errors.draft || errors.template || errors.template_version || errors.test}
                     </FieldError>
-                    {(errors.revision || errors.template_version || errors.template) && (
+                    {(errors.revision || errors.template_version || errors.template || errors.draft) && (
                         <>
                             <FieldDescription>
                                 Salin input yang belum tersimpan sebelum memuat versi terbaru.

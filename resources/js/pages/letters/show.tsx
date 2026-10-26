@@ -10,6 +10,9 @@ import { destroy, index, show } from '@/routes/ltr';
 import { LetterForm } from './components/letter-form';
 import { LetterChangeAction } from './components/change-action';
 import { LetterPreviewPanel } from './components/preview-panel';
+import { LetterIssueAction } from './components/issue-action';
+import { LetterOfficialDocument } from './components/official-document';
+import type { LetterIssuance } from '@/schemas/letter-preview';
 import type { LetterPreview } from '@/schemas/letter-preview';
 
 type AuditPage = { data: LetterAudit[]; current_page: number; last_page: number };
@@ -17,15 +20,22 @@ export default function LetterShow({
     resource: { data: letter },
     audits,
     preview,
+    issuance,
 }: {
     resource: { data: LetterResource };
     audits: AuditPage;
     preview: LetterPreview;
+    issuance: LetterIssuance;
 }) {
+    const [issuing, setIssuing] = useState(
+        !!issuance.operation && ['queued', 'running'].includes(issuance.operation.status),
+    );
     const [editing, setEditing] = useState(false);
+    const [openedLetter, setOpenedLetter] = useState<LetterResource | null>(null);
     const [saving, setSaving] = useState(false);
     const [operation, setOperation] = useState<string | null>(null);
     const draft = letter.draft;
+    const formLetter = editing && openedLetter ? openedLetter : letter;
     return (
         <>
             <Head title={letter.subject}>
@@ -51,8 +61,9 @@ export default function LetterShow({
                             <FieldDescription key={reason}>{reason}</FieldDescription>
                         ))}
                         <FieldDescription>
-                            Draft dapat disimpan dan diperiksa melalui preview. Penerbitan tersedia pada tahap
-                            berikutnya.
+                            {letter.status === 1
+                                ? 'Simpan dan periksa preview sebelum menerbitkan surat.'
+                                : 'Dokumen resmi dan riwayat penerbitan tersimpan. Perubahan resmi berikutnya menggunakan alur revisi.'}
                         </FieldDescription>
                         {draft && letter.editable && (
                             <div className="flex flex-wrap gap-2">
@@ -61,7 +72,12 @@ export default function LetterShow({
                                         letterId={letter.id}
                                         revision={draft.revision}
                                         kind="template"
-                                        disabled={editing || saving || (operation !== null && operation !== 'template')}
+                                        disabled={
+                                            editing ||
+                                            saving ||
+                                            issuing ||
+                                            (operation !== null && operation !== 'template')
+                                        }
                                         onOpenChange={(open) => setOperation(open ? 'template' : null)}
                                     />
                                 )}
@@ -70,7 +86,12 @@ export default function LetterShow({
                                         letterId={letter.id}
                                         revision={draft.revision}
                                         kind="masters"
-                                        disabled={editing || saving || (operation !== null && operation !== 'masters')}
+                                        disabled={
+                                            editing ||
+                                            saving ||
+                                            issuing ||
+                                            (operation !== null && operation !== 'masters')
+                                        }
                                         onOpenChange={(open) => setOperation(open ? 'masters' : null)}
                                     />
                                 )}
@@ -88,24 +109,39 @@ export default function LetterShow({
                                     successMessage="Draft surat dihapus."
                                     errorMessage="Draft belum dapat dihapus. Muat status terbaru."
                                     data={{ revision: draft.revision, confirmed: true }}
-                                    disabled={editing || saving || (operation !== null && operation !== 'delete')}
+                                    disabled={
+                                        editing || saving || issuing || (operation !== null && operation !== 'delete')
+                                    }
                                     onOpenChange={(open) => setOperation(open ? 'delete' : null)}
                                 />
                             </div>
                         )}
                     </div>
                 </FormCard>
-                {draft && letter.configuration && (
+                {letter.official && <LetterOfficialDocument letterId={letter.id} official={letter.official} />}
+                {editing && !letter.editable && (
+                    <FieldDescription>
+                        Status surat berubah. Salin input yang belum disimpan sebelum menutup editor atau memuat versi
+                        terbaru.
+                    </FieldDescription>
+                )}
+                {formLetter.draft && formLetter.configuration && (
                     <LetterForm
                         key={`${letter.id}-${editing}`}
-                        resource={letter}
-                        configuration={letter.configuration}
-                        templateId={letter.template.id}
-                        today={draft.letter_date}
+                        resource={formLetter}
+                        configuration={formLetter.configuration}
+                        templateId={formLetter.template.id}
+                        today={formLetter.draft.letter_date}
                         editing={editing}
-                        disabled={saving || operation !== null}
-                        onEdit={() => setEditing(true)}
-                        onClose={() => setEditing(false)}
+                        disabled={saving || operation !== null || issuing}
+                        onEdit={() => {
+                            setOpenedLetter(letter);
+                            setEditing(true);
+                        }}
+                        onClose={() => {
+                            setOpenedLetter(null);
+                            setEditing(false);
+                        }}
                         onProcessingChange={setSaving}
                     />
                 )}
@@ -115,9 +151,26 @@ export default function LetterShow({
                         letterId={letter.id}
                         revision={draft.revision}
                         preview={preview}
-                        disabled={editing || saving || (operation !== null && operation !== 'preview')}
+                        disabled={editing || saving || issuing || (operation !== null && operation !== 'preview')}
                         onOpenChange={(open) => setOperation(open ? 'preview' : null)}
                     />
+                )}
+                {draft && letter.editable && (
+                    <FormCard
+                        sectioned
+                        title="Penerbitan Surat"
+                        description="Nomor baru diambil setelah Word resmi berhasil disiapkan."
+                    >
+                        <LetterIssueAction
+                            letterId={letter.id}
+                            revision={draft.revision}
+                            preview={preview}
+                            issuance={issuance}
+                            disabled={editing || saving || (operation !== null && operation !== 'issue')}
+                            onOpenChange={(open) => setOperation(open ? 'issue' : null)}
+                            onPendingChange={setIssuing}
+                        />
+                    </FormCard>
                 )}
                 <FormCard
                     sectioned
@@ -151,7 +204,9 @@ export default function LetterShow({
                                 nativeButton={false}
                                 variant="outline"
                                 size="sm"
-                                disabled={editing || saving || operation !== null || audits.current_page <= 1}
+                                disabled={
+                                    editing || saving || issuing || operation !== null || audits.current_page <= 1
+                                }
                                 render={
                                     <Link
                                         href={show(letter.id, { query: { page: audits.current_page - 1 } }).url}

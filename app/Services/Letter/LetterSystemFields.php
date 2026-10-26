@@ -18,6 +18,11 @@ class LetterSystemFields
         return $classification . '/XX.XX/PKM-KMJ/' . $month . '/' . $date->year;
     }
 
+    public function number(string $classification, CarbonImmutable $date, int $page, int $sequence): string
+    {
+        return str_replace('/XX.XX/', '/' . sprintf('%02d.%02d', $page, $sequence) . '/', $this->exampleNumber($classification, $date));
+    }
+
     /** @return array{nomor_surat: string, tanggal_surat: string} */
     public function values(string $number, CarbonImmutable $date, string $format): array
     {

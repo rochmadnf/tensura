@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[UseFactory(LetterNumberPeriodFactory::class)]
 class LetterNumberPeriod extends Model
@@ -33,11 +34,12 @@ class LetterNumberPeriod extends Model
         return $this->belongsTo(LetterNumber::class);
     }
 
-    /**
-     * Perkiraan tanpa klaim nomor; pemeriksaan pemakaian ditambahkan saat penerbitan tersedia.
-     *
-     * @return array{page: int, sequence: int}|null
-     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(LetterNumberAssignment::class);
+    }
+
+    /** @return array{page: int, sequence: int}|null */
     public function nextPosition(): ?array
     {
         if ($this->last_page_number === null) {

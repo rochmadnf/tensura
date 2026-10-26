@@ -40,7 +40,7 @@ class LetterPreviewState
 
     public function fingerprint(LetterDraft $draft): string
     {
-        return $this->state->token(['draft' => $draft->uuid, 'revision' => $draft->revision, 'snapshot' => $draft->snapshot, 'source' => $draft->templateVersion->source_sha256, 'configuration' => $this->configuration->hash($draft->templateVersion)]);
+        return $this->state->token(['contract' => 2, 'classification' => $draft->templateVersion->letterNumber->classification_code, 'draft' => $draft->uuid, 'revision' => $draft->revision, 'snapshot' => $draft->snapshot, 'source' => $draft->templateVersion->source_sha256, 'configuration' => $this->configuration->hash($draft->templateVersion)]);
     }
 
     public function assertSource(LetterDraft $draft): void

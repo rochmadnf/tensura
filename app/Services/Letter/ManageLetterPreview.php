@@ -3,6 +3,7 @@
 namespace App\Services\Letter;
 
 use App\Enums\LetterOperationStatusEnum;
+use App\Enums\LetterStatusEnum;
 use App\Http\Resources\LetterOperationResource;
 use App\Jobs\GenerateLetterPreview;
 use App\Models\Letter;
@@ -44,7 +45,7 @@ class ManageLetterPreview
                 $requirements = $draft->templateVersion->test_font_requirements['requirements'] ?? $draft->templateVersion->validation_result['fonts']['requirements'] ?? [];
                 $this->fonts->inventory(true);
                 $profile = $this->fonts->fingerprint($requirements);
-                $existing = LetterOperation::query()->where('letter_id', $letter->id)->where('actor_uuid', $actor->uuid)->where('draft_revision', $draft->revision)->whereIn('status', [LetterOperationStatusEnum::QUEUED, LetterOperationStatusEnum::RUNNING, LetterOperationStatusEnum::SUCCEEDED])->orderByDesc('id')->first();
+                $existing = LetterOperation::query()->where('letter_id', $letter->id)->where('kind', 'preview')->where('actor_uuid', $actor->uuid)->where('draft_revision', $draft->revision)->whereIn('status', [LetterOperationStatusEnum::QUEUED, LetterOperationStatusEnum::RUNNING, LetterOperationStatusEnum::SUCCEEDED])->orderByDesc('id')->first();
                 if ($existing !== null && ($existing->payload['state'] ?? '') === $fingerprint && ($existing->payload['requested_profile'] ?? '') === $profile) {
                     if (!$existing->status->terminal()) {
                         return $existing;
@@ -58,7 +59,7 @@ class ManageLetterPreview
                     } catch (ValidationException) {
                     }
                 }
-                $operation = LetterOperation::query()->create(['letter_id' => $letter->id, 'letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'preview', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => LetterOperationStatusEnum::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'state' => $fingerprint, 'requested_profile' => $profile, 'snapshot' => $draft->snapshot, 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256]]);
+                $operation = LetterOperation::query()->create(['letter_id' => $letter->id, 'letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'preview', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => LetterOperationStatusEnum::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'state' => $fingerprint, 'requested_profile' => $profile, 'snapshot' => [...$draft->snapshot, 'values' => [...$draft->snapshot['values'], 'nomor_surat' => app(LetterSystemFields::class)->exampleNumber($draft->templateVersion->letterNumber->classification_code, $draft->letter_date)]], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256]]);
                 $this->events->notify($operation);
 
                 return $operation;
@@ -117,7 +118,10 @@ class ManageLetterPreview
 
     public function detail(Letter $letter, User $actor): array
     {
-        $latest = LetterOperation::query()->where('letter_id', $letter->id)->where('actor_uuid', $actor->uuid)->orderByDesc('id')->first();
+        $latest = LetterOperation::query()->where('letter_id', $letter->id)->where('kind', 'preview')->where('actor_uuid', $actor->uuid)->orderByDesc('id')->first();
+        if ($letter->status !== LetterStatusEnum::DRAFT) {
+            return ['revision' => $letter->draft?->revision, 'operation' => null, 'artifact' => null, 'can_generate' => false, 'reason' => null, 'max_bytes' => config('letters.max_output_bytes')];
+        }
         $artifact = LetterArtifact::query()->where('letter_id', $letter->id)->where('draft_revision', $letter->draft?->revision)->orderByDesc('id')->first();
         $reason = null;
         $canGenerate = false;

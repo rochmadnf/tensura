@@ -69,6 +69,7 @@ export function LetterNumberForm({ letterNumber }: { letterNumber?: LetterNumber
                         <FieldLabel htmlFor="classification_code">Kode Klasifikasi Surat</FieldLabel>
                         <Input
                             type="text"
+                            readOnly={letterNumber?.code_locked}
                             inputMode="numeric"
                             placeholder="445"
                             minLength={3}
@@ -76,6 +77,11 @@ export function LetterNumberForm({ letterNumber }: { letterNumber?: LetterNumber
                             disabled={form.processing}
                             {...bind('classification_code')}
                         />
+                        {letterNumber?.code_locked && (
+                            <FieldDescription>
+                                Kode telah digunakan surat dan dilindungi untuk menjaga riwayat penomoran.
+                            </FieldDescription>
+                        )}
                         {form.errors.classification_code && <FieldError>{form.errors.classification_code}</FieldError>}
                     </Field>
                     <FieldDescription>

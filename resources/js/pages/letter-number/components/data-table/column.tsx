@@ -13,6 +13,7 @@ export type LetterNumberColumns = {
     page_number: number | null;
     sequence_number: number | null;
     needs_initialization: boolean;
+    code_locked?: boolean;
 };
 
 const columnHelper = createDataTableColumnHelper<LetterNumberColumns>();

@@ -77,7 +77,14 @@ class LetterNumberController extends Controller
 
     public function update(UpdateLetterNumberRequest $request, LetterNumber $letterNumber): RedirectResponse
     {
-        $letterNumber->update($request->safe()->only(['classification_name', 'classification_code']));
+        DB::transaction(function () use ($request, $letterNumber): void {
+            $letterNumber = LetterNumber::query()->whereKey($letterNumber->id)->lockForUpdate()->firstOrFail();
+            $data = $request->safe()->only(['classification_name', 'classification_code']);
+            if ($data['classification_code'] !== $letterNumber->classification_code && $letterNumber->periods()->whereHas('assignments')->exists()) {
+                throw ValidationException::withMessages(['classification_code' => 'Kode klasifikasi sudah digunakan surat dan tidak dapat diubah. Buat klasifikasi baru untuk kode berbeda.']);
+            }
+            $letterNumber->update($data);
+        }, 5);
 
         return redirect()->route('ln.index');
     }

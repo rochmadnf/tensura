@@ -60,6 +60,7 @@ export type LetterDraft = {
     reasons: string[];
 };
 export type LetterResource = {
+    official?: import('@/schemas/letter-preview').LetterOfficial;
     id: string;
     subject: string;
     number: string | null;
@@ -70,7 +71,7 @@ export type LetterResource = {
     creator: string;
     creator_id: string;
     updated_at: string;
-    revision: number;
+    revision: number | null;
     editable: boolean;
     draft?: LetterDraft;
     configuration?: LetterConfiguration;

@@ -11,7 +11,9 @@ use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentFontController;
 use App\Http\Controllers\LetterController;
+use App\Http\Controllers\LetterDocumentController;
 use App\Http\Controllers\LetterDraftChangeController;
+use App\Http\Controllers\LetterIssuanceController;
 use App\Http\Controllers\LetterOperationController;
 use App\Http\Controllers\LetterPreviewController;
 use App\Http\Controllers\MasterData\EmployeeController;
@@ -20,6 +22,7 @@ use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
 use App\Http\Controllers\MasterData\LetterNumberPeriodController;
+use App\Http\Controllers\MasterData\LetterNumberUsageController;
 use App\Http\Controllers\MasterData\LetterTemplateAuditController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
@@ -39,6 +42,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
     Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
+        Route::post('issue', [LetterIssuanceController::class, 'store'])->middleware('throttle:20,1')->name('ltr.issue');
+        Route::get('versions/{version:uuid}/word', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.file');
+        Route::get('versions/{version:uuid}/download', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.download');
         Route::post('previews', [LetterPreviewController::class, 'store'])->middleware('throttle:20,1')->name('ltr.previews.store');
         Route::get('previews/{artifact:uuid}/file', [LetterPreviewController::class, 'file'])->whereUuid('artifact')->name('ltr.previews.file');
         Route::post('previews/{artifact:uuid}/rendered', [LetterPreviewController::class, 'rendered'])->whereUuid('artifact')->name('ltr.previews.rendered');
@@ -146,6 +152,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/create', 'create')->name('ln.create');
             Route::post('/store', 'store')->name('ln.store');
             Route::get('/{letterNumber:uuid}', 'show')->name('ln.show');
+            Route::get('/{letterNumber:uuid}/periods/{period:uuid}/usage', LetterNumberUsageController::class)->whereUuid(['letterNumber', 'period'])->name('ln.periods.usage');
             Route::post('/{letterNumber:uuid}/periods', [LetterNumberPeriodController::class, 'store'])->name('ln.periods.store');
             Route::get('/{letterNumber:uuid}/edit', 'edit')->name('ln.edit');
             Route::patch('/{letterNumber:uuid}', 'update')->name('ln.update');

@@ -13,12 +13,12 @@ use Throwable;
 
 class RunLetterPreview
 {
-    public function __construct(private LetterPreviewState $state, private LetterOperationEvents $events, private RenderLetterPreview $renderer, private DocumentFontRegistry $fonts) {}
+    public function __construct(private LetterPreviewState $state, private LetterOperationEvents $events, private RenderLetterOperation $renderer, private DocumentFontRegistry $fonts) {}
 
     public function run(string $uuid): void
     {
         $operation = DB::transaction(function () use ($uuid): ?LetterOperation {
-            $operation = LetterOperation::query()->where('uuid', $uuid)->first();
+            $operation = LetterOperation::query()->where('uuid', $uuid)->where('kind', 'preview')->first();
             if ($operation === null || $operation->status->terminal()) {
                 return null;
             }
