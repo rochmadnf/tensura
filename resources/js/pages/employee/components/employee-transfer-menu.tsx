@@ -6,6 +6,7 @@ import {
     Cancel01Icon,
     Download01Icon,
     Download04Icon,
+    InformationCircleIcon,
     Upload01Icon,
     Xls01Icon,
 } from '@hugeicons/core-free-icons';
@@ -26,7 +27,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Alert, AlertDescription, AlertTitle } from '@/components/reui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { OptionSelect } from '@/components/option-select';
 import empl from '@/routes/empl';
@@ -36,6 +39,7 @@ export function EmployeeTransferMenu() {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
     const [scope, setScope] = useState('all');
+    const [helpOpen, setHelpOpen] = useState(false);
 
     function downloadUrl() {
         const current = new URLSearchParams(window.location.search);
@@ -71,6 +75,7 @@ export function EmployeeTransferMenu() {
                         <DropdownMenuItem
                             onClick={() => {
                                 setScope('all');
+                                setHelpOpen(false);
                                 setOpen(true);
                             }}
                         >
@@ -81,14 +86,12 @@ export function EmployeeTransferMenu() {
                 </DropdownMenuContent>
             </DropdownMenu>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent finalFocus={triggerRef}>
-                    <DialogHeader>
+                <DialogContent finalFocus={triggerRef} className="flex max-h-[85dvh] flex-col">
+                    <DialogHeader className="shrink-0">
                         <DialogTitle>Ekspor Data Pegawai</DialogTitle>
-                        <DialogDescription>
-                            Unduh data dalam format Excel yang sesuai dengan template impor.
-                        </DialogDescription>
+                        <DialogDescription>Pilih cakupan data untuk diunduh sebagai Excel.</DialogDescription>
                     </DialogHeader>
-                    <FieldGroup>
+                    <FieldGroup className="min-h-0 gap-2.5 overflow-y-auto">
                         <Field>
                             <FieldLabel htmlFor="employee-export-scope">Data yang diekspor</FieldLabel>
                             <OptionSelect
@@ -103,17 +106,42 @@ export function EmployeeTransferMenu() {
                                 placeholder="Pilih cakupan ekspor"
                                 resetLabel="Reset cakupan ekspor"
                             />
-                            <FieldDescription>
-                                Hasil filter mencakup semua halaman, bukan hanya halaman yang sedang dibuka. Jika tidak
-                                ada filter, hasilnya sama dengan seluruh pegawai.
-                            </FieldDescription>
                         </Field>
-                        <p className="text-sm">
-                            Untuk impor ulang, bagi file sesuai batas pada halaman impor. Pegawai tanpa jabatan perlu
-                            dilengkapi sebelum diimpor.
-                        </p>
+                        <Collapsible open={helpOpen} onOpenChange={setHelpOpen}>
+                            <CollapsibleTrigger
+                                render={<Button type="button" variant="link" className="justify-start px-0" />}
+                            >
+                                Petunjuk
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="flex flex-col gap-3 pt-2">
+                                    {scope && (
+                                        <Alert variant="info" role="note">
+                                            <HugeiconsIcon icon={InformationCircleIcon} aria-hidden="true" />
+                                            <AlertTitle>
+                                                {scope === 'all' ? 'Seluruh Pegawai' : 'Sesuai Pencarian/Filter'}
+                                            </AlertTitle>
+                                            <AlertDescription>
+                                                {scope === 'all'
+                                                    ? 'Anda akan mendapatkan seluruh data pegawai dalam satu file Excel, tanpa mengikuti pencarian, filter, atau halaman yang sedang dibuka.'
+                                                    : 'Anda akan mendapatkan data pegawai yang sesuai dengan pencarian dan filter aktif dari semua halaman. Jika tidak ada pencarian atau filter, hasilnya mencakup seluruh pegawai.'}
+                                            </AlertDescription>
+                                        </Alert>
+                                    )}
+                                    <Alert variant="warning" role="note">
+                                        <HugeiconsIcon icon={Upload01Icon} aria-hidden="true" />
+                                        <AlertTitle>Impor Ulang</AlertTitle>
+                                        <AlertDescription>
+                                            File hasil ekspor menggunakan format template impor. Bagi file sesuai batas
+                                            pada halaman impor dan lengkapi jabatan yang kosong sebelum mengunggahnya
+                                            kembali. Data pegawai yang sudah ada tidak diperbarui.
+                                        </AlertDescription>
+                                    </Alert>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
                     </FieldGroup>
-                    <DialogFooter>
+                    <DialogFooter className="shrink-0">
                         <DialogClose render={<Button variant="secondary" />}>
                             <HugeiconsIcon icon={Cancel01Icon} data-icon="inline-start" aria-hidden="true" />
                             Tutup

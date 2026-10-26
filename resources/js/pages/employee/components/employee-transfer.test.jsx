@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertTitle, AlertDescription } from '@/components/reui/alert';
 import { OptionSelect } from '@/components/option-select';
 import { EmployeeExcelUpload } from './employee-excel-upload';
 import { EmployeeImportHelp } from './employee-import-help';
@@ -223,6 +225,53 @@ describe('satu file Excel', () => {
 });
 
 describe('menu impor/ekspor', () => {
+    it('starts with guidance closed and resets it when the export dialog is reopened', () => {
+        let tree = render(EmployeeTransferMenu);
+        const openExport = (current) => findAll(current, (item) => item.type === DropdownMenuItem)[1].props.onClick();
+        openExport(tree);
+        tree = render(EmployeeTransferMenu);
+        let guidance = findAll(tree, (item) => item.type === Collapsible)[0];
+        expect(guidance.props.open).toBe(false);
+        const trigger = findAll(guidance, (item) => item.type === CollapsibleTrigger)[0];
+        expect(text(trigger)).toBe('Petunjuk');
+        expect(trigger.props.render.type).toBe(Button);
+        expect(trigger.props.render.props.type).toBe('button');
+        expect(trigger.props.render.props.variant).toBe('link');
+
+        guidance.props.onOpenChange(true);
+        tree = render(EmployeeTransferMenu);
+        guidance = findAll(tree, (item) => item.type === Collapsible)[0];
+        expect(guidance.props.open).toBe(true);
+
+        findAll(tree, (item) => item.type === Dialog)[0].props.onOpenChange(false);
+        openExport(render(EmployeeTransferMenu));
+        tree = render(EmployeeTransferMenu);
+        expect(findAll(tree, (item) => item.type === Collapsible)[0].props.open).toBe(false);
+    });
+    it('explains the selected scope separately from reimport guidance', () => {
+        let tree = render(EmployeeTransferMenu);
+        const findAlerts = (current) => findAll(current, (item) => item.type === Alert);
+        const title = (alert) => text(findAll(alert, (item) => item.type === AlertTitle)[0]);
+        const description = (alert) => text(findAll(alert, (item) => item.type === AlertDescription)[0]);
+        let alerts = findAlerts(tree);
+        expect(alerts.map(title)).toEqual(['Seluruh Pegawai', 'Impor Ulang']);
+        expect(alerts[0].props.variant).toBe('info');
+        expect(description(alerts[0])).toContain('tanpa mengikuti pencarian, filter, atau halaman');
+        expect(alerts[1].props.variant).toBe('warning');
+        expect(description(alerts[1])).toContain('Data pegawai yang sudah ada tidak diperbarui.');
+
+        findAll(tree, (item) => item.type === OptionSelect)[0].props.onValueChange('filtered');
+        tree = render(EmployeeTransferMenu);
+        alerts = findAlerts(tree);
+        expect(alerts.map(title)).toEqual(['Sesuai Filter', 'Impor Ulang']);
+        expect(description(alerts[0])).toContain('pencarian dan filter aktif dari semua halaman');
+        expect(description(alerts[0])).toContain('Jika tidak ada pencarian atau filter');
+
+        findAll(tree, (item) => item.type === OptionSelect)[0].props.onValueChange('');
+        tree = render(EmployeeTransferMenu);
+        expect(findAlerts(tree).map(title)).toEqual(['Impor Ulang']);
+        expect(button(tree, 'Ekspor Excel').props.disabled).toBe(true);
+    });
     it('offers two actions and exports all data by default without sending filters', () => {
         let tree = render(EmployeeTransferMenu);
         const items = findAll(tree, (item) => item.type === DropdownMenuItem);
