@@ -1,6 +1,6 @@
 # Alur Pembuatan Fitur Baru (Tensura)
 
-Wajib dibaca agent **sebelum** membuat fitur/modul baru. Referensi CRUD sederhana: **JobTitle** (Jabatan). Gunakan **LetterNumber** untuk field yang dilindungi saat update, **Employee** untuk filter relasi/tanggal, dan **Reference/Archive** untuk penghapusan yang dapat dipulihkan.
+Wajib dibaca agent **sebelum** membuat fitur/modul baru. Referensi CRUD sederhana: **JobTitle** (Jabatan). Gunakan **LetterNumber** untuk field yang dilindungi saat update, **Employee** untuk filter relasi/tanggal, **Reference/Archive** untuk penghapusan yang dapat dipulihkan, dan **Templat Surat** untuk halaman kelola bertahap, editor per kartu, dokumen privat, publikasi, serta timeline.
 
 Kontrak backend rinci (Form Request, Resource, routing, query list) ada di [LARAVEL_PATTERNS.md](LARAVEL_PATTERNS.md). Dokumen ini mengatur urutan kerja, wawancara, penamaan, frontend, skill, dan verifikasi. Jangan menduplikasi isi LARAVEL_PATTERNS.md.
 
@@ -12,6 +12,7 @@ Kontrak backend rinci (Form Request, Resource, routing, query list) ada di [LARA
 4. **Utamakan komponen bersama dan kontrak domain yang sesuai.** Pilih referensi berdasarkan kebutuhan; perbedaan lama yang perlu dipertahankan dicatat pada bagian 8.
 5. Jangan merefaktor fitur yang sudah ada, menambah dependensi, atau membuat folder dasar baru tanpa persetujuan.
 6. Aktifkan skill yang relevan pada tiap fase (bagian 5) dan baca fitur referensi sebelum meniru polanya.
+7. Pisahkan **proses bisnis yang disepakati**, **pola yang sudah diimplementasikan**, dan **rancangan teknis yang belum dibuat**. Untuk fitur Surat, baca [probis Surat](docs/planning/letter/probis.md); jangan menganggap alur Surat sudah tersedia hanya karena generate uji Templat Surat sudah berjalan. Keputusan bisnis fitur tidak disalin menjadi aturan universal semua modul.
 
 ## 1. Wawancara
 
@@ -45,6 +46,8 @@ Isi keputusan berikut dari permintaan pengguna, sesi sebelumnya, dan kode yang a
 9. **Perilaku penghapusan**: permanen, arsip snapshot yang dapat dipulihkan, atau kebutuhan soft delete tersendiri. CRUD sederhana mengikuti penghapusan permanen JobTitle/LetterNumber jika tidak ada kebutuhan pemulihan. Reference memakai arsip snapshot, bukan `SoftDeletes`. Jika perlu arsip, tentukan entitas/induk-anak, pemulihan, konflik, dan hapus permanen arsip; ikuti bagian arsip di LARAVEL_PATTERNS.md. Perubahan skema/perilaku di luar lingkup yang disepakati memerlukan persetujuan.
 10. **Validasi khusus**: unik, format, rentang, pesan galat bila berbeda dari pesan bawaan.
 11. **Otorisasi**: cukup login (default) atau perlu role/policy per record?
+
+Untuk fitur dengan siklus hidup di luar CRUD, rangkum juga status dan transisinya, aktor, versi/data yang menjadi acuan, syarat pemeriksaan, alasan tindakan, hasil dokumen, dan batas keberhasilan operasi. Tentukan perilaku draft, perubahan master, data lama dari operator lain, percobaan ulang, serta kegagalan sebagian dari spesifikasi; jangan menyimpulkannya dari label tombol. Gunakan layanan domain Templat Surat/Archive sebagai referensi mekanisme, bukan untuk menyalin keputusan bisnisnya.
 
 ### D. Halaman daftar
 
@@ -93,10 +96,12 @@ Semua teks yang tampil ke pengguna (label, pesan, toast, placeholder) berbahasa 
     - migration → enum (jika ada) → model + factory → `Store`/`Update` request → resource → controller → route → seeder (jika diminta).
     - Untuk listing yang dapat dicari, gunakan `Searchable`, daftar kolom eksplisit, `normalizeSearchKeyword()` untuk prop `filters.keyword`, dan `->search($keyword)` pada query. Jangan menulis ulang SQL pencarian di controller. Tambahkan pengurutan dan pagination sesuai LARAVEL_PATTERNS.md.
     - Untuk arsip, implementasikan snapshot, pemilihan record, konflik, preview/token, pemulihan, serta transaksi/locking yang diperlukan sebelum menghubungkan UI. Registry handler saja belum membuat modul dapat dipulihkan.
+    - Untuk alur bertahap, pisahkan operasi domain ke `app/Services/{Domain}` mengikuti Templat Surat: request → controller operasi → service → model/penyimpanan → Resource/redirect. Pertahankan CRUD sederhana tanpa service tambahan bila tidak diperlukan. Kontrak state, transaksi, bukti pemeriksaan, audit, dan kompensasi berkas mengikuti LARAVEL_PATTERNS.md.
     - `php artisan make:model {Domain}/{Nama} -mf --no-interaction`, `make:controller`, `make:request`, `make:resource`.
 3. **Wayfinder**: `php artisan wayfinder:generate --no-interaction` setiap signature route berubah. Plugin Vite juga menjalankan generator saat development/build; konfigurasi saat ini `routes: true`, `actions: false`, `formVariants: false`. Jangan mengedit file hasil generator atau mengandalkan helper yang tidak dihasilkan. Folder `resources/js/routes` di-gitignore.
 4. **Frontend**: schema dan tipe → kolom → pembungkus `DeleteResourceAction` → pembungkus `ResourceDataTable` → form fitur bersama → `index`/`create`/`edit` (dan `show` bila diperlukan) → perbarui item sidebar.
     - Halaman Inertia harus ada sebagai file sebelum test `assertInertia` lulus (`ensure_pages_exist` aktif).
+    - Untuk halaman kelola, susun kartu dan operasi dari state backend; gunakan kontrak editor di bagian 4. Jangan memaksa seluruh pengelolaan versi/dokumen menjadi satu form create/edit besar.
 5. **Test** (bagian 6).
 6. **Verifikasi** (bagian 7).
 
@@ -122,6 +127,26 @@ Semua teks yang tampil ke pengguna (label, pesan, toast, placeholder) berbahasa 
 - **Komponen UI**: dahulukan komponen yang sudah tersedia dan ikuti skill `shadcn` saat menambah atau mengubahnya. Pengecualian `resources/js/components/ui/*` dari lint/format bukan larangan perubahan; edit hanya bila diperlukan dan sesuai lingkup.
 - **Mobile**: gunakan `useIsMobile` yang membaca `matchMedia` sejak render browser pertama, mendengarkan perubahan breakpoint 768 px, dan aman tanpa `window`. Jangan menggandakan state awal desktop yang menyebabkan flicker.
 - Format: Prettier (`printWidth` 120, 4 spasi, single quote). Hindari impor tak terpakai.
+
+### Konsistensi visual dan komposisi
+
+- Acuan tema adalah `components.json` (`base-vega`, Base UI, Hugeicons) dan `resources/css/app.css`. Pertahankan tipografi, radius, ukuran kontrol, dan varian komponen bersama. Jangan menambah tema/palet atau CSS khusus halaman hanya untuk meniru komponen yang sudah tersedia.
+- Gunakan `Button`/`TableActionButton` dengan varian yang ada: utama `default`, ubah `warning`, informasi `info`, pemulihan/persetujuan `approve`, dan tindakan merusak `destructive`. Pilih sesuai akibat tindakan; Batal editor tidak sama dengan pembatalan surat. Ikuti `FormActions` untuk Simpan/Batal editor.
+- Pakai token `warning`, `success`, `info`, dan `destructive` beserta foreground yang sesuai untuk status. Gunakan `Badge`, `Alert`, `Skeleton`, dan komponen UI existing; jangan memberi warna mentah atau override warna/ukuran tombol di tiap halaman. Status harus memiliki teks, bukan hanya warna.
+- Proyek menggunakan komposisi Base UI: periksa prop `render`/`nativeButton` pada komponen lokal, jangan menyalin `asChild` dari contoh Radix. Navigasi Inertia memakai `Link`; unduhan dokumen memakai tautan/response berkas biasa, bukan kunjungan halaman Inertia.
+- Tombol berteks memakai ikon di depan dengan `data-icon="inline-start"`; aksi ikon memakai label aksesibel dan tooltip melalui `TableActionButton`. `FormActions` saat ini menyediakan tombol ikon Simpan/Batal dengan label dan tooltip; jangan membuat versi footer lain hanya untuk mengganti tampilannya.
+- Aksi header kartu memakai slot `action` pada `FormCard` dan `CardAction`; izinkan wrap pada layar sempit. Gunakan `min-w-0`, tabel dengan scroll horizontal lokal, serta jarak antarkartu mengikuti halaman referensi. Halaman tidak boleh melebar karena isi tabel atau placeholder panjang.
+
+### Halaman kelola dan editor per kartu
+
+- Ikuti `pages/letter-templates/edit.tsx` untuk koordinasi kartu. `FormCard` mendukung `step` untuk tahap bernomor dan `sectioned` untuk bagian tanpa nomor; gunakan hanya ketika alur memerlukannya. Form tambah sederhana tetap langsung dapat diisi.
+- Kartu/item tersimpan mulai dalam mode baca. Satu editor atau dialog operasi yang saling memengaruhi aktif pada satu waktu; pemilik halaman mengoordinasikan editor aktif dan request berjalan. Detail field serta draft input tetap dimiliki komponen fitur.
+- Simpan/Batal hanya muncul saat edit. Batal/Escape memulihkan nilai tersimpan, galat, dan pilihan file tanpa navigasi; gunakan `FormActions.onCancel`. Jangan membungkus form di dalam form.
+- Tambah item membuka draft lokal; record server baru dibuat setelah Simpan berhasil. Hapus record tersimpan merupakan operasi terpisah dengan konfirmasi dampak domain. Reorder mengikuti pola Reference/Templat Surat dan tetap mempertahankan identitas item.
+- Galat mempertahankan editor dan input; sukses memperbarui data tersimpan lalu menutup editor. Gunakan key stabil berdasarkan identitas record/versi, bukan indeks atau nilai input yang menyebabkan remount saat mengetik.
+- Blokir aksi yang bertentangan selama edit/request, pertahankan fokus dan scroll, dan selalu lepaskan status sibuk saat request selesai atau gagal. Penguncian UI membantu interaksi; backend tetap memeriksa state dan konflik.
+- Tampilkan kesiapan, alasan aksi tertahan, hasil validasi, dan riwayat dari props backend. Pesan validasi rinci berada di bagian terkait, toast menjadi umpan balik singkat. Jangan menyalin formula kelayakan publikasi atau parsing DOCX ke frontend.
+- Jangan menggeneralisasi komponen khusus templat sebelum ada kebutuhan reuse yang nyata. Gunakan shell bersama terlebih dahulu; field, slot penandatangan, dan aturan publikasi tetap milik domain.
 
 ## 5. Pemetaan skill
 
@@ -152,6 +177,7 @@ Tes database memakai PostgreSQL disposable sesuai konfigurasi `.env.testing.exam
 - **Edit/Update**: halaman terisi; hanya kolom yang boleh diubah yang berubah (kolom terlarang dikirim dan tetap utuh); nilai milik sendiri diterima, milik record lain ditolak; UUID tidak dikenal dan id numerik → 404; guest ditolak.
 - **Delete**: hanya record terpilih yang dihapus/diarsipkan, record lain tetap ada; guest ditolak; UUID tidak dikenal dan id numerik → 404. Jika diarsipkan, periksa snapshot, relasi, dan data aktif sesuai kontrak.
 - **Arsip**: bila terdampak, uji scope pilihan record, konflik, token salah pengguna/aksi atau kedaluwarsa karena state berubah, partial restore, dan hapus permanen. Jalankan runner arsip terpisah untuk pengujian konkurensi; kasus yang dilewati runner utama belum terverifikasi.
+- **Alur bertahap/dokumen**: uji transisi yang diizinkan/ditolak, child milik induk lain, state/bukti pemeriksaan usang, rollback, kegagalan storage, perlindungan riwayat, dan retry tanpa efek ganda sesuai kontrak fitur. Untuk perubahan konkurensi Templat Surat, gunakan runner khusus `phpunit.letter-templates.xml` sesuai LARAVEL_PATTERNS.md; jangan mengklaim kasus skip pada suite utama sudah lulus.
 - **Frontend**: jalankan test state/query pencarian, schema, atau render yang terdampak melalui `vite-plus/test`. Tidak perlu test baru untuk perubahan copy/styling/layout murni. Verifikasi fokus, request lambat, dan Back/Forward di browser bila relevan.
 - Jangan mem-mock database. Siapkan record prasyarat sebelum `Event::fake()` bila dipakai.
 
@@ -172,6 +198,7 @@ pnpm run build
 - Jalankan ulang test setelah mengubahnya. Pint wajib saat PHP berubah. Untuk perubahan dokumentasi saja, cukup periksa referensi, format Markdown, dan `git diff --check`; tidak perlu test aplikasi atau build.
 - `types:check` tetap merupakan pemeriksaan proyek penuh. Jangan menganggapnya lulus jika masih ada error; pisahkan error akibat perubahan dari masalah lama dan laporkan dengan jelas.
 - Periksa manual bila UI berubah: menu sidebar aktif, fokus input saat request berjalan, pencarian/reset, filter/Terapkan/Reset, paginasi, Back/Forward, tambah/ubah/hapus, toast, loading, keyboard/label aksesibel, dan viewport mobile. Laporkan bila browser atau pemeriksaan tertentu tidak tersedia.
+- Untuk editor bertahap, periksa mode baca/edit, satu editor aktif, Batal/Escape, kegagalan simpan, penambahan lokal, reorder, aksi saat request lambat, dan dialog yang dibuka ulang. Pemeriksaan browser dan pembukaan/render hasil DOCX/PDF merupakan bukti terpisah dari test backend/build; laporkan masing-masing sesuai yang benar-benar dijalankan.
 - Laporan akhir singkat: apa yang dibuat, apa yang diuji, dan apa yang tidak dapat dijalankan beserta alasannya.
 
 ## 8. Perbedaan pola yang perlu dipertahankan
