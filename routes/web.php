@@ -9,6 +9,7 @@ use App\Http\Controllers\ArchivePreviewController;
 use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentFontController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
@@ -31,6 +32,9 @@ use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('document-fonts', [DocumentFontController::class, 'index'])->name('document-fonts.index');
+    Route::post('document-fonts', [DocumentFontController::class, 'store'])->middleware('throttle:20,1')->name('document-fonts.store');
+    Route::get('document-fonts/{documentFont:uuid}/file', [DocumentFontController::class, 'file'])->whereUuid('documentFont')->name('document-fonts.file');
     Route::get('options', OptionController::class)->name('options.index');
     Route::get('letter-templates/{letterTemplate:uuid}/audits', LetterTemplateAuditController::class)->whereUuid('letterTemplate')->name('lt.audits.index');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');

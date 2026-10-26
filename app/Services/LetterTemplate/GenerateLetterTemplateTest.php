@@ -5,6 +5,7 @@ namespace App\Services\LetterTemplate;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\User;
+use App\Services\Letter\DocumentFontRegistry;
 use App\Services\Letter\LetterSystemFields;
 use App\Services\Letter\RenderLetterDocument;
 use App\Services\Letter\ResolveLetterDocumentSnapshot;
@@ -24,6 +25,7 @@ class GenerateLetterTemplateTest
         private LetterSystemFields $system,
         private ValidateLetterTemplateDocx $validator,
         private RecordLetterTemplateAudit $audit,
+        private DocumentFontRegistry $fonts,
     ) {}
 
     /** @param array{validation_token: string, values: array<string, string|list<string>|null>, signers: array<string, string>} $data */
@@ -58,7 +60,9 @@ class GenerateLetterTemplateTest
                 $path = config('letter-templates.paths.previews') . '/' . $version->uuid . '/' . Str::uuid() . '.docx';
                 $disk->makeDirectory(dirname($path));
                 $created[] = ['disk' => $diskName, 'path' => $path];
-                $this->renderer->render($source, $snapshot, $disk->path($path));
+                $fontUsage = $this->renderer->render($source, $snapshot, $disk->path($path));
+                $requirements = $fontUsage['requirements'];
+                $fontFingerprint = $this->fonts->fingerprint($requirements);
                 if ($disk->size($path) > config('letter-templates.test.max_output_bytes')) {
                     throw ValidationException::withMessages(['test' => 'Ukuran hasil uji melewati batas pengujian. Kurangi data pilihan.']);
                 }
@@ -67,6 +71,7 @@ class GenerateLetterTemplateTest
                 $old = ['disk' => $version->test_disk, 'path' => $version->test_path];
                 $version->fill([
                     'test_disk' => $diskName, 'test_path' => $path, 'test_sha256' => hash_file('sha256', $disk->path($path)),
+                    'test_font_requirements' => ['schema_version' => 1, ...$fontUsage], 'test_font_fingerprint' => $fontFingerprint,
                     'test_signer_uuids' => $signers, 'tested_at' => now(), 'test_expires_at' => now()->addHours(config('letter-templates.test.expires_hours')),
                     'tested_source_sha256' => $version->source_sha256, 'tested_configuration_sha256' => $version->validated_configuration_sha256,
                     'visually_confirmed_at' => null, 'visually_confirmed_by' => null, 'visually_confirmed_by_uuid' => null, 'visually_confirmed_by_name' => null,

@@ -7,6 +7,8 @@ use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\User;
+use App\Services\Letter\DocumentFontRegistry;
+use App\Services\Letter\InspectDocumentFonts;
 use App\Services\Letter\LetterSystemFields;
 use DOMElement;
 use DOMNode;
@@ -17,9 +19,9 @@ use Illuminate\Validation\ValidationException;
 
 class ValidateLetterTemplateDocx
 {
-    public function __construct(private InspectLetterTemplateDocx $inspector, private LetterTemplateConfigurationHash $configurationHash, private InvalidateLetterTemplateEvidence $evidence, private RecordLetterTemplateAudit $audit) {}
+    public function __construct(private InspectLetterTemplateDocx $inspector, private LetterTemplateConfigurationHash $configurationHash, private InvalidateLetterTemplateEvidence $evidence, private RecordLetterTemplateAudit $audit, private InspectDocumentFonts $fonts, private DocumentFontRegistry $fontRegistry) {}
 
-    /** @return array{valid: bool, errors: list<string>, placeholders: list<string>} */
+    /** @return array{valid: bool, errors: list<string>, placeholders: list<string>, fonts?: array} */
     public function validate(LetterTemplate $template, LetterTemplateVersion $version, User $actor): array
     {
         return DB::transaction(function () use ($template, $version, $actor): array {
@@ -59,7 +61,7 @@ class ValidateLetterTemplateDocx
         }, 5);
     }
 
-    /** @return array{valid: bool, errors: list<string>, placeholders: list<string>} */
+    /** @return array{valid: bool, errors: list<string>, placeholders: list<string>, fonts?: array} */
     public function inspectPlaceholders(string $path, LetterTemplateVersion $version): array
     {
         $parts = $this->inspector->read($path);
@@ -162,7 +164,9 @@ class ValidateLetterTemplateDocx
         $errors = array_values(array_unique($errors));
         sort($names);
 
-        return ['valid' => $errors === [], 'errors' => $errors, 'placeholders' => $names];
+        $fonts = $this->fonts->inspect($parts);
+
+        return ['valid' => $errors === [], 'errors' => $errors, 'placeholders' => $names, 'fonts' => [...$fonts, ...$this->fontRegistry->report($fonts['requirements'])]];
     }
 
     private function ancestor(DOMNode $node, string $name): ?DOMElement

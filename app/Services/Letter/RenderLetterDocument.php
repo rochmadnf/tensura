@@ -2,13 +2,19 @@
 
 namespace App\Services\Letter;
 
+use App\Services\LetterTemplate\InspectLetterTemplateDocx;
 use App\Services\LetterTemplate\LetterTemplateProcessor;
 use Illuminate\Validation\ValidationException;
 
 class RenderLetterDocument
 {
-    /** @param array{schema_version: int, values: array<string, string>, rows: list<array{anchor: string, count: int}>} $snapshot */
-    public function render(string $source, array $snapshot, string $destination): void
+    public function __construct(private InspectLetterTemplateDocx $inspector, private InspectDocumentFonts $fonts) {}
+
+    /**
+     * @param  array{schema_version: int, values: array<string, string>, rows: list<array{anchor: string, count: int}>}  $snapshot
+     * @return array{requirements: list<array{family: string, bold: bool, italic: bool}>, limitations: list<string>}
+     */
+    public function render(string $source, array $snapshot, string $destination): array
     {
         if (($snapshot['schema_version'] ?? null) !== 1) {
             throw ValidationException::withMessages(['test' => 'Versi snapshot dokumen belum didukung.']);
@@ -23,7 +29,11 @@ class RenderLetterDocument
                 }
             }
             $processor->fillLiteralValues($snapshot['values']);
+            $parts = array_replace($this->inspector->read($source), $processor->renderedParts());
+            $fontUsage = $this->fonts->inspect($parts);
             $processor->saveAs($destination);
+
+            return $fontUsage;
         } finally {
             unset($processor);
         }

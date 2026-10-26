@@ -1,3 +1,4 @@
+import { DocumentFonts, DocumentFontWarnings } from '@/components/document-fonts';
 import { DocumentValidationResult } from './document-validation-result';
 import { Download04Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -98,6 +99,7 @@ export function LetterTemplateDocumentForm({
             description="Unduh contoh, sesuaikan dokumen, lalu unggah dan validasi. Panduan memakai konfigurasi yang sudah disimpan."
             action={
                 <CardAction className="col-span-full col-start-1 row-span-1 row-start-3 flex flex-wrap gap-2 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end">
+                    <DocumentFonts disabled={busy} />
                     <Button
                         nativeButton={false}
                         variant="outline"
@@ -140,6 +142,7 @@ export function LetterTemplateDocumentForm({
                 {(document.state === 'valid' || document.state === 'invalid') && (
                     <DocumentValidationResult errors={document.errors} names={document.placeholders} />
                 )}
+                <DocumentFontWarnings report={document.fonts} disabled={busy} />
                 {document.state === 'stale' && (
                     <p className="text-sm text-muted-foreground">
                         Konfigurasi berubah. Jalankan validasi ulang sebelum menguji dokumen.

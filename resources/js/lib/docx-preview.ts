@@ -97,3 +97,81 @@ export async function renderPreviewDocx(bytes: Uint8Array, document: Document): 
     await Promise.all(Array.from(document.images, (image) => image.decode().catch(() => undefined)));
     return Array.from(container.querySelectorAll<HTMLElement>('section.docx'));
 }
+
+export type PreviewFont = {
+    family: string;
+    style: string;
+    bold: boolean;
+    italic: boolean;
+    browser_url: string | null;
+    available: boolean;
+};
+
+export async function loadPreviewFonts(
+    fonts: PreviewFont[],
+    document: Document,
+    signal: AbortSignal,
+): Promise<string[]> {
+    const warnings: string[] = [];
+    document.fonts.clear();
+    for (const font of fonts) {
+        if (!font.browser_url) {
+            warnings.push(
+                `${font.family} (${font.style}): ${font.available ? 'tersedia di server, belum dimuat ke browser' : 'belum tersedia'}. Viewer memakai font komputer/browser atau fallback.`,
+            );
+            continue;
+        }
+        try {
+            const url = new URL(font.browser_url, window.location.href);
+            if (url.origin !== window.location.origin) throw new Error('Sumber font tidak sah.');
+            const response = await fetch(url.href, {
+                signal,
+                credentials: 'same-origin',
+                headers: { Accept: 'font/ttf, font/otf' },
+            });
+            if (
+                !response.ok ||
+                response.redirected ||
+                !response.headers.get('Content-Type')?.startsWith('font/') ||
+                !response.body
+            )
+                throw new Error('Font belum dapat dimuat.');
+            const reader = response.body.getReader();
+            const chunks: Uint8Array[] = [];
+            let size = 0;
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    size += value.byteLength;
+                    if (size > 10 * 1024 * 1024) {
+                        await reader.cancel();
+                        throw new Error('Ukuran font terlalu besar.');
+                    }
+                    chunks.push(value);
+                }
+            } finally {
+                reader.releaseLock();
+            }
+            const bytes = new Uint8Array(size);
+            let offset = 0;
+            for (const chunk of chunks) {
+                bytes.set(chunk, offset);
+                offset += chunk.byteLength;
+            }
+            const face = new FontFace(JSON.stringify(font.family), bytes, {
+                weight: font.bold ? '700' : '400',
+                style: font.italic ? 'italic' : 'normal',
+            });
+            await face.load();
+            if (signal.aborted) return warnings;
+            document.fonts.add(face);
+        } catch {
+            if (signal.aborted) return warnings;
+            warnings.push(
+                `${font.family} (${font.style}) gagal dimuat ke browser. Viewer memakai font komputer/browser atau fallback.`,
+            );
+        }
+    }
+    return warnings;
+}

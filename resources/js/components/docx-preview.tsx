@@ -1,3 +1,4 @@
+import type { DocumentFontReport } from '@/schemas/document-font';
 import { useEffect, useRef, useState } from 'react';
 import {
     ArrowLeft01Icon,
@@ -13,16 +14,18 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FieldError } from '@/components/ui/field';
-import { DOCX_PREVIEW_FRAME, fetchPreviewDocx, renderPreviewDocx } from '@/lib/docx-preview';
+import { DOCX_PREVIEW_FRAME, fetchPreviewDocx, renderPreviewDocx, loadPreviewFonts } from '@/lib/docx-preview';
 
 export function DocxPreview({
     url,
     maxBytes,
     disabled = false,
+    fontReport,
 }: {
     url: string;
     maxBytes: number;
     disabled?: boolean;
+    fontReport?: DocumentFontReport;
 }) {
     const [open, setOpen] = useState(false);
     return (
@@ -40,19 +43,28 @@ export function DocxPreview({
                             hasil sebelum mengonfirmasi.
                         </DialogDescription>
                     </DialogHeader>
-                    {open && <PreviewDocument key={url} url={url} maxBytes={maxBytes} />}
+                    {open && <PreviewDocument key={url} url={url} maxBytes={maxBytes} fontReport={fontReport} />}
                 </DialogContent>
             </Dialog>
         </>
     );
 }
 
-function PreviewDocument({ url, maxBytes }: { url: string; maxBytes: number }) {
+function PreviewDocument({
+    url,
+    maxBytes,
+    fontReport,
+}: {
+    url: string;
+    maxBytes: number;
+    fontReport?: DocumentFontReport;
+}) {
     const frame = useRef<HTMLIFrameElement>(null);
     const pages = useRef<HTMLElement[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [attempt, setAttempt] = useState(0);
     const [status, setStatus] = useState<{ ready: boolean; error: string | null }>({ ready: false, error: null });
+    const [fontWarnings, setFontWarnings] = useState<string[]>([]);
     const [page, setPage] = useState(1);
     const [zoom, setZoom] = useState(100);
 
@@ -66,6 +78,13 @@ function PreviewDocument({ url, maxBytes }: { url: string; maxBytes: number }) {
             try {
                 const bytes = await fetchPreviewDocx(url, maxBytes, abort.signal);
                 if (abort.signal.aborted) return;
+                const warnings = await loadPreviewFonts(fontReport?.entries ?? [], document, abort.signal);
+                if (abort.signal.aborted) return;
+                setFontWarnings([
+                    ...(fontReport?.warning ? [fontReport.warning] : []),
+                    ...(fontReport?.limitations ?? []),
+                    ...warnings,
+                ]);
                 const rendered = await renderPreviewDocx(bytes, document);
                 if (abort.signal.aborted) return;
                 if (rendered.length === 0)
@@ -85,8 +104,9 @@ function PreviewDocument({ url, maxBytes }: { url: string; maxBytes: number }) {
         void load();
         return () => {
             abort.abort();
+            document.fonts.clear();
         };
-    }, [loaded, attempt, url, maxBytes]);
+    }, [loaded, attempt, url, maxBytes, fontReport]);
 
     useEffect(() => {
         if (frame.current?.contentDocument) frame.current.contentDocument.body.style.zoom = String(zoom / 100);
@@ -175,6 +195,16 @@ function PreviewDocument({ url, maxBytes }: { url: string; maxBytes: number }) {
                     Cetak
                 </Button>
             </div>
+            {fontWarnings.length > 0 && (
+                <details className="text-sm text-muted-foreground">
+                    <summary>Peringatan font · {fontWarnings.length}</summary>
+                    <ul className="flex flex-col gap-1">
+                        {fontWarnings.map((warning) => (
+                            <li key={warning}>{warning}</li>
+                        ))}
+                    </ul>
+                </details>
+            )}
             {!status.ready && !status.error && (
                 <p role="status" className="text-sm text-muted-foreground">
                     Menyiapkan preview DOCX…

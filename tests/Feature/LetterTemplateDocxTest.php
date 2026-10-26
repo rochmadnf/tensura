@@ -106,7 +106,9 @@ class LetterTemplateDocxTest extends TestCase
             'source_name' => 'source.docx', 'valid' => false,
             'errors' => ['Variabel tujuan belum terdaftar. Tambahkan pada Konfigurasi Formulir Surat atau sesuaikan nama variabel di dokumen.'],
             'placeholders' => ['tujuan'],
+            'fonts' => $first->validation_details['fonts'],
         ];
+        $this->assertNotEmpty($expected['fonts']['requirements']);
         $this->assertSame($expected, $first->validation_details);
         $this->post($this->route($version, 'validation.store'))->assertSessionHasErrors('docx');
         $this->assertSame(2, $version->audits()->where('operation', 'source.validated')->count());
@@ -115,7 +117,7 @@ class LetterTemplateDocxTest extends TestCase
         $this->post($this->route($version, 'validation.store'))->assertSessionHasNoErrors();
         $this->assertSame($expected, $first->fresh()->validation_details);
         $success = $version->audits()->latest('id')->firstOrFail();
-        $this->assertSame(['source_name' => 'source.docx', 'valid' => true, 'errors' => [], 'placeholders' => ['tujuan']], $success->validation_details);
+        $this->assertSame(['source_name' => 'source.docx', 'valid' => true, 'errors' => [], 'placeholders' => ['tujuan'], 'fonts' => $expected['fonts']], $success->validation_details);
         $this->getJson(route('lt.audits.index', $version->template->uuid))->assertOk()
             ->assertJsonPath('data.0.validation_details.valid', true)
             ->assertJsonPath('data.1.validation_details', $expected)

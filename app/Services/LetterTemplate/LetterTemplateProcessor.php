@@ -68,6 +68,25 @@ class LetterTemplateProcessor extends TemplateProcessor
         }
     }
 
+    /** @return array<string, DOMDocument> */
+    public function renderedParts(): array
+    {
+        $parts = ['word/document.xml' => $this->tempDocumentMainPart];
+        foreach ($this->tempDocumentHeaders as $index => $xml) {
+            $parts['word/header' . $index . '.xml'] = $xml;
+        }
+        foreach ($this->tempDocumentFooters as $index => $xml) {
+            $parts['word/footer' . $index . '.xml'] = $xml;
+        }
+
+        return array_map(function (string $xml): DOMDocument {
+            $document = new DOMDocument();
+            $document->loadXML($xml, LIBXML_NONET | LIBXML_COMPACT);
+
+            return $document;
+        }, $parts);
+    }
+
     public function __destruct()
     {
         parent::__destruct();

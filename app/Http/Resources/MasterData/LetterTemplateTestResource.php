@@ -6,6 +6,7 @@ use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\DocumentFontRegistry;
 use App\Services\LetterTemplate\LetterTemplateConfigurationHash;
 use App\Services\LetterTemplate\LetterTemplateTestEvidence;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
@@ -38,6 +39,7 @@ class LetterTemplateTestResource extends JsonResource
             'state' => $evidence->state($version), 'test_token' => $evidence->token($version),
             'tested_at' => $version->tested_at?->toIso8601String(), 'expires_at' => $version->test_expires_at?->toIso8601String(),
             'confirmed_at' => $version->visually_confirmed_at?->toIso8601String(), 'confirmed_by' => $version->visually_confirmed_by_name,
+            'fonts' => [...app(DocumentFontRegistry::class)->report($version->test_font_requirements['requirements'] ?? []), 'limitations' => $version->test_font_requirements['limitations'] ?? []],
             'limits' => config('letter-templates.test'),
             'variables' => $variables->map(fn(LetterTemplateVariable $variable): array => [
                 'id' => $variable->uuid, 'label' => $variable->label, 'type' => $variable->type->value, 'is_required' => $variable->is_required,

@@ -1,6 +1,6 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: tahap 1–3 selesai diimplementasikan dan diverifikasi nonvisual; tahap 4–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
+Status: tahap 1–4 selesai diimplementasikan dan diverifikasi nonvisual; tahap 5–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
 
 Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
@@ -9,6 +9,16 @@ Commit tahap 1: `5d26de6` — `feat: add read-only DOCX preview and printing`.
 Tahap 2 menyediakan detail Penomoran Surat, tabel `letter_number_periods` sembilan kolom, persiapan angka lama satu kali, periode kosong/custom, perkiraan urutan, dan perlindungan hapus master. Migration sudah diterapkan pada aplikasi lokal tanpa menyalin angka lama ke periode secara otomatis. Kolom `initial_period_id` pada master mencatat tujuan pemindahan, sedangkan dua counter lama tetap tersedia selama transisi. Klasifikasi baru cukup nama/kode. Daftar pemakaian surat belum tersedia sampai tahap penerbitan. Verifikasi: 103 test PHPUnit/818 assertion untuk periode dan regresi Penomoran/master templat/pencarian, 24 test frontend termasuk regresi tahap 1, Pint, lint, TypeScript, dan build lulus. Skema aktif dikonfirmasi memiliki sembilan kolom periode beserta constraint unik dan check posisi. Pengujian konkurensi antarkoneksi menyeluruh mengikuti tahap 10; checklist manual tetap belum dijalankan oleh agent.
 
 Tahap 3 menyediakan kartu Variabel Sistem, token nomor/tanggal, format tanggal per versi, bantuan DOCX, dan renderer yang menerima snapshot terpisah dari pengambilan nilai master. Generate uji memakai XX.XX tanpa alokasi nomor. Validasi dan bukti uji dibatalkan saat format berubah; format dipertahankan pada salinan versi. Verifikasi regresi DOCX dan templat serta test frontend telah lulus; pemeriksaan visual mengikuti checklist pengguna.
+
+Commit tahap 3: `ffc00c6` — `feat: support system letter fields and reusable rendering`.
+
+Tahap 4 menyediakan pemeriksaan font efektif pada validasi DOCX dan hasil rendering, daftar/pencarian varian server, unggah font TTF/OTF statis maksimal 10 MB, serta pemuatan font aplikasi ke frame viewer lewat endpoint terautentikasi. Instalasi memakai direktori privat aplikasi, konfigurasi Fontconfig bersama, cache, verifikasi inventory sebelum status siap, hash duplikat, dan penolakan konflik keluarga/varian. Migration sudah diterapkan pada aplikasi lokal. Font tidak tersedia maupun inventory gagal tetap peringatan; generate, konfirmasi, dan publikasi templat tetap dapat dilakukan jika syarat lainnya lengkap.
+
+Profil uji menyimpan penggunaan font dalam JSONB versi 1 beserta keterbatasan pemeriksaan. Fingerprint DOCX mengikat font/varian relevan, fallback yang dipakai, ketersediaan font untuk browser, dan revisi viewer. Profil PDF yang disiapkan untuk tahap 8 menambahkan versi LibreOffice dan environment Fontconfig; belum menyediakan konversi/unduhan PDF. Perubahan font yang relevan membuat bukti uji usang tanpa mengubah Word sumber/hasil tersimpan. Penambahan font/fallback yang tidak dipakai tidak membatalkan pemeriksaan.
+
+Verifikasi tahap 3–4: 225 test PHPUnit/1.685 assertion pada suite terarah lulus; 12 test font diulang setelah penyempurnaan profil/config dan lulus. Sebanyak 65 test frontend terkait, Pint, lint, TypeScript, dan build lulus. Tidak ada pengujian browser visual atau cetak oleh agent.
+
+Batas tahap 4: font sistem tidak otomatis dibagikan ke browser; unggah berkas yang sama agar font dapat dilayani aplikasi. Font variabel/koleksi belum termasuk unggahan awal. Style tabel bersyarat, font simbol bullet otomatis, sebagian DrawingML, atau tema yang tidak dapat dipetakan menampilkan keterbatasan eksplisit; bukan klaim seluruh layout sudah setara Word. Uji tampilan/cetak tetap mengikuti checklist pengguna.
 
 ## 1. Aturan pelaksanaan
 
@@ -164,3 +174,7 @@ Setiap tahap berikut wajib menambahkan/memperbarui test yang bermakna dan melapo
 - [Fontconfig](https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html).
 - [PHP 8.4 PostgreSQL getNotify](https://www.php.net/manual/en/pdo-pgsql.getnotify.php) dan [PostgreSQL NOTIFY](https://www.postgresql.org/docs/18/sql-notify.html).
 - [Inertia persistent layouts](https://inertiajs.com/docs/v3/the-basics/layouts) dan [Laravel SSE](https://laravel.com/docs/13.x/responses#event-streams).
+
+### Referensi pemeriksaan font
+
+Konfigurasi bersama dan pemilihan font mengikuti [Fontconfig](https://fontconfig.pages.freedesktop.org/fontconfig/fontconfig-user.html). Pemilihan font per aksara dan pewarisan format mengacu pada [WordprocessingML RunFonts](https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.runfonts?view=openxml-3.0.1); batas implementasi dicatat di atas.

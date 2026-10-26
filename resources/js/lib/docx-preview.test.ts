@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import { fetchPreviewDocx, previewElement } from './docx-preview';
+import { fetchPreviewDocx, previewElement, loadPreviewFonts } from './docx-preview';
 
 const contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const controller = () => new AbortController();
@@ -85,5 +85,113 @@ describe('authenticated DOCX preview loading', () => {
         const abort = controller();
         abort.abort(new DOMException('Closed', 'AbortError'));
         await expect(fetchPreviewDocx('/result', 100, abort.signal)).rejects.toMatchObject({ name: 'AbortError' });
+    });
+});
+
+describe('private preview font loading', () => {
+    const font = {
+        family: 'Example',
+        style: 'Regular',
+        bold: false,
+        italic: false,
+        available: true,
+        browser_url: '/fonts/file',
+    };
+    const document = () => {
+        const addFont = vi.fn();
+        return { document: { fonts: { clear: vi.fn(), add: addFont } } as unknown as Document, addFont };
+    };
+    const setup = () =>
+        vi.stubGlobal('window', { location: { href: 'https://app.test/templates', origin: 'https://app.test' } });
+    it('loads font bytes into the isolated document with the requested variant', async () => {
+        setup();
+        const faces: unknown[][] = [];
+        vi.stubGlobal(
+            'FontFace',
+            class {
+                constructor(...args: unknown[]) {
+                    faces.push(args);
+                }
+                load() {
+                    return Promise.resolve(this);
+                }
+            },
+        );
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    new Response(new Uint8Array([0, 1, 0, 0]), { headers: { 'Content-Type': 'font/ttf' } }),
+                ),
+        );
+        const target = document();
+        expect(
+            await loadPreviewFonts([{ ...font, bold: true, italic: true }], target.document, controller().signal),
+        ).toEqual([]);
+        expect(target.addFont).toHaveBeenCalledOnce();
+        expect(faces[0][2]).toMatchObject({ weight: '700', style: 'italic' });
+    });
+    it('reports server-only fonts and failed font requests without blocking DOCX rendering', async () => {
+        setup();
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(new Response('login', { headers: { 'Content-Type': 'text/html' } })),
+        );
+        const target = document();
+        expect(
+            await loadPreviewFonts([{ ...font, browser_url: null }, font], target.document, controller().signal),
+        ).toHaveLength(2);
+        expect(target.addFont).not.toHaveBeenCalled();
+    });
+    it('rejects remote font URLs and cancels oversized streamed font files', async () => {
+        setup();
+        const cancel = vi.fn();
+        const fetch = vi.fn().mockResolvedValue(
+            new Response(
+                new ReadableStream({
+                    start(stream) {
+                        stream.enqueue(new Uint8Array(10 * 1024 * 1024 + 1));
+                    },
+                    cancel,
+                }),
+                { headers: { 'Content-Type': 'font/ttf' } },
+            ),
+        );
+        vi.stubGlobal('fetch', fetch);
+        const target = document();
+        expect(
+            await loadPreviewFonts(
+                [{ ...font, browser_url: 'https://remote.test/font' }, font],
+                target.document,
+                controller().signal,
+            ),
+        ).toHaveLength(2);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(cancel).toHaveBeenCalledOnce();
+    });
+    it('does not attach a font when the viewer has been closed while it was loading', async () => {
+        setup();
+        const abort = controller();
+        vi.stubGlobal(
+            'FontFace',
+            class {
+                load() {
+                    abort.abort();
+                    return Promise.resolve(this);
+                }
+            },
+        );
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValue(
+                    new Response(new Uint8Array([0, 1, 0, 0]), { headers: { 'Content-Type': 'font/ttf' } }),
+                ),
+        );
+        const target = document();
+        await loadPreviewFonts([font], target.document, abort.signal);
+        expect(target.addFont).not.toHaveBeenCalled();
     });
 });

@@ -6,6 +6,7 @@ use App\Enums\AsnStatusEnum;
 use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\DocumentFontRegistry;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -68,6 +69,10 @@ class LetterTemplateTestEvidence
             return 'stale';
         }
 
+        if ($version->test_font_fingerprint !== null && (($version->test_font_requirements['schema_version'] ?? null) !== 1 || !hash_equals($version->test_font_fingerprint, app(DocumentFontRegistry::class)->fingerprint($version->test_font_requirements['requirements'] ?? [])))) {
+            return 'stale';
+        }
+
         $signers = Employee::query()->whereIn('uuid', $version->test_signer_uuids ?? [])->orderBy('id')->sharedLock()->get();
         if ($signers->count() !== count($version->test_signer_uuids ?? []) || $signers->contains(fn(Employee $employee): bool => $employee->status !== AsnStatusEnum::AKTIF)) {
             return 'stale';
@@ -80,7 +85,7 @@ class LetterTemplateTestEvidence
     {
         $this->assertValidated($version);
         if (!in_array($this->state($version), ['ready', 'confirmed'], true) || !hash_equals($this->token($version) ?? '', $token)) {
-            throw ValidationException::withMessages(['test' => 'Hasil uji hilang, berubah, kedaluwarsa, atau sudah diganti. Generate ulang dan periksa hasil terbaru.']);
+            throw ValidationException::withMessages(['test' => 'Hasil uji hilang, berubah, kedaluwarsa, sudah diganti, atau font terkait diperbarui. Generate ulang dan periksa hasil terbaru.']);
         }
     }
 }

@@ -1,5 +1,6 @@
 export type TestOption = { id: string; label: string };
 export type LetterTemplateTest = {
+    fonts?: import('./document-font').DocumentFontReport;
     id: string;
     can_generate: boolean;
     validation_token: string;

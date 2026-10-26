@@ -92,6 +92,12 @@ export function LetterTemplateTestForm({
         >
             <FieldGroup>
                 <Badge variant={test.state === 'confirmed' ? 'secondary' : 'outline'}>{states[test.state]}</Badge>
+                {test.state === 'stale' && (
+                    <FieldDescription>
+                        DOCX, konfigurasi, atau font terkait berubah. Generate ulang hasil uji dan periksa kembali
+                        sebelum mengonfirmasi.
+                    </FieldDescription>
+                )}
                 {!test.can_generate && (
                     <p className="text-sm text-muted-foreground">
                         {readOnly
@@ -251,6 +257,7 @@ export function LetterTemplateTestForm({
                             <DocxPreview
                                 url={download(args, { query: { test_token: test.test_token } }).url}
                                 maxBytes={test.limits.max_output_bytes}
+                                fontReport={test.fonts}
                                 disabled={busy}
                             />
                         </div>

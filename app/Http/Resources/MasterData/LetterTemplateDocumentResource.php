@@ -3,6 +3,7 @@
 namespace App\Http\Resources\MasterData;
 
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\DocumentFontRegistry;
 use App\Services\LetterTemplate\LetterTemplateConfigurationHash;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,6 +26,7 @@ class LetterTemplateDocumentResource extends JsonResource
             'state' => $state, 'validated_at' => $this->validated_at?->toIso8601String(),
             'errors' => $this->validation_result['errors'] ?? [],
             'placeholders' => $this->validation_result['placeholders'] ?? [],
+            'fonts' => isset($this->validation_result['fonts']) ? [...$this->validation_result['fonts'], ...app(DocumentFontRegistry::class)->report($this->validation_result['fonts']['requirements'])] : null,
         ];
     }
 }
