@@ -24,6 +24,7 @@ class LetterTemplateAuditChanges
         $put('version', 'Nomor versi', $version->version_number);
         $put('status', 'Status versi', $version->status->label());
         $put('classification', 'Klasifikasi', $version->letterNumber->classification_code . ' — ' . $version->letterNumber->classification_name);
+        $put('letter_date_format', 'Format tanggal surat', $version->letter_date_format);
         $put('source.name', 'Nama DOCX Sumber', $version->source_original_name);
         $put('source.hash', 'Sidik DOCX Sumber', $version->source_sha256);
         $put('validation', 'Validasi DOCX', $version->validated_at?->toIso8601String());

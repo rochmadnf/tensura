@@ -12,6 +12,7 @@ class LetterTemplateConfigurationHash
     {
         $version->loadMissing(['template', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $data = [
+            'letter_date_format' => $version->letter_date_format ?? 'd-m-Y', 'system_fields' => 1,
             'contract' => EmployeeAttributeCatalog::REVISION, 'locale' => config('app.locale'),
             'name' => $version->template->name, 'letter_number_id' => $version->letter_number_id,
             'variables' => $version->variables->map(fn(LetterTemplateVariable $variable): array => [

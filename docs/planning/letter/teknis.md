@@ -1,12 +1,14 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: tahap 1–2 selesai diimplementasikan dan diverifikasi nonvisual; tahap 3–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
+Status: tahap 1–3 selesai diimplementasikan dan diverifikasi nonvisual; tahap 4–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
 
 Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
 Commit tahap 1: `5d26de6` — `feat: add read-only DOCX preview and printing`.
 
 Tahap 2 menyediakan detail Penomoran Surat, tabel `letter_number_periods` sembilan kolom, persiapan angka lama satu kali, periode kosong/custom, perkiraan urutan, dan perlindungan hapus master. Migration sudah diterapkan pada aplikasi lokal tanpa menyalin angka lama ke periode secara otomatis. Kolom `initial_period_id` pada master mencatat tujuan pemindahan, sedangkan dua counter lama tetap tersedia selama transisi. Klasifikasi baru cukup nama/kode. Daftar pemakaian surat belum tersedia sampai tahap penerbitan. Verifikasi: 103 test PHPUnit/818 assertion untuk periode dan regresi Penomoran/master templat/pencarian, 24 test frontend termasuk regresi tahap 1, Pint, lint, TypeScript, dan build lulus. Skema aktif dikonfirmasi memiliki sembilan kolom periode beserta constraint unik dan check posisi. Pengujian konkurensi antarkoneksi menyeluruh mengikuti tahap 10; checklist manual tetap belum dijalankan oleh agent.
+
+Tahap 3 menyediakan kartu Variabel Sistem, token nomor/tanggal, format tanggal per versi, bantuan DOCX, dan renderer yang menerima snapshot terpisah dari pengambilan nilai master. Generate uji memakai XX.XX tanpa alokasi nomor. Validasi dan bukti uji dibatalkan saat format berubah; format dipertahankan pada salinan versi. Verifikasi regresi DOCX dan templat serta test frontend telah lulus; pemeriksaan visual mengikuti checklist pengguna.
 
 ## 1. Aturan pelaksanaan
 

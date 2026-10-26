@@ -20,6 +20,7 @@ class LetterTemplateDocumentResource extends JsonResource
 
         return [
             'id' => $this->uuid,
+            'letter_date_format' => $this->letter_date_format ?? 'd-m-Y',
             'source' => $this->source_path === null ? null : ['name' => $this->source_original_name, 'size' => $this->source_size],
             'state' => $state, 'validated_at' => $this->validated_at?->toIso8601String(),
             'errors' => $this->validation_result['errors'] ?? [],

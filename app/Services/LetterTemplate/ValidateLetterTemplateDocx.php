@@ -7,6 +7,7 @@ use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\User;
+use App\Services\Letter\LetterSystemFields;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
@@ -63,7 +64,7 @@ class ValidateLetterTemplateDocx
     {
         $parts = $this->inspector->read($path);
         $version->loadMissing(['variables.columns', 'signerSlots']);
-        $known = [];
+        $known = LetterSystemFields::NAMES;
         $multiple = [];
         foreach ($version->variables as $variable) {
             if ($variable->is_multiple) {

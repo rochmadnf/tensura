@@ -21,6 +21,7 @@ use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
+use App\Http\Controllers\MasterData\LetterTemplateSystemFieldsController;
 use App\Http\Controllers\MasterData\LetterTemplateTestController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\LetterTemplateVersionController;
@@ -79,6 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::post('draft', [LetterTemplateVersionController::class, 'draft'])->name('lt.versions.draft');
         Route::post('archive', [LetterTemplateVersionController::class, 'archive'])->name('lt.versions.archive');
         Route::patch('activation', [LetterTemplateVersionController::class, 'activation'])->name('lt.activation.update');
+        Route::patch('system-fields', LetterTemplateSystemFieldsController::class)->name('lt.system-fields.update');
         Route::post('test', [LetterTemplateTestController::class, 'store'])->name('lt.test.store');
         Route::get('test', [LetterTemplateTestController::class, 'show'])->name('lt.test.download');
         Route::post('test/confirm', [LetterTemplateTestController::class, 'confirm'])->name('lt.test.confirm');

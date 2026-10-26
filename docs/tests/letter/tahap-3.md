@@ -1,6 +1,6 @@
 # Tahap 3 — Token Sistem dan Mesin Dokumen
 
-Status implementasi: direncanakan. Status uji mandiri pengguna: belum dijalankan.
+Status implementasi: selesai, terverifikasi nonvisual. Status uji mandiri pengguna: belum dijalankan.
 
 Acuan: [rencana teknis](../../planning/letter/teknis.md). Agent menjalankan test nonvisual terkait; perbandingan dokumen dilakukan pengguna.
 
@@ -22,3 +22,9 @@ Pada Templat Surat, gunakan `${nomor_surat}` dan `${tanggal_surat}`, atur format
 ## Hasil pengguna
 
 Tanggal, sampel, dan temuan: belum diisi.
+
+## Bukti implementasi
+
+Kartu Variabel Sistem tersedia pada pengaturan versi templat. Format tanggal mengikuti versi, disalin ke draft versi baru, dan perubahannya membatalkan bukti validasi/uji. Renderer memakai snapshot nilai terpisah dari pembacaan master. Nomor uji memakai XX.XX; tidak mengubah counter/periode.
+
+Verifikasi: 212 test PHPUnit/1.556 assertion terkait lulus, 57 test frontend terkait, Pint, lint, TypeScript, dan build. Pemeriksaan visual tetap menunggu pengguna.
