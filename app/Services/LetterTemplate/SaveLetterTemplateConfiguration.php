@@ -27,6 +27,7 @@ class SaveLetterTemplateConfiguration
         DB::transaction(function () use ($template, $version, $data, $actor): void {
             $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
             $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+            $before = $this->audit->snapshot($template, $version);
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['configuration' => 'Konfigurasi hanya dapat diubah pada draft yang belum digunakan.']);
             }
@@ -53,7 +54,7 @@ class SaveLetterTemplateConfiguration
             $this->replaceConfiguration($version, $data, $groups->map->id->all(), $employees->map->id->all());
             $this->evidence->invalidate($version);
             $version->save();
-            $this->audit->record($template, $version, $actor, 'configuration.updated', 'Variabel dan penandatangan diperbarui; bukti pemeriksaan dibatalkan.');
+            $this->audit->record($template, $version, $actor, 'configuration.updated', 'Variabel dan penandatangan diperbarui; bukti pemeriksaan dibatalkan.', $before);
         }, 5);
     }
 

@@ -1,5 +1,5 @@
 import { defineRequest } from '@/lib/request';
-import { check, maxLength, minLength, nonEmpty, object, pipe, string, trim } from 'valibot';
+import { uuid, maxLength, minLength, nonEmpty, object, pipe, string, trim } from 'valibot';
 
 export type ClassificationOption = { id: string; label: string };
 export type LetterTemplateResource = {
@@ -12,18 +12,11 @@ export type LetterTemplateResource = {
     draft: { id: string; number: number; letter_number: string } | null;
 };
 
-export function createLetterTemplateSchema(classifications: ClassificationOption[]) {
+export function createLetterTemplateSchema(_classifications: ClassificationOption[]) {
     return defineRequest(
         object({
             name: pipe(string(), trim(), nonEmpty(), minLength(3), maxLength(100)),
-            letter_number: pipe(
-                string(),
-                nonEmpty(),
-                check(
-                    (value) => classifications.some((item) => item.id === value),
-                    ':attribute yang dipilih tidak valid.',
-                ),
-            ),
+            letter_number: pipe(string(), nonEmpty(), uuid(':attribute yang dipilih tidak valid.')),
         }),
         { name: 'Nama Templat', letter_number: 'Klasifikasi' },
     );

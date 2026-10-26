@@ -1,14 +1,10 @@
-import { Link } from '@inertiajs/react';
-import { HugeiconsIcon } from '@hugeicons/react';
 import { LoaderIcon, SaveIcon, XIcon } from '@hugeicons/core-free-icons';
-import { Button } from '@/components/ui/button';
-import { Field } from '@/components/ui/field';
+import { TableActionButton } from '@/components/table-action-button';
 
 export function FormActions({
     cancelUrl,
     processing,
     disabled = false,
-    fullWidth = true,
     onCancel,
 }: {
     cancelUrl: string;
@@ -19,29 +15,25 @@ export function FormActions({
 }) {
     const busy = processing || disabled;
     return (
-        <Field orientation="responsive">
-            <Button className={fullWidth ? 'w-full' : undefined} type="submit" disabled={busy}>
-                <HugeiconsIcon
-                    icon={processing ? LoaderIcon : SaveIcon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                    className={processing ? 'animate-spin' : undefined}
-                    aria-hidden="true"
-                />
-                Simpan
-            </Button>
-            <Button
+        <div className="flex items-center gap-2">
+            <TableActionButton
+                type="submit"
+                icon={processing ? LoaderIcon : SaveIcon}
+                label={processing ? 'Menyimpan' : 'Simpan'}
+                tooltip={processing ? 'Menyimpan…' : 'Simpan'}
+                disabled={busy}
+                loading={processing}
+            />
+            <TableActionButton
                 type="button"
-                className={fullWidth ? 'w-full' : undefined}
-                nativeButton={!!onCancel}
+                icon={XIcon}
+                label="Batal"
+                tooltip="Batal"
                 variant="destructive"
                 disabled={busy}
                 onClick={onCancel}
-                render={onCancel ? undefined : <Link href={cancelUrl} />}
-            >
-                <HugeiconsIcon icon={XIcon} strokeWidth={2} data-icon="inline-start" aria-hidden="true" />
-                Batal
-            </Button>
-        </Field>
+                href={onCancel ? undefined : cancelUrl}
+            />
+        </div>
     );
 }

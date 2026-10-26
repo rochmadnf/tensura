@@ -1,3 +1,4 @@
+import { DocumentValidationResult } from './document-validation-result';
 import { Download04Icon, CheckmarkCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { TemplateEditAction } from './edit-action';
@@ -8,6 +9,7 @@ import { FormActions } from '@/components/form-actions';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { CardAction } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { useValibotForm } from '@/hooks/use-valibot-form';
@@ -80,22 +82,36 @@ export function LetterTemplateDocumentForm({
     };
     function validateSource() {
         if (busy || !editable || !document.source) return;
+        validation.clearErrors();
         validation.post(validate(args).url, {
             preserveScroll: true,
             onStart: () => onProcessingChange(true),
             onFinish: () => onProcessingChange(false),
             onError: showError,
-            onSuccess: () => gooeyToast.success('Berhasil', { description: 'Struktur dan placeholder DOCX valid.' }),
+            onSuccess: () => gooeyToast.success('Berhasil', { description: 'Struktur dan variabel DOCX valid.' }),
         });
     }
     return (
         <FormCard
             title="DOCX Sumber"
+            step={4}
             description="Unduh contoh, sesuaikan dokumen, lalu unggah dan validasi. Panduan memakai konfigurasi yang sudah disimpan."
             action={
-                !editing && editable ? (
-                    <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} />
-                ) : undefined
+                <CardAction className="col-span-full col-start-1 row-span-1 row-start-3 flex flex-wrap gap-2 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end">
+                    <Button
+                        nativeButton={false}
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        render={<a href={exampleDownload(args).url} />}
+                    >
+                        <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
+                        Unduh DOCX Contoh
+                    </Button>
+                    {!editing && editable && (
+                        <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} inline />
+                    )}
+                </CardAction>
             }
             disabled={busy}
         >
@@ -121,23 +137,12 @@ export function LetterTemplateDocumentForm({
                         ? `${document.source.name} · ${Math.ceil(document.source.size / 1024)} KB`
                         : 'Belum ada DOCX sumber.'}
                 </p>
-                {document.errors.length > 0 && (
-                    <FieldError>
-                        <ul>
-                            {document.errors.map((error) => (
-                                <li key={error}>{error}</li>
-                            ))}
-                        </ul>
-                    </FieldError>
+                {(document.state === 'valid' || document.state === 'invalid') && (
+                    <DocumentValidationResult errors={document.errors} names={document.placeholders} />
                 )}
                 {document.state === 'stale' && (
                     <p className="text-sm text-muted-foreground">
                         Konfigurasi berubah. Jalankan validasi ulang sebelum menguji dokumen.
-                    </p>
-                )}
-                {document.placeholders.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                        Placeholder ditemukan: {document.placeholders.join(', ')}.
                     </p>
                 )}
                 {editable && editing && (
@@ -188,10 +193,14 @@ export function LetterTemplateDocumentForm({
                             <HugeiconsIcon icon={CheckmarkCircle02Icon} data-icon="inline-start" aria-hidden="true" />
                             {validation.processing ? 'Memvalidasi...' : 'Validasi DOCX'}
                         </Button>
-                        <FieldError>{validation.errors.docx}</FieldError>
+                        <FieldError>
+                            {validation.errors.docx && !document.errors.includes(validation.errors.docx)
+                                ? validation.errors.docx
+                                : null}
+                        </FieldError>
                         <FieldDescription>
-                            Validasi ini memeriksa struktur dan placeholder. Generate hasil uji, konfirmasi visual, dan
-                            publikasi tersedia pada tahap berikutnya.
+                            Validasi ini memeriksa struktur dan variabel. Lanjutkan generate dan pemeriksaan visual pada
+                            kartu di bawah, lalu lanjutkan publikasi setelah seluruh pemeriksaan terpenuhi.
                         </FieldDescription>
                     </Field>
                 )}

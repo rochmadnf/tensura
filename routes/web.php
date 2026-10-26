@@ -10,19 +10,27 @@ use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterData\EmployeeController;
+use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
+use App\Http\Controllers\MasterData\LetterTemplateAuditController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
+use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
 use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
+use App\Http\Controllers\MasterData\LetterTemplateTestController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
+use App\Http\Controllers\MasterData\LetterTemplateVersionController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
+use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('options', OptionController::class)->name('options.index');
+    Route::get('letter-templates/{letterTemplate:uuid}/audits', LetterTemplateAuditController::class)->whereUuid('letterTemplate')->name('lt.audits.index');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('archives', [ArchiveController::class, 'index'])->name('archives.index');
@@ -39,6 +47,10 @@ Route::middleware('auth')->group(function () {
     Route::post('account/avatar', [AccountAvatarController::class, 'store'])->name('account.avatar.store');
     Route::delete('account/avatar', [AccountAvatarController::class, 'destroy'])->name('account.avatar.destroy');
 
+    Route::get('employees/import', [EmployeeImportController::class, 'create'])->name('empl.import.create');
+    Route::get('employees/import/template', [EmployeeImportController::class, 'template'])->name('empl.import.template');
+    Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('empl.import.store');
+
     Route::resource('employees', EmployeeController::class)
         ->parameters(['employees' => 'employee'])
         ->scoped(['employee' => 'uuid'])
@@ -53,6 +65,22 @@ Route::middleware('auth')->group(function () {
     Route::get('letter-templates/date-format', LetterTemplateDateFormatController::class)->name('lt.date-format');
 
     Route::prefix('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}')->scopeBindings()->whereUuid(['letterTemplate', 'version'])->group(function (): void {
+        Route::post('configuration/variables', LetterTemplateConfigurationItemController::class)->defaults('kind', 'variable')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.variables.store');
+        Route::put('configuration/variables/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'variable')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.variables.update');
+        Route::delete('configuration/variables/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'variable')->defaults('operation', 'delete')->whereUuid('item')->name('lt.configuration.variables.destroy');
+        Route::patch('configuration/variables/{item}/attributes/{attribute}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'variable')->defaults('operation', 'attribute')->whereUuid('item')->name('lt.configuration.variables.attribute');
+        Route::patch('configuration/variables/{item}/order', LetterTemplateConfigurationItemController::class)->defaults('kind', 'variable')->defaults('operation', 'move')->whereUuid('item')->name('lt.configuration.variables.move');
+        Route::post('configuration/slots', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.slots.store');
+        Route::put('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.slots.update');
+        Route::delete('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'delete')->whereUuid('item')->name('lt.configuration.slots.destroy');
+        Route::patch('configuration/slots/{item}/attributes/{attribute}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'attribute')->whereUuid('item')->name('lt.configuration.slots.attribute');
+        Route::post('publish', [LetterTemplateVersionController::class, 'publish'])->name('lt.versions.publish');
+        Route::post('draft', [LetterTemplateVersionController::class, 'draft'])->name('lt.versions.draft');
+        Route::post('archive', [LetterTemplateVersionController::class, 'archive'])->name('lt.versions.archive');
+        Route::patch('activation', [LetterTemplateVersionController::class, 'activation'])->name('lt.activation.update');
+        Route::post('test', [LetterTemplateTestController::class, 'store'])->name('lt.test.store');
+        Route::get('test', [LetterTemplateTestController::class, 'show'])->name('lt.test.download');
+        Route::post('test/confirm', [LetterTemplateTestController::class, 'confirm'])->name('lt.test.confirm');
         Route::post('source', [LetterTemplateSourceController::class, 'store'])->name('lt.source.store');
         Route::get('source', [LetterTemplateSourceController::class, 'show'])->name('lt.source.download');
         Route::post('validate', LetterTemplateValidationController::class)->name('lt.validation.store');

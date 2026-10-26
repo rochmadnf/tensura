@@ -18,7 +18,7 @@ class LetterTemplateVersion extends Model
     /** @use HasFactory<LetterTemplateVersionFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_template_id', 'version_number', 'letter_number_id', 'status', 'source_disk', 'source_path', 'source_original_name', 'source_size', 'source_sha256', 'validated_source_sha256', 'validated_configuration_sha256', 'validated_at', 'validation_result', 'tested_source_sha256', 'tested_configuration_sha256', 'test_disk', 'test_path', 'tested_at', 'test_expires_at', 'visually_confirmed_at', 'visually_confirmed_by', 'visually_confirmed_by_uuid', 'visually_confirmed_by_name', 'published_at', 'first_used_at'];
+    protected $fillable = ['letter_template_id', 'version_number', 'letter_number_id', 'status', 'source_disk', 'source_path', 'source_original_name', 'source_size', 'source_sha256', 'validated_source_sha256', 'validated_configuration_sha256', 'validated_at', 'validation_result', 'tested_source_sha256', 'tested_configuration_sha256', 'test_disk', 'test_path', 'test_sha256', 'test_signer_uuids', 'tested_at', 'test_expires_at', 'visually_confirmed_at', 'visually_confirmed_by', 'visually_confirmed_by_uuid', 'visually_confirmed_by_name', 'published_at', 'first_used_at'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -33,6 +33,7 @@ class LetterTemplateVersion extends Model
             'version_number' => 'integer',
             'source_size' => 'integer',
             'validation_result' => 'array',
+            'test_signer_uuids' => 'array',
             'validated_at' => 'datetime',
             'tested_at' => 'datetime',
             'test_expires_at' => 'datetime',

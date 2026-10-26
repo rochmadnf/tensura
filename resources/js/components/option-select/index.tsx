@@ -16,8 +16,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { AriaAttributes } from 'react';
-
-type SelectOption = { value: string; label: string };
+import { Button } from '@/components/ui/button';
+import { useRemoteOptions, type RemoteOptions, type SelectOption } from './use-remote-options';
 
 type OptionSelectCommonProps = Pick<AriaAttributes, 'aria-invalid' | 'aria-describedby'> & {
     id: string;
@@ -27,12 +27,13 @@ type OptionSelectCommonProps = Pick<AriaAttributes, 'aria-invalid' | 'aria-descr
     resetLabel?: string;
     disabled?: boolean;
     forceCombobox?: boolean;
+    remote?: RemoteOptions;
 };
 
 export type OptionSelectProps = OptionSelectCommonProps &
     (
-        | { multiple?: false; value: string; onValueChange: (value: string) => void }
-        | { multiple: true; value: string[]; onValueChange: (value: string[]) => void }
+        | { multiple?: false; value: string; onValueChange: (value: string, item?: SelectOption | null) => void }
+        | { multiple: true; value: string[]; onValueChange: (value: string[], items?: SelectOption[]) => void }
     );
 
 export function OptionSelect(props: OptionSelectProps) {
@@ -53,11 +54,13 @@ function SingleOptionSelect({
     resetLabel = 'Reset pilihan',
     disabled = false,
     forceCombobox = false,
+    remote,
     'aria-invalid': ariaInvalid,
     'aria-describedby': ariaDescribedBy,
-}: OptionSelectCommonProps & { value: string; onValueChange: (value: string) => void }) {
+}: OptionSelectCommonProps & { value: string; onValueChange: (value: string, item?: SelectOption | null) => void }) {
+    const data = useRemoteOptions(remote, value, items);
     const ariaProps = { 'aria-invalid': ariaInvalid, 'aria-describedby': ariaDescribedBy };
-    if (!forceCombobox && items.length <= 5) {
+    if (!remote && !forceCombobox && items.length <= 5) {
         return (
             <Select
                 name={name}
@@ -85,11 +88,14 @@ function SingleOptionSelect({
     return (
         <Combobox
             name={name}
-            items={items}
-            value={items.find((item) => item.value === value) ?? null}
+            {...data.comboboxProps}
+            items={data.items}
+            itemToStringLabel={(item) => item.label}
+            itemToStringValue={(item) => item.value}
+            value={data.selected[0] ?? null}
             isItemEqualToValue={(item, selectedItem) => item.value === selectedItem.value}
             disabled={disabled}
-            onValueChange={(item) => onValueChange(item?.value ?? '')}
+            onValueChange={(item) => onValueChange(item?.value ?? '', item)}
         >
             <ComboboxInput
                 id={id}
@@ -105,7 +111,20 @@ function SingleOptionSelect({
                 {...ariaProps}
             />
             <ComboboxContent>
-                <ComboboxEmpty>Pilihan tidak ditemukan.</ComboboxEmpty>
+                {data.loading ? (
+                    <p role="status" className="p-3 text-sm text-muted-foreground">
+                        Memuat pilihan…
+                    </p>
+                ) : data.error ? (
+                    <div role="alert" className="flex items-center gap-2 p-3 text-sm">
+                        Pilihan gagal dimuat.
+                        <Button type="button" variant="outline" size="sm" onClick={data.retry}>
+                            Coba lagi
+                        </Button>
+                    </div>
+                ) : (
+                    <ComboboxEmpty>Pilihan tidak ditemukan.</ComboboxEmpty>
+                )}
                 <ComboboxList>
                     {(item: SelectOption) => (
                         <ComboboxItem key={item.value} value={item}>
@@ -128,13 +147,15 @@ function MultipleOptionSelect({
     resetLabel = 'Reset pilihan',
     disabled = false,
     forceCombobox = false,
+    remote,
     'aria-invalid': ariaInvalid,
     'aria-describedby': ariaDescribedBy,
-}: OptionSelectCommonProps & { value: string[]; onValueChange: (value: string[]) => void }) {
+}: OptionSelectCommonProps & { value: string[]; onValueChange: (value: string[], items?: SelectOption[]) => void }) {
     const anchor = useComboboxAnchor();
-    const selectedItems = items.filter((item) => value.includes(item.value));
+    const data = useRemoteOptions(remote, value, items);
+    const selectedItems = data.selected;
 
-    if (!forceCombobox && items.length <= 5) {
+    if (!remote && !forceCombobox && items.length <= 5) {
         return (
             <div
                 id={id}
@@ -171,13 +192,19 @@ function MultipleOptionSelect({
         <Combobox
             multiple
             name={name}
-            items={items}
+            {...data.comboboxProps}
+            items={data.items}
             value={selectedItems}
             itemToStringLabel={(item) => item.label}
             itemToStringValue={(item) => item.value}
             isItemEqualToValue={(item, selectedItem) => item.value === selectedItem.value}
             disabled={disabled}
-            onValueChange={(selected) => onValueChange(selected.map((item) => item.value))}
+            onValueChange={(selected) =>
+                onValueChange(
+                    selected.map((item) => item.value),
+                    selected,
+                )
+            }
         >
             <ComboboxChips ref={anchor}>
                 <ComboboxValue>
@@ -207,7 +234,20 @@ function MultipleOptionSelect({
                 />
             </ComboboxChips>
             <ComboboxContent anchor={anchor}>
-                <ComboboxEmpty>Pilihan tidak ditemukan.</ComboboxEmpty>
+                {data.loading ? (
+                    <p role="status" className="p-3 text-sm text-muted-foreground">
+                        Memuat pilihan…
+                    </p>
+                ) : data.error ? (
+                    <div role="alert" className="flex items-center gap-2 p-3 text-sm">
+                        Pilihan gagal dimuat.
+                        <Button type="button" variant="outline" size="sm" onClick={data.retry}>
+                            Coba lagi
+                        </Button>
+                    </div>
+                ) : (
+                    <ComboboxEmpty>Pilihan tidak ditemukan.</ComboboxEmpty>
+                )}
                 <ComboboxList>
                     {(item: SelectOption) => (
                         <ComboboxItem key={item.value} value={item}>

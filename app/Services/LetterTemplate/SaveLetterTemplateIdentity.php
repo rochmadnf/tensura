@@ -17,6 +17,7 @@ class SaveLetterTemplateIdentity
     public function create(array $data, User $actor): LetterTemplate
     {
         return DB::transaction(function () use ($data, $actor): LetterTemplate {
+            $before = [];
             $classification = $this->classification($data['letter_number']);
             $template = LetterTemplate::create(['name' => $data['name']]);
             $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
@@ -25,7 +26,7 @@ class SaveLetterTemplateIdentity
                 'letter_number_id' => $classification->id,
                 'status' => LetterTemplateVersionStatusEnum::DRAFT,
             ]);
-            $this->audit->record($template, $version, $actor, 'draft.created', 'Identitas dan draft awal dibuat.');
+            $this->audit->record($template, $version, $actor, 'draft.created', 'Identitas dan draft awal dibuat.', $before);
 
             return $template;
         }, 5);
@@ -41,6 +42,7 @@ class SaveLetterTemplateIdentity
                 throw ValidationException::withMessages(['name' => 'Identitas hanya dapat diubah pada draft yang belum digunakan.']);
             }
 
+            $before = $this->audit->snapshot($template, $version);
             $classification = $this->classification($data['letter_number']);
             $template->fill(['name' => $data['name']]);
             $version->fill(['letter_number_id' => $classification->id]);
@@ -51,7 +53,7 @@ class SaveLetterTemplateIdentity
             $this->evidence->invalidate($version);
             $template->save();
             $version->save();
-            $this->audit->record($template, $version, $actor, 'identity.updated', 'Identitas draft diperbarui; bukti pemeriksaan dibatalkan.');
+            $this->audit->record($template, $version, $actor, 'identity.updated', 'Identitas draft diperbarui; bukti pemeriksaan dibatalkan.', $before);
         }, 5);
     }
 

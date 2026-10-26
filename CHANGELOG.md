@@ -4,6 +4,25 @@
 
 ### Ditambahkan
 
+- Cleanup Templat Surat setiap jam melalui `letter-templates:cleanup`, dilengkapi dry-run, masa aman berkas sementara 1 jam dan hasil uji yatim 24 jam, pemeriksaan ulang referensi dalam transaksi, serta perlindungan DOCX sumber, metadata publikasi, dan riwayat.
+- Indeks pencarian disk/path berkas pada versi templat dan runner konkurensi PostgreSQL khusus `phpunit.letter-templates.xml` dengan database disposable, proses/koneksi terpisah, pengujian retry salinan DOCX, integrasi publikasi/arsip, dan perlindungan master.
+
+- Pencarian opsi database bersama dengan maksimal 10 hasil, penyegaran saat pilihan dibuka, dan pemuatan label pilihan tersimpan tanpa menghapus isian formulir.
+- Detail audit Templat Surat sebelum–sesudah dan timeline lintas versi berisi 10 aktivitas per halaman dengan navigasi Sebelumnya/Berikutnya.
+- Header tahap editor Templat Surat, switch Wajib diisi, kolom aksi yang mengikuti izin edit versi, serta tombol Simpan/Batal ikon dengan tooltip pada komponen bersama dan item referensi.
+
+- Publikasi Templat Surat setelah pemeriksaan sumber, konfigurasi, hasil uji terbaru yang belum kedaluwarsa, konfirmasi visual, dan seluruh kandidat penandatangan aktif; pointer versi terbit aktif diperbarui tanpa menghapus publikasi terdahulu.
+- Pembukaan kembali publikasi yang belum digunakan sebagai draft dengan nomor yang sama, serta penyalinan versi yang sudah digunakan atau diarsipkan menjadi draft bernomor baru. Seluruh konfigurasi/fallback/format disalin mandiri dan sumber DOCX memakai berkas terpisah; bukti pemeriksaan wajib dibuat ulang.
+- Arsip draft sebagai status versi serta aktif/nonaktif templat dengan konfirmasi dan audit, tanpa hapus permanen atau integrasi Arsip pusat. Publikasi mempertahankan status Nonaktif hingga admin mengaktifkannya secara terpisah.
+- Kartu kesiapan Publikasi dan Status, pemilihan versi historis melalui Timeline Versi, dan 50 aktivitas terbaru. Identitas/klasifikasi/konfigurasi/DOCX mengikuti versi terpilih dan versi historis tetap hanya-baca walaupun templat memiliki draft lain.
+- Perlindungan satu draft berjalan, penolakan token versi/hasil yang usang, serta rollback database dan pembersihan berkas pada kegagalan salinan. Dialog serta navigasi versi menghormati editor aktif agar perubahan lokal tidak hilang.
+
+- Generate DOCX hasil uji dari data contoh sesuai token yang dipakai, termasuk fallback, tanggal, seluruh atribut Pegawai, penandatangan berbeda per slot, header/footer, dan tabel berulang dengan urutan pemilihan admin.
+- Unduhan hasil uji privat dan konfirmasi pemeriksaan visual yang terikat pada hasil terbaru, hash sumber/konfigurasi/hasil, serta masa berlaku 24 jam. Generate ulang menghapus konfirmasi lama; hasil usang, hilang, berubah, kedaluwarsa, atau memakai penandatangan tidak aktif ditolak.
+- Batas isian, jumlah baris, ekspansi XML, ukuran hasil, serta pemeriksaan batas waktu generate dipusatkan dalam konfigurasi. Penyimpanan gagal mempertahankan bukti dan berkas sebelumnya serta membersihkan hasil baru.
+- Kartu Generate dan Pemeriksaan DOCX menampilkan isian yang diperlukan saja, urutan baris pilihan, unduhan hasil, dan pernyataan pemeriksaan visual. Tahap publikasi dan cleanup terjadwal tetap mengikuti tahap berikutnya.
+- Form data contoh dibentuk ulang setelah validasi pertama berhasil agar daftar isian baru, termasuk multiple, tersedia tanpa memuat ulang halaman; generate ulang hasil tetap mempertahankan isian contoh.
+
 - Katalog bersama 25 atribut Pegawai untuk variabel tunggal, kolom tabel berulang, dan penandatangan; token atribut otomatis serta alias nama lengkap tetap tersedia. Pemetaan mencakup pangkat, golongan, masa kerja sampai hari, status, serta STR/SIP.
 - Fallback teks literal variabel tunggal/per atribut Pegawai dan format tanggal per atribut/kolom, disimpan relasional per versi. Format default `d-m-Y`, nama bulan/hari mengikuti locale aplikasi, dan input menyediakan bantuan pola PHP serta contoh dari backend.
 - Fingerprint konfigurasi mencakup fallback, format, locale, dan revisi kontrak katalog agar bukti lama harus diperiksa ulang tanpa menghapus DOCX sumber. Payload konfigurasi lama tetap dapat disimpan tanpa kehilangan pengaturan tambahan.
@@ -43,9 +62,14 @@
 
 ### Diubah
 
+- Halaman kelola Templat Surat memakai satu kartu Identitas Templat serta kartu terpisah Konfigurasi Formulir Surat dan Penandatangan. Unduh DOCX Contoh dipindahkan ke header DOCX Sumber di samping Edit, termasuk pada mode hanya-baca.
+- Variabel ditampilkan dalam tabel dengan editor per baris, Wajib/Opsional di samping jenis, detail combobox di bawahnya, serta urutan dan hapus yang langsung tersimpan. Penandatangan memiliki editor kandidat per slot; tambah membuka item lokal sampai disimpan.
+- Atribut Pegawai memakai tabel dengan edit fallback per atribut dan format untuk tanggal. Label Nama beserta gelar/Nama tanpa gelar diperjelas; token tetap sama. Hanya satu editor aktif, Batal/Escape tanpa navigasi, dan galat mempertahankan input.
+- Endpoint konfigurasi per item memeriksa kepemilikan, namespace global, dan status draft dalam transaksi; mempertahankan item lain serta fallback atribut terbaru ketika pemilik diedit. Kandidat tidak aktif di slot lain tidak memblokir edit variabel/atribut. Bukti pemeriksaan dibatalkan setelah perubahan konfigurasi.
+
 - Key kartu identitas, konfigurasi, dan DOCX Templat Surat dibedakan berdasarkan jenis kartu agar tidak mengganda saat Edit/Simpan/Batal meskipun memakai UUID versi yang sama. Reset form saat keluar dari mode edit tetap dipertahankan.
 - Kartu kelola Templat Surat dibuka dalam mode baca dan hanya satu kartu dapat diedit; Simpan/Batal hanya tampil saat edit. Batal memulihkan form tanpa navigasi, tombol urutan memakai ikon outline kecil, dan hapus memakai destructive.
-- Unduh DOCX Contoh versi saat ini hanya ditampilkan sekali secara ringkas pada ringkasan atas. Panduan memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Generate hasil DOCX tetap mengikuti tahap berikutnya.
+- Panduan DOCX memuat keluarga token Pegawai/fallback/format; token nama penandatangan tidak diwajibkan. Lokasi unduhan terbaru mengikuti header DOCX Sumber di atas.
 
 - Detail Pegawai disusun menjadi kartu ringkasan, data diri, pekerjaan, serta STR/SIP dengan kondisi kosong, tampilan responsif, dan dukungan mode gelap mengikuti tema yang ada.
 - Kolom jenis kelamin Pegawai menggunakan integer tetap 1/2; formulir dikelompokkan menjadi Data Diri, Data Kepegawaian, STR, dan SIP.

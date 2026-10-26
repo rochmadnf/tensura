@@ -1,6 +1,11 @@
 import { Children, isValidElement } from 'react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import LetterTemplateEdit from './edit';
+import { LetterTemplateTestForm } from './components/test-form';
+import { LetterTemplateForm } from './components/letter-template-form';
+import { LetterTemplateLifecycleCard } from './components/lifecycle-card';
+import { LetterTemplateVersionTimeline } from './components/version-timeline';
+import { LetterTemplateConfigurationForm } from './components/configuration-form';
 
 const state = vi.hoisted(() => ({ activeCard: null }));
 
@@ -20,31 +25,129 @@ function checkSiblingKeys(element) {
     children.forEach(checkSiblingKeys);
 }
 
-describe('Letter template card identity', () => {
-    it.each([null, 'identity', 'configuration', 'document'])(
-        'keeps sibling cards distinct when all cards share a version UUID and the active card is %s',
-        (activeCard) => {
-            state.activeCard = activeCard;
-            const versionId = '01911111-1111-7111-8111-111111111111';
-            const page = LetterTemplateEdit({
-                classifications: [],
-                resource: {
-                    data: {
-                        id: '01922222-2222-7222-8222-222222222222',
-                        name: 'Surat Tugas',
-                        is_active: true,
-                        classification: null,
-                        draft: { id: versionId, number: 1 },
-                    },
-                },
-                configuration: { data: { id: versionId } },
-                configurationOptions: {},
-                document: { data: { id: versionId } },
-                documentUploadLimitKb: 10240,
-                documentVersions: [],
-            });
-
-            checkSiblingKeys(page);
+function createPage(testOverrides = {}, overrides = {}) {
+    const versionId = '01911111-1111-7111-8111-111111111111';
+    return LetterTemplateEdit({
+        classifications: [],
+        resource: {
+            data: {
+                id: '01922222-2222-7222-8222-222222222222',
+                name: 'Surat Tugas',
+                is_active: true,
+                classification: null,
+                draft: { id: versionId, number: 1 },
+            },
         },
-    );
+        configuration: { data: { id: versionId } },
+        configurationOptions: {},
+        document: { data: { id: versionId } },
+        test: { data: { id: versionId, validation_token: 'validation-token', can_generate: false, ...testOverrides } },
+        documentUploadLimitKb: 10240,
+        documentVersions: [],
+        ...overrides,
+    });
+}
+
+function findTestCard(element, type = LetterTemplateTestForm) {
+    if (!isValidElement(element)) return null;
+    if (element.type === type) return element;
+    for (const child of Children.toArray(element.props.children)) {
+        const found = findTestCard(child, type);
+        if (found) return found;
+    }
+    return null;
+}
+
+describe('Letter template card identity', () => {
+    it.each([
+        null,
+        'identity',
+        'document',
+        'variable:one',
+        'slot:one',
+        'attribute:variable:one:nip',
+        'attribute:slot:one:name',
+    ])('keeps sibling cards distinct when all cards share a version UUID and the active card is %s', (activeCard) => {
+        state.activeCard = activeCard;
+        const page = createPage();
+
+        checkSiblingKeys(page);
+    });
+    it('keeps identity visible as read-only when no draft exists', () => {
+        state.activeCard = null;
+        const page = createPage(
+            {},
+            {
+                resource: {
+                    data: { id: 'template', name: 'Surat Tugas', is_active: true, classification: null, draft: null },
+                },
+            },
+        );
+        const identity = findTestCard(page, LetterTemplateForm);
+        expect(identity).not.toBeNull();
+        expect(identity.props.editing).toBe(false);
+        expect(identity.props.letterTemplate.draft).toBeNull();
+    });
+
+    it('keeps configuration state mounted and blocks generation while a row is edited', () => {
+        state.activeCard = null;
+        const before = findTestCard(createPage(), LetterTemplateConfigurationForm);
+        state.activeCard = 'attribute:variable:one:nip';
+        const page = createPage();
+        const after = findTestCard(page, LetterTemplateConfigurationForm);
+        expect(after.key).toBe(before.key);
+        expect(after.props.activeEditor).toBe(state.activeCard);
+        expect(findTestCard(page).props.disabled).toBe(true);
+        expect(findTestCard(page, LetterTemplateForm).props.disabled).toBe(true);
+    });
+
+    it('blocks editing and timeline navigation while a lifecycle dialog is open', () => {
+        state.activeCard = 'lifecycle';
+        const page = createPage(
+            {},
+            { lifecycle: { data: { id: 'selected', version_token: 'token', editable: true } } },
+        );
+        expect(findTestCard(page, LetterTemplateForm).props.disabled).toBe(true);
+        expect(findTestCard(page, LetterTemplateVersionTimeline).props.disabled).toBe(true);
+        expect(findTestCard(page).props.disabled).toBe(true);
+        expect(findTestCard(page, LetterTemplateLifecycleCard).props.disabled).toBe(false);
+        checkSiblingKeys(page);
+    });
+
+    it('preserves a lifecycle dialog when refreshed evidence changes the version token', () => {
+        state.activeCard = 'lifecycle';
+        const before = findTestCard(
+            createPage({}, { lifecycle: { data: { id: 'selected', version_token: 'old' } } }),
+            LetterTemplateLifecycleCard,
+        );
+        const after = findTestCard(
+            createPage({}, { lifecycle: { data: { id: 'selected', version_token: 'latest' } } }),
+            LetterTemplateLifecycleCard,
+        );
+        expect(after.key).toBe(before.key);
+    });
+
+    it('binds identity and test read-only state to the selected version', () => {
+        state.activeCard = null;
+        const selected = { id: 'history', version_token: 'token', editable: false };
+        const page = createPage({}, { lifecycle: { data: selected } });
+        expect(findTestCard(page, LetterTemplateForm).props.selectedVersion).toBe(selected);
+        expect(findTestCard(page).props.readOnly).toBe(true);
+    });
+
+    it('reinitializes sample inputs when first validation makes the form available', () => {
+        state.activeCard = null;
+        const before = findTestCard(createPage({ can_generate: false, variables: [] }));
+        const after = findTestCard(
+            createPage({ can_generate: true, variables: [{ id: 'variable', is_multiple: true }] }),
+        );
+        expect(after.key).not.toBe(before.key);
+    });
+
+    it('keeps sample inputs when regeneration replaces only the result token', () => {
+        state.activeCard = null;
+        const before = findTestCard(createPage({ can_generate: true, test_token: 'old-result' }));
+        const after = findTestCard(createPage({ can_generate: true, test_token: 'new-result' }));
+        expect(after.key).toBe(before.key);
+    });
 });

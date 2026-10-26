@@ -1,41 +1,46 @@
-import { Add01Icon, Delete02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { EmployeeAttributeFields } from './employee-attribute-fields';
-import { TemplateEditAction } from './edit-action';
-import { type SubmitEventHandler } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { router } from '@inertiajs/react';
+import { ArrowUp01Icon, ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import { FormCard } from '@/components/form-card';
-import { FormActions } from '@/components/form-actions';
-import { OptionSelect } from '@/components/option-select';
-import { Button } from '@/components/ui/button';
-import {
-    Field,
-    FieldDescription,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-} from '@/components/ui/field';
+import { CardAction } from '@/components/ui/card';
+import { FieldError } from '@/components/ui/field';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableActionButton } from '@/components/table-action-button';
 import { gooeyToast } from '@/components/ui/goey-toaster';
-import { useValibotForm } from '@/hooks/use-valibot-form';
-import lt from '@/routes/lt';
-import { update } from '@/routes/lt/configuration';
-import {
-    letterTemplateConfigurationSchema,
-    type ConfigurationOptions,
-    type ConfigurationVariable,
-    type LetterTemplateConfiguration,
+import variables from '@/routes/lt/configuration/variables';
+import slots from '@/routes/lt/configuration/slots';
+import type {
+    ConfigurationOptions,
+    ConfigurationVariable,
+    LetterTemplateConfiguration,
 } from '@/schemas/letter-template-configuration';
-import { ConfigurationVariableFields } from './configuration-variable';
 import { CopyPlaceholder } from './copy-placeholder';
+import { AddConfigurationItem, DeleteConfigurationItem, EditConfigurationItem } from './configuration-item-actions';
+import { ConfigurationVariableRow } from './configuration-variable-row';
+import { ConfigurationSlotRow } from './configuration-slot-row';
+import { ConfigurationAttributeTable } from './configuration-attribute-table';
+
+const newVariable = (): ConfigurationVariable => ({
+    id: null,
+    name: '',
+    label: '',
+    type: 1,
+    is_required: false,
+    option_source: null,
+    reference_group: null,
+    is_multiple: false,
+    default_text: null,
+    employee_attributes: [],
+    columns: [],
+});
 
 export function LetterTemplateConfigurationForm({
     templateId,
     configuration,
     options,
-    disabled: externalDisabled = false,
+    disabled = false,
     onProcessingChange,
-    editing = false,
+    activeEditor,
     onEdit,
     onClose,
 }: {
@@ -43,405 +48,466 @@ export function LetterTemplateConfigurationForm({
     configuration: LetterTemplateConfiguration;
     options: ConfigurationOptions;
     disabled?: boolean;
-    onProcessingChange?: (processing: boolean) => void;
-    editing?: boolean;
-    onEdit: () => void;
+    onProcessingChange: (processing: boolean) => void;
+    activeEditor: string | null;
+    onEdit: (key: string) => void;
     onClose: () => void;
 }) {
-    const { form, submit } = useValibotForm(letterTemplateConfigurationSchema, {
-        variables: configuration.variables,
-        signer_slots:
-            configuration.signer_slots.length === 0 && !configuration.has_configuration && configuration.editable
-                ? [{ id: null, candidates: [], employee_attributes: [] }]
-                : configuration.signer_slots.map(({ id, candidates, employee_attributes }) => ({
-                      id,
-                      candidates,
-                      employee_attributes,
-                  })),
-    });
-    const disabled = externalDisabled || form.processing || !configuration.editable;
-    const errors: Record<string, string | undefined> = form.errors;
-    const showError = () =>
-        gooeyToast.error('Galat', { description: 'Periksa isian konfigurasi dan kandidat penandatangan.' });
-    const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
-        event.preventDefault();
-        if (disabled) return;
-        const action = update({ letterTemplate: templateId, version: configuration.id });
-        const submitted = submit(action.method, action.url, {
+    const [errors, setErrors] = useState<string[]>([]);
+    const [focusRevision, setFocusRevision] = useState(0);
+    const root = useRef<HTMLDivElement>(null);
+    const focusKey = useRef<string | null>(null);
+    const running = useRef(false);
+    const blocked = disabled || activeEditor !== null || !configuration.editable;
+    const args = { letterTemplate: templateId, version: configuration.id };
+    useEffect(() => {
+        if (focusRevision > 0 && !disabled && activeEditor === null && focusKey.current) {
+            const group = root.current?.querySelector<HTMLElement>(`[data-focus="${focusKey.current}"]`);
+            const target =
+                group?.querySelector<HTMLButtonElement>('button[aria-label^="Edit"]:not(:disabled)') ??
+                group?.querySelector<HTMLButtonElement>('button:not(:disabled)');
+            target?.focus({ preventScroll: true });
+        }
+    }, [focusRevision, disabled, activeEditor]);
+    function edit(key: string) {
+        focusKey.current = key;
+        setErrors([]);
+        onEdit(key);
+    }
+    function close() {
+        onClose();
+        setFocusRevision((value) => value + 1);
+    }
+    function mutate(
+        action: { url: string; method: 'delete' | 'patch' },
+        data: { direction?: string },
+        after?: () => void,
+        focus?: string,
+    ) {
+        if (blocked || running.current) return;
+        running.current = true;
+        setErrors([]);
+        router.visit(action.url, {
+            method: action.method,
+            data,
             preserveScroll: true,
-            onStart: () => onProcessingChange?.(true),
-            onFinish: () => onProcessingChange?.(false),
-            onError: showError,
-            onSuccess: (page) => {
-                onClose();
-                const saved = page.props.configuration as { data: LetterTemplateConfiguration };
-                form.setData({
-                    variables: saved.data.variables,
-                    signer_slots: saved.data.signer_slots.map(({ id, candidates, employee_attributes }) => ({
-                        id,
-                        candidates,
-                        employee_attributes,
-                    })),
-                });
-                gooeyToast.success('Berhasil', {
-                    description: 'Konfigurasi disimpan. Periksa kembali DOCX sebelum publikasi.',
+            preserveState: true,
+            showProgress: false,
+            onStart: () => onProcessingChange(true),
+            onFinish: () => {
+                running.current = false;
+                onProcessingChange(false);
+            },
+            onError: (errors) => {
+                setErrors(Object.values(errors).flat());
+                gooeyToast.error('Galat', {
+                    description: Object.values(errors).flat().join(' ') || 'Konfigurasi belum berhasil diperbarui.',
                 });
             },
+            onSuccess: () => {
+                after?.();
+                focusKey.current = focus ?? focusKey.current;
+                setFocusRevision((value) => value + 1);
+                gooeyToast.success('Berhasil', { description: 'Konfigurasi diperbarui. Validasi ulang DOCX.' });
+            },
         });
-        if (!submitted) showError();
-    };
-    function updateVariable(index: number, variable: ConfigurationVariable) {
-        form.setData(
-            'variables',
-            form.data.variables.map((value, position) => (position === index ? variable : value)),
-        );
-        form.clearErrors();
     }
-    function moveVariable(index: number, direction: number) {
-        const variables = [...form.data.variables];
-        [variables[index + direction], variables[index]] = [variables[index], variables[index + direction]];
-        form.setData('variables', variables);
-        form.clearErrors();
-    }
-    if (!editing) {
-        return (
+    const attributes = (
+        kind: 'variable' | 'slot',
+        id: string,
+        prefix: string,
+        settings: ConfigurationVariable['employee_attributes'],
+    ) => (
+        <ConfigurationAttributeTable
+            templateId={templateId}
+            versionId={configuration.id}
+            ownerId={id}
+            kind={kind}
+            prefix={prefix}
+            attributes={options.employeeAttributes}
+            settings={settings}
+            editable={configuration.editable}
+            activeEditor={activeEditor}
+            disabled={disabled}
+            onEdit={edit}
+            onClose={close}
+            onProcessingChange={onProcessingChange}
+        />
+    );
+    return (
+        <div
+            ref={root}
+            className="flex min-w-0 flex-col gap-6"
+            onKeyDown={(event) => {
+                if (
+                    event.key === 'Escape' &&
+                    !disabled &&
+                    activeEditor &&
+                    /^(variable|slot|attribute):/.test(activeEditor)
+                ) {
+                    event.preventDefault();
+                    close();
+                }
+            }}
+        >
             <FormCard
-                title="Konfigurasi Variabel dan Penandatangan"
-                description="Konfigurasi tersimpan. Salin token yang dibutuhkan ke DOCX."
+                title="Konfigurasi Formulir Surat"
+                step={2}
+                description="Atur pertanyaan yang akan diisi pada formulir surat. Urutan baris menjadi urutan isian. Simpan setiap item setelah mengedit."
                 action={
                     configuration.editable ? (
-                        <TemplateEditAction label="konfigurasi" disabled={externalDisabled} onClick={onEdit} />
+                        <CardAction
+                            className="col-span-full col-start-1 row-span-1 row-start-3 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end"
+                            data-focus="variable:new"
+                        >
+                            <AddConfigurationItem
+                                label="Pertanyaan"
+                                disabled={blocked}
+                                onClick={() => edit('variable:new')}
+                            />
+                        </CardAction>
                     ) : undefined
                 }
             >
-                <FieldGroup>
-                    {configuration.warnings.map((warning) => (
-                        <FieldError key={`${warning.slot}-${warning.employee}`}>
-                            {warning.name} pada slot {warning.slot} sudah tidak aktif. Ganti atau hapus kandidat sebelum
-                            publikasi.
-                        </FieldError>
-                    ))}
-                    {configuration.variables.length === 0 && (
-                        <p className="text-sm text-muted-foreground">Belum ada variabel.</p>
-                    )}
-                    {configuration.variables.map((variable) => (
-                        <FieldGroup key={variable.id}>
-                            <p className="text-sm font-medium">
-                                {variable.label} · {options.types.find((type) => type.id === variable.type)?.label} ·{' '}
-                                {variable.is_required ? 'Wajib' : 'Opsional'}
-                            </p>
-                            {variable.is_multiple ? (
-                                variable.columns.map((column) => (
-                                    <div key={column.id}>
-                                        <CopyPlaceholder name={column.placeholder} />
-                                        <p className="text-sm text-muted-foreground">
-                                            {
-                                                options.columns[variable.option_source ?? 0]?.find(
-                                                    (item) => item.id === column.source_attribute,
-                                                )?.label
-                                            }
-                                            {column.date_format ? ` · ${column.date_format}` : ''}
-                                        </p>
-                                    </div>
-                                ))
-                            ) : (
-                                <CopyPlaceholder name={variable.name} />
-                            )}
-                            {variable.default_text && <p className="text-sm">Fallback: {variable.default_text}</p>}
-                            {variable.option_source === 2 && !variable.is_multiple && (
-                                <EmployeeAttributeFields
-                                    prefix={variable.name}
-                                    path={`saved-variable-${variable.id}`}
-                                    attributes={options.employeeAttributes}
-                                    settings={variable.employee_attributes}
-                                    disabled
-                                    errors={{}}
-                                    readOnly
-                                />
-                            )}
-                        </FieldGroup>
-                    ))}
-                    {configuration.signer_slots.length === 0 && (
-                        <p className="text-sm text-muted-foreground">Tidak ada slot penandatangan aktif.</p>
-                    )}
-                    {configuration.signer_slots.map((slot, index) => (
-                        <FieldGroup key={slot.id}>
-                            <p className="text-sm font-medium">
-                                Kandidat Slot {index + 1}:{' '}
-                                {slot.candidates
-                                    .map(
-                                        (id) =>
-                                            options.employees.find((employee) => employee.id === id)?.label ??
-                                            configuration.warnings.find((warning) => warning.employee === id)?.name ??
-                                            'Tidak tersedia',
-                                    )
-                                    .join(', ')}
-                            </p>
-                            <CopyPlaceholder name={slot.placeholder} />
-                            <EmployeeAttributeFields
-                                prefix={slot.placeholder}
-                                path={`saved-slot-${slot.id}`}
-                                attributes={options.employeeAttributes}
-                                settings={slot.employee_attributes}
-                                disabled
-                                errors={{}}
-                                readOnly
-                            />
-                        </FieldGroup>
-                    ))}
-                </FieldGroup>
-            </FormCard>
-        );
-    }
-    return (
-        <FormCard
-            title="Konfigurasi Variabel dan Penandatangan"
-            description="Atur isian surat dan kandidat untuk setiap slot, lalu simpan konfigurasi. Gunakan placeholder pada DOCX."
-            disabled={externalDisabled || form.processing}
-        >
-            <form noValidate onSubmit={handleSubmit}>
-                <FieldGroup>
-                    {!configuration.editable && (
-                        <p className="text-sm text-muted-foreground">Konfigurasi versi ini hanya dapat dibaca.</p>
-                    )}
-                    {configuration.warnings.length > 0 && (
-                        <FieldError>
-                            <ul>
-                                {configuration.warnings.map((warning) => (
-                                    <li key={`${warning.slot}-${warning.employee}`}>
-                                        {warning.name} pada slot {warning.slot} sudah tidak aktif. Ganti atau hapus
-                                        kandidat dari konfigurasi sebelum publikasi.
-                                    </li>
+                {errors.length > 0 && <FieldError>{errors.join(' ')}</FieldError>}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {[
+                                'Nomor urut',
+                                'Nama Variabel',
+                                'Pertanyaan',
+                                'Jenis Pertanyaan',
+                                'Teks Alternatif',
+                                'Aksi',
+                            ]
+                                .filter((label) => configuration.editable || label !== 'Aksi')
+                                .map((label) => (
+                                    <TableHead key={label}>{label}</TableHead>
                                 ))}
-                            </ul>
-                        </FieldError>
-                    )}
-                    <FieldError>{errors.configuration}</FieldError>
-                    <FieldSet>
-                        <FieldLegend>Variabel</FieldLegend>
-                        <FieldDescription>
-                            Urutan variabel di bawah menjadi urutan isian formulir surat.
-                        </FieldDescription>
-                        <FieldError>{errors.variables}</FieldError>
-                        <FieldGroup>
-                            {form.data.variables.length === 0 && (
-                                <p className="text-sm text-muted-foreground">Belum ada variabel.</p>
-                            )}
-                            {form.data.variables.map((variable, index) => (
-                                <ConfigurationVariableFields
-                                    key={variable.id ?? `variable-${index}`}
-                                    variable={variable}
-                                    index={index}
-                                    count={form.data.variables.length}
-                                    options={options}
-                                    disabled={disabled}
-                                    errors={errors}
-                                    onChange={(value) => updateVariable(index, value)}
-                                    onMove={(direction) => moveVariable(index, direction)}
-                                    onRemove={() => {
-                                        form.setData(
-                                            'variables',
-                                            form.data.variables.filter((_, position) => position !== index),
-                                        );
-                                        form.clearErrors();
-                                    }}
-                                />
-                            ))}
-                            {configuration.editable && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={disabled}
-                                    onClick={() =>
-                                        form.setData('variables', [
-                                            ...form.data.variables,
-                                            {
-                                                id: null,
-                                                name: '',
-                                                label: '',
-                                                type: 1,
-                                                is_required: false,
-                                                option_source: null,
-                                                reference_group: null,
-                                                is_multiple: false,
-                                                columns: [],
-                                                default_text: null,
-                                                employee_attributes: [],
-                                            },
-                                        ])
-                                    }
-                                >
-                                    <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
-                                    Tambah Variabel
-                                </Button>
-                            )}
-                        </FieldGroup>
-                    </FieldSet>
-                    <FieldSet>
-                        <FieldLegend>Penandatangan</FieldLegend>
-                        <FieldDescription>
-                            Setiap slot aktif wajib memiliki kandidat pegawai aktif. Hapus slot jika penandatangan tidak
-                            diperlukan. Token penandatangan bersifat opsional. Jika jumlah slot berubah, sesuaikan
-                            placeholder di DOCX.
-                        </FieldDescription>
-                        <FieldError>{errors.signer_slots}</FieldError>
-                        <FieldGroup>
-                            {form.data.signer_slots.length === 0 && (
-                                <p className="text-sm text-muted-foreground">Tidak ada slot penandatangan aktif.</p>
-                            )}
-                            {form.data.signer_slots.map((slot, index) => {
-                                const path = `signer_slots.${index}.candidates`;
-                                const candidates = slot.candidates;
-                                const changeCandidates = (selected: string[]) => {
-                                    form.setData(
-                                        'signer_slots',
-                                        form.data.signer_slots.map((value, position) =>
-                                            position === index ? { ...value, candidates: selected } : value,
-                                        ),
-                                    );
-                                    form.clearErrors();
-                                };
-                                const inactive = configuration.warnings.filter(
-                                    (warning) =>
-                                        warning.slot ===
-                                            configuration.signer_slots.findIndex(
-                                                (savedSlot) => savedSlot.id === slot.id,
-                                            ) +
-                                                1 && candidates.includes(warning.employee),
-                                );
-                                const candidateErrors = Object.entries(errors)
-                                    .filter(([key]) => key === path || key.startsWith(path + '.'))
-                                    .map(([, message]) => message);
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {configuration.variables.length === 0 && activeEditor !== 'variable:new' && (
+                            <TableRow>
+                                <TableCell colSpan={configuration.editable ? 6 : 5} className="text-muted-foreground">
+                                    Belum ada pertanyaan.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {configuration.variables.map((variable, index) => {
+                            const key = `variable:${variable.id}`;
+                            if (activeEditor === key)
                                 return (
-                                    <Field key={slot.id ?? `slot-${index}`} data-invalid={candidateErrors.length > 0}>
-                                        <FieldError>{errors[`signer_slots.${index}.id`]}</FieldError>
-                                        <FieldLabel htmlFor={path}>Kandidat Slot {index + 1}</FieldLabel>
-                                        <OptionSelect
-                                            multiple
-                                            forceCombobox
-                                            id={path}
-                                            name={path}
-                                            items={options.employees.map((employee) => ({
-                                                value: employee.id,
-                                                label: employee.label,
-                                            }))}
-                                            value={candidates}
-                                            onValueChange={changeCandidates}
-                                            disabled={disabled}
-                                            aria-invalid={candidateErrors.length > 0}
-                                            placeholder="Pilih pegawai aktif"
-                                            resetLabel="Reset kandidat slot"
-                                        />
-                                        {inactive.map((warning) => (
-                                            <div
-                                                key={warning.employee}
-                                                className="flex flex-wrap items-center gap-2 text-sm"
-                                            >
-                                                <span>{warning.name} — Tidak aktif</span>
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    disabled={disabled}
-                                                    onClick={() =>
-                                                        changeCandidates(
-                                                            candidates.filter((id) => id !== warning.employee),
-                                                        )
-                                                    }
-                                                >
-                                                    <HugeiconsIcon
-                                                        icon={Delete02Icon}
-                                                        data-icon="inline-start"
-                                                        aria-hidden="true"
-                                                    />
-                                                    Hapus Kandidat
-                                                </Button>
-                                            </div>
-                                        ))}
-                                        {candidateErrors.map((message, position) => (
-                                            <FieldError key={position}>{message}</FieldError>
-                                        ))}
-                                        <CopyPlaceholder
-                                            name={
-                                                form.data.signer_slots.length === 1
-                                                    ? 'penandatangan'
-                                                    : `penandatangan_${index + 1}`
-                                            }
-                                        />
-                                        <EmployeeAttributeFields
-                                            prefix={
-                                                form.data.signer_slots.length === 1
-                                                    ? 'penandatangan'
-                                                    : `penandatangan_${index + 1}`
-                                            }
-                                            path={`signer_slots.${index}.employee_attributes`}
-                                            attributes={options.employeeAttributes}
-                                            settings={slot.employee_attributes}
-                                            disabled={disabled}
-                                            errors={errors}
-                                            onChange={(employee_attributes) =>
-                                                form.setData(
-                                                    'signer_slots',
-                                                    form.data.signer_slots.map((value, position) =>
-                                                        position === index ? { ...value, employee_attributes } : value,
-                                                    ),
-                                                )
-                                            }
-                                        />
-                                        {configuration.editable && (
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                disabled={disabled}
-                                                onClick={() => {
-                                                    form.setData(
-                                                        'signer_slots',
-                                                        form.data.signer_slots.filter(
-                                                            (_, position) => position !== index,
-                                                        ),
-                                                    );
-                                                    form.clearErrors();
-                                                }}
-                                            >
-                                                <HugeiconsIcon
-                                                    icon={Delete02Icon}
-                                                    data-icon="inline-start"
-                                                    aria-hidden="true"
-                                                />
-                                                Hapus Slot {index + 1}
-                                            </Button>
-                                        )}
-                                    </Field>
+                                    <ConfigurationVariableRow
+                                        key={`editor-${variable.id}`}
+                                        variable={variable}
+                                        index={index}
+                                        options={options}
+                                        templateId={templateId}
+                                        versionId={configuration.id}
+                                        disabled={disabled}
+                                        onClose={close}
+                                        onProcessingChange={onProcessingChange}
+                                    />
                                 );
-                            })}
-                            {configuration.editable && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    disabled={disabled}
-                                    onClick={() =>
-                                        form.setData('signer_slots', [
-                                            ...form.data.signer_slots,
-                                            { id: null, candidates: [], employee_attributes: [] },
-                                        ])
-                                    }
-                                >
-                                    <HugeiconsIcon icon={Add01Icon} data-icon="inline-start" aria-hidden="true" />
-                                    Tambah Slot
-                                </Button>
-                            )}
-                        </FieldGroup>
-                    </FieldSet>
-                    {configuration.editable && (
-                        <FormActions
-                            cancelUrl={lt.index().url}
-                            onCancel={onClose}
-                            processing={form.processing}
-                            fullWidth={false}
-                        />
-                    )}
-                </FieldGroup>
-            </form>
-        </FormCard>
+                            return (
+                                <Fragment key={`variable-${variable.id}`}>
+                                    <TableRow>
+                                        <TableCell>{index + 1}</TableCell>
+                                        <TableCell>
+                                            {variable.is_multiple ? (
+                                                <code>{variable.name}</code>
+                                            ) : (
+                                                <CopyPlaceholder name={variable.name} />
+                                            )}
+                                            {variable.is_multiple && (
+                                                <p className="mt-2 text-xs text-muted-foreground">
+                                                    Gunakan variabel kolom di bawah untuk tabel berulang.
+                                                </p>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="whitespace-normal">{variable.label}</TableCell>
+                                        <TableCell>
+                                            {options.types.find((type) => type.id === variable.type)?.label}
+                                            <span className="ml-2 text-muted-foreground">
+                                                {variable.is_required ? 'Wajib' : 'Opsional'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="max-w-80 whitespace-pre-wrap">
+                                            {variable.is_multiple
+                                                ? 'Tidak berlaku'
+                                                : variable.option_source === 2
+                                                  ? 'Per atribut'
+                                                  : variable.default_text || '—'}
+                                        </TableCell>
+                                        {configuration.editable && (
+                                            <TableCell>
+                                                <div className="flex items-center gap-2" data-focus={key}>
+                                                    <TableActionButton
+                                                        type="button"
+                                                        variant="outline"
+                                                        icon={ArrowUp01Icon}
+                                                        tooltip="Naikkan"
+                                                        label={`Naikkan ${variable.label}`}
+                                                        disabled={blocked || index === 0}
+                                                        onClick={() =>
+                                                            mutate(
+                                                                variables.move({ ...args, item: variable.id! }),
+                                                                { direction: 'up' },
+                                                                undefined,
+                                                                key,
+                                                            )
+                                                        }
+                                                    />
+                                                    <TableActionButton
+                                                        type="button"
+                                                        variant="outline"
+                                                        icon={ArrowDown01Icon}
+                                                        tooltip="Turunkan"
+                                                        label={`Turunkan ${variable.label}`}
+                                                        disabled={
+                                                            blocked || index === configuration.variables.length - 1
+                                                        }
+                                                        onClick={() =>
+                                                            mutate(
+                                                                variables.move({ ...args, item: variable.id! }),
+                                                                { direction: 'down' },
+                                                                undefined,
+                                                                key,
+                                                            )
+                                                        }
+                                                    />
+                                                    <EditConfigurationItem
+                                                        label={`variabel ${variable.label}`}
+                                                        disabled={blocked}
+                                                        onClick={() => edit(key)}
+                                                    />
+                                                    <DeleteConfigurationItem
+                                                        label={`variabel ${variable.label}`}
+                                                        description="Variabel dan pengaturan atributnya akan dihapus. Sesuaikan variabel DOCX dan validasi ulang dokumen setelah menghapus."
+                                                        disabled={blocked}
+                                                        onDelete={(done) =>
+                                                            mutate(
+                                                                variables.destroy({ ...args, item: variable.id! }),
+                                                                {},
+                                                                done,
+                                                                'variable:new',
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                    {variable.type === 4 && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
+                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                    Sumber:{' '}
+                                                    {
+                                                        options.sources.find(
+                                                            (source) => source.id === variable.option_source,
+                                                        )?.label
+                                                    }
+                                                    {variable.reference_group
+                                                        ? ` · ${options.referenceGroups.find((group) => group.id === variable.reference_group)?.label ?? 'Grup tidak tersedia'}`
+                                                        : ''}{' '}
+                                                    · {variable.is_multiple ? 'Pilihan multiple' : 'Pilihan tunggal'}
+                                                </p>
+                                                {variable.option_source === 2 &&
+                                                    !variable.is_multiple &&
+                                                    attributes(
+                                                        'variable',
+                                                        variable.id!,
+                                                        variable.name,
+                                                        variable.employee_attributes,
+                                                    )}
+                                                {variable.is_multiple && (
+                                                    <div className="flex flex-col gap-2">
+                                                        {variable.columns.map((column) => (
+                                                            <div
+                                                                key={column.id}
+                                                                className="flex flex-wrap items-center gap-3 text-sm"
+                                                            >
+                                                                <CopyPlaceholder name={column.placeholder} />
+                                                                <span className="text-muted-foreground">
+                                                                    {
+                                                                        options.columns[
+                                                                            variable.option_source ?? 0
+                                                                        ]?.find(
+                                                                            (item) =>
+                                                                                item.id === column.source_attribute,
+                                                                        )?.label
+                                                                    }
+                                                                    {column.date_format
+                                                                        ? ` · ${column.date_format}`
+                                                                        : ''}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
+                            );
+                        })}
+                        {activeEditor === 'variable:new' && (
+                            <ConfigurationVariableRow
+                                key="new-variable"
+                                variable={newVariable()}
+                                index={configuration.variables.length}
+                                options={options}
+                                templateId={templateId}
+                                versionId={configuration.id}
+                                disabled={disabled}
+                                onClose={close}
+                                onProcessingChange={onProcessingChange}
+                            />
+                        )}
+                    </TableBody>
+                </Table>
+            </FormCard>
+            <FormCard
+                title="Penandatangan"
+                step={3}
+                description="Tentukan kandidat pegawai aktif pada setiap slot. Token penandatangan opsional; perubahan jumlah slot dapat mengubah nama variabel pada DOCX."
+                action={
+                    configuration.editable ? (
+                        <CardAction
+                            className="col-span-full col-start-1 row-span-1 row-start-3 justify-self-start sm:col-span-1 sm:col-start-2 sm:row-span-2 sm:row-start-1 sm:justify-self-end"
+                            data-focus="slot:new"
+                        >
+                            <AddConfigurationItem
+                                label="Penandatangan"
+                                disabled={blocked}
+                                onClick={() => edit('slot:new')}
+                            />
+                        </CardAction>
+                    ) : undefined
+                }
+            >
+                {configuration.warnings.map((warning) => (
+                    <FieldError key={`${warning.slot}-${warning.employee}`}>
+                        {warning.name} pada slot {warning.slot} sudah tidak aktif. Ganti atau hapus kandidat sebelum
+                        publikasi.
+                    </FieldError>
+                ))}
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {['Slot', 'Nama Variabel', 'Kandidat Penandatangan', 'Aksi']
+                                .filter((label) => configuration.editable || label !== 'Aksi')
+                                .map((label) => (
+                                    <TableHead key={label}>{label}</TableHead>
+                                ))}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {configuration.signer_slots.length === 0 && activeEditor !== 'slot:new' && (
+                            <TableRow>
+                                <TableCell colSpan={configuration.editable ? 4 : 3} className="text-muted-foreground">
+                                    Belum ada slot penandatangan.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {configuration.signer_slots.map((slot, index) => {
+                            const key = `slot:${slot.id}`;
+                            if (activeEditor === key)
+                                return (
+                                    <ConfigurationSlotRow
+                                        key={`editor-${slot.id}`}
+                                        slot={{
+                                            id: slot.id,
+                                            candidates: slot.candidates,
+                                            employee_attributes: slot.employee_attributes,
+                                        }}
+                                        index={index}
+                                        templateId={templateId}
+                                        configuration={configuration}
+                                        options={options}
+                                        disabled={disabled}
+                                        onClose={close}
+                                        onProcessingChange={onProcessingChange}
+                                    />
+                                );
+                            return (
+                                <Fragment key={`slot-${slot.id}`}>
+                                    <TableRow>
+                                        <TableCell>Slot {index + 1}</TableCell>
+                                        <TableCell>
+                                            <CopyPlaceholder name={slot.placeholder} />
+                                        </TableCell>
+                                        <TableCell className="whitespace-normal">
+                                            {slot.candidates
+                                                .map(
+                                                    (id) =>
+                                                        options.employees.find((employee) => employee.id === id)
+                                                            ?.label ??
+                                                        configuration.warnings.find(
+                                                            (warning) => warning.employee === id,
+                                                        )?.name ??
+                                                        'Tidak tersedia',
+                                                )
+                                                .join(', ')}
+                                        </TableCell>
+                                        {configuration.editable && (
+                                            <TableCell>
+                                                <div className="flex items-center gap-2" data-focus={key}>
+                                                    <EditConfigurationItem
+                                                        label={`penandatangan slot ${index + 1}`}
+                                                        disabled={blocked}
+                                                        onClick={() => edit(key)}
+                                                    />
+                                                    <DeleteConfigurationItem
+                                                        label={`penandatangan slot ${index + 1}`}
+                                                        description="Slot dan pengaturan atributnya akan dihapus. Nomor slot dan variabel penandatangan dapat berubah. Sesuaikan DOCX dan lakukan validasi ulang."
+                                                        disabled={blocked}
+                                                        onDelete={(done) =>
+                                                            mutate(
+                                                                slots.destroy({ ...args, item: slot.id! }),
+                                                                {},
+                                                                done,
+                                                                'slot:new',
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={configuration.editable ? 4 : 3}
+                                            className="whitespace-normal"
+                                        >
+                                            {attributes('slot', slot.id!, slot.placeholder, slot.employee_attributes)}
+                                        </TableCell>
+                                    </TableRow>
+                                </Fragment>
+                            );
+                        })}
+                        {activeEditor === 'slot:new' && (
+                            <ConfigurationSlotRow
+                                key="new-slot"
+                                slot={{ id: null, candidates: [], employee_attributes: [] }}
+                                index={configuration.signer_slots.length}
+                                templateId={templateId}
+                                configuration={configuration}
+                                options={options}
+                                disabled={disabled}
+                                onClose={close}
+                                onProcessingChange={onProcessingChange}
+                            />
+                        )}
+                    </TableBody>
+                </Table>
+            </FormCard>
+        </div>
     );
 }

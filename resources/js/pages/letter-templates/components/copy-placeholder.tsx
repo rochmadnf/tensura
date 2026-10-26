@@ -8,10 +8,10 @@ export function CopyPlaceholder({ name }: { name: string }) {
     async function copy() {
         try {
             await navigator.clipboard.writeText(placeholder);
-            gooeyToast.success('Berhasil', { description: 'Placeholder disalin.' });
+            gooeyToast.success('Berhasil', { description: 'Variabel disalin.' });
         } catch {
             gooeyToast.error('Galat', {
-                description: 'Placeholder gagal disalin. Pilih teks placeholder untuk menyalinnya secara manual.',
+                description: 'Variabel gagal disalin. Pilih teks variabel untuk menyalinnya secara manual.',
             });
         }
     }
@@ -24,7 +24,7 @@ export function CopyPlaceholder({ name }: { name: string }) {
                 size="sm"
                 onClick={copy}
                 disabled={!/^[a-z][a-z0-9_]*$/.test(name) || name.length > 100}
-                aria-label={`Salin placeholder ${name}`}
+                aria-label={`Salin variabel ${name}`}
             >
                 <HugeiconsIcon icon={Copy01Icon} data-icon="inline-start" aria-hidden="true" />
                 Salin

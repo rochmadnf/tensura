@@ -7,24 +7,25 @@ export function TemplateEditAction({
     label,
     disabled,
     onClick,
+    inline = false,
 }: {
+    inline?: boolean;
     label: string;
     disabled: boolean;
     onClick: () => void;
 }) {
-    return (
-        <CardAction>
-            <Button
-                type="button"
-                size="sm"
-                variant="warning"
-                disabled={disabled}
-                onClick={onClick}
-                aria-label={`Edit ${label}`}
-            >
-                <HugeiconsIcon icon={Edit04Icon} data-icon="inline-start" aria-hidden="true" />
-                Edit
-            </Button>
-        </CardAction>
+    const button = (
+        <Button
+            type="button"
+            size="sm"
+            variant="warning"
+            disabled={disabled}
+            onClick={onClick}
+            aria-label={`Edit ${label}`}
+        >
+            <HugeiconsIcon icon={Edit04Icon} data-icon="inline-start" aria-hidden="true" />
+            Edit
+        </Button>
     );
+    return inline ? button : <CardAction>{button}</CardAction>;
 }

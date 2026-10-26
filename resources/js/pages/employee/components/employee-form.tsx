@@ -152,6 +152,9 @@ export function EmployeeForm({ employee, ...options }: EmployeeFormProps) {
                                                     forceCombobox={name === 'str_status'}
                                                     id={name}
                                                     name={name}
+                                                    remote={
+                                                        name === 'job_title_id' ? { source: 'job-titles' } : undefined
+                                                    }
                                                     items={items.map((item) => ({
                                                         value: String(item.id),
                                                         label: item.label,

@@ -107,14 +107,7 @@ const optionalDate = (today?: string) =>
         transform((value) => (value === '' ? null : value)),
     );
 
-export function createEmployeeSchema({
-    jobTitles,
-    genders,
-    strStatuses,
-    contractStatuses,
-    statuses,
-    today,
-}: EmployeeFormOptions) {
+export function createEmployeeSchema({ genders, strStatuses, contractStatuses, statuses, today }: EmployeeFormOptions) {
     return defineRequest(
         pipe(
             object({
@@ -141,7 +134,7 @@ export function createEmployeeSchema({
                     string(),
                     nonEmpty(),
                     check(
-                        (value) => jobTitles.some((option) => option.id === value),
+                        (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value),
                         ':attribute yang dipilih tidak valid.',
                     ),
                 ),

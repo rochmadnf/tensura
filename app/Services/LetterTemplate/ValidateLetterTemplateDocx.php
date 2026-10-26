@@ -24,6 +24,7 @@ class ValidateLetterTemplateDocx
         return DB::transaction(function () use ($template, $version, $actor): array {
             $template = LetterTemplate::query()->whereKey($template->id)->lockForUpdate()->firstOrFail();
             $version = $template->versions()->whereKey($version->id)->lockForUpdate()->firstOrFail();
+            $before = $this->audit->snapshot($template, $version);
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['docx' => 'Validasi hanya dapat dijalankan pada draft yang belum digunakan.']);
             }
@@ -36,9 +37,9 @@ class ValidateLetterTemplateDocx
             if (!$disk->exists($version->source_path)) {
                 $result['errors'][] = 'DOCX sumber tidak ditemukan. Unggah ulang berkas.';
             } elseif ($disk->size($version->source_path) > config('letter-templates.max_upload_kb') * 1024) {
-                $result['errors'][] = 'Ukuran DOCX tersimpan melebihi batas upload. Unggah ulang berkas.';
+                $result['errors'][] = 'Ukuran dokumen melebihi batas unggahan. Kurangi ukuran gambar atau isi dokumen, lalu unggah kembali.';
             } elseif (hash_file('sha256', $disk->path($version->source_path)) !== $version->source_sha256) {
-                $result['errors'][] = 'Isi DOCX sumber berubah di penyimpanan. Unggah ulang berkas.';
+                $result['errors'][] = 'Berkas yang tersimpan sudah berubah. Unggah kembali dokumen yang ingin digunakan, lalu jalankan validasi.';
             } else {
                 try {
                     $result = $this->inspectPlaceholders($disk->path($version->source_path), $version);
@@ -51,7 +52,7 @@ class ValidateLetterTemplateDocx
             }
             $version->validation_result = $result;
             $version->save();
-            $this->audit->record($template, $version, $actor, 'source.validated', $result['valid'] ? 'Struktur dan placeholder DOCX valid.' : 'Validasi DOCX gagal; periksa hasil validasi.');
+            $this->audit->record($template, $version, $actor, 'source.validated', $result['valid'] ? 'Struktur dokumen dan variabel DOCX sesuai konfigurasi.' : 'Validasi DOCX gagal; periksa hasil validasi.', $before, validationDetails: ['source_name' => $version->source_original_name, ...$result]);
 
             return $result;
         }, 5);
@@ -81,7 +82,7 @@ class ValidateLetterTemplateDocx
         }
         $known = [...$known, ...$signers];
         $found = [];
-        $errors = count($known) === count(array_unique($known)) ? [] : ['Konfigurasi memiliki placeholder yang bertabrakan. Perbaiki nama variabel atau kolom sebelum validasi.'];
+        $errors = count($known) === count(array_unique($known)) ? [] : ['Ada nama variabel yang digunakan lebih dari sekali dalam konfigurasi. Bedakan Nama Variabel atau Nama Variabel Kolom, lalu periksa ulang dokumen.'];
         $rows = [];
         $rowOwners = [];
         $occurrences = 0;
@@ -89,7 +90,13 @@ class ValidateLetterTemplateDocx
             $supported = preg_match('~^word/(?:document|header[1-9][0-9]*|footer[1-9][0-9]*)\.xml$~D', $part);
             if (!$supported) {
                 if (str_contains($document->textContent, '${')) {
-                    $errors[] = "Placeholder pada komponen {$part} tidak didukung. Gunakan isi dokumen, header, atau footer.";
+                    $location = match ($part) {
+                        'word/footnotes.xml' => 'catatan kaki',
+                        'word/endnotes.xml' => 'catatan akhir',
+                        'word/comments.xml' => 'komentar',
+                        default => 'bagian dokumen yang tidak didukung',
+                    };
+                    $errors[] = "Ada variabel pada {$location}. Pindahkan variabel ke isi surat, kepala halaman, atau kaki halaman.";
                 }
 
                 continue;
@@ -98,7 +105,7 @@ class ValidateLetterTemplateDocx
             $xpath->registerNamespace('w', InspectLetterTemplateDocx::WORD_NAMESPACE);
             foreach ($xpath->query('//@*') as $attribute) {
                 if (str_contains($attribute->nodeValue, '${')) {
-                    $errors[] = 'Placeholder dalam atribut XML tidak didukung. Gunakan teks paragraf.';
+                    $errors[] = 'Ada variabel pada pengaturan elemen dokumen. Hapus variabel tersebut dan tulis ulang sebagai teks biasa di isi surat.';
                 }
             }
             foreach ($xpath->query('//w:p') as $paragraph) {
@@ -110,30 +117,30 @@ class ValidateLetterTemplateDocx
                 }
                 preg_match_all('/\$\{([^}]*)\}/u', $text, $matches);
                 if (substr_count($text, '${') !== count($matches[0])) {
-                    $errors[] = 'Placeholder tidak lengkap atau terpisah antarparagraf. Tulis ulang dalam satu paragraf.';
+                    $errors[] = 'Penulisan variabel belum lengkap atau terpotong oleh pergantian paragraf. Tulis ulang dengan format ${nama_variabel} dalam satu paragraf.';
                 }
                 foreach ($matches[1] as $name) {
                     $occurrences++;
                     if ($occurrences > config('letter-templates.placeholders.max_occurrences')) {
-                        throw ValidationException::withMessages(['docx' => 'Jumlah placeholder DOCX melewati batas.']);
+                        throw ValidationException::withMessages(['docx' => 'Jumlah penggunaan variabel dalam dokumen terlalu banyak. Kurangi variabel yang berulang, lalu unggah kembali.']);
                     }
                     $found[] = $name;
                     if (strlen($name) > config('letter-templates.placeholders.max_length') || !preg_match('/\A[a-z][a-z0-9_]*\z/D', $name)) {
-                        $errors[] = 'Nama placeholder tidak valid. Gunakan nama dari konfigurasi templat.';
+                        $errors[] = 'Nama variabel tidak sesuai format. Salin variabel dari Konfigurasi Formulir Surat dan tempelkan kembali ke dokumen.';
                     } elseif (!in_array($name, $known, true)) {
-                        $errors[] = "Placeholder {$name} belum dikonfigurasi; perbaiki DOCX atau konfigurasi variabel.";
+                        $errors[] = "Variabel {$name} belum terdaftar. Tambahkan pada Konfigurasi Formulir Surat atau sesuaikan nama variabel di dokumen.";
                     }
                     if (isset($multiple[$name])) {
                         $row = $this->ancestor($paragraph, 'tr');
                         if ($part !== 'word/document.xml' || $row === null || $xpath->query('.//w:vMerge | .//w:tbl', $row)->length > 0) {
-                            $errors[] = "Placeholder tabel {$name} harus berada pada baris tabel biasa di isi dokumen, tanpa tabel bersarang atau penggabungan vertikal.";
+                            $errors[] = "Variabel tabel {$name} harus berada dalam satu baris tabel di isi surat. Pindahkan dari kepala/kaki halaman dan gunakan baris tanpa tabel di dalamnya atau sel yang digabung ke bawah.";
 
                             continue;
                         }
                         $rowKey = $row->getNodePath();
                         $variable = $multiple[$name];
                         if ((isset($rows[$variable]) && $rows[$variable] !== $rowKey) || (isset($rowOwners[$rowKey]) && $rowOwners[$rowKey] !== $variable)) {
-                            $errors[] = 'Setiap variabel multiple harus memakai satu baris tabel tersendiri.';
+                            $errors[] = 'Setiap pertanyaan dengan pilihan lebih dari satu harus menggunakan satu baris contoh tabel tersendiri. Letakkan semua variabel kolom pertanyaan tersebut dalam baris yang sama.';
                         }
                         $rows[$variable] = $rowKey;
                         $rowOwners[$rowKey] = $variable;
@@ -149,7 +156,7 @@ class ValidateLetterTemplateDocx
         }
         $names = array_values(array_unique($found));
         if (array_diff($phpWordNames, $names) !== [] || array_diff($names, $phpWordNames) !== []) {
-            $errors[] = 'Ada placeholder pada lokasi atau text run yang tidak didukung PHPWord. Tulis ulang placeholder pada teks paragraf biasa.';
+            $errors[] = 'Ada variabel yang tidak dapat diproses pada tempat atau format penulisannya. Hapus lalu tempel ulang variabel sebagai teks biasa dalam satu paragraf.';
         }
         $errors = array_values(array_unique($errors));
         sort($names);

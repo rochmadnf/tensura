@@ -3,6 +3,16 @@
         "laravel-boost": {
             "command": "php",
             "args": ["artisan", "boost:mcp"]
+        },
+        "codegraph": {
+          "type": "stdio",
+          "command": "codegraph",
+          "args": [
+            "serve",
+            "--mcp",
+            "--path",
+            "/home/rochmadnf/Sites/laravel/tensura"
+          ]
         }
     }
 }

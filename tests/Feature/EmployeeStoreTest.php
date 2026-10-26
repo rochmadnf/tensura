@@ -20,7 +20,7 @@ class EmployeeStoreTest extends TestCase
 
     public function test_create_page_provides_uuid_job_options_and_existing_enums(): void
     {
-        $jobTitle = JobTitle::factory()->create();
+        JobTitle::factory()->create();
         $this->actingAs(UserFactory::new()->create())
             ->withoutVite()
             ->get(route('empl.create'))
@@ -29,9 +29,7 @@ class EmployeeStoreTest extends TestCase
                 fn(Assert $page) => $page
                     ->component('employee/create')
                     ->where('page.id', 'a30c21b9-15ef-4dc0-97ef-524ead13be55')
-                    ->where('jobTitles', [
-                        ['id' => $jobTitle->uuid, 'label' => $jobTitle->name, 'group' => $jobTitle->group?->value],
-                    ])
+                    ->where('jobTitles', [])
                     ->where('contractStatuses', ContractStatusEnum::options())
                     ->where('statuses', AsnStatusEnum::options()),
             );
