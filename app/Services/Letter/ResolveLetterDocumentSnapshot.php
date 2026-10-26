@@ -6,6 +6,7 @@ use App\Enums\AsnStatusEnum;
 use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVariableTypeEnum;
 use App\Models\MasterData\Employee;
+use App\Models\MasterData\JobTitle;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVariableColumn;
 use App\Models\MasterData\LetterTemplateVersion;
@@ -27,9 +28,10 @@ class ResolveLetterDocumentSnapshot
      * Resolve live choices once. Rendering this snapshot never reads master data again.
      *
      * @param  array{values: array<string, string|list<string>|null>, signers: array<string, string>}  $data
-     * @return array{schema_version: int, locale: string, as_of: string, date_format: string, inputs: array, configuration: array, values: array<string, string>, rows: list<array{anchor: string, count: int}>}
+     * @param  array{employees?: array<string, array{attributes: array, job_title: ?array}>, references?: array<string, array{content: string}>}  $frozenMasters
+     * @return array{schema_version: int, locale: string, as_of: string, date_format: string, inputs: array, configuration: array, values: array<string, string>, rows: list<array{anchor: string, count: int}>, masters: array{employees: array, references: array}}
      */
-    public function resolve(LetterTemplateVersion $version, array $data, CarbonImmutable $asOf, string $number): array
+    public function resolve(LetterTemplateVersion $version, array $data, CarbonImmutable $asOf, string $number, array $frozenMasters = []): array
     {
         $version->loadMissing(['variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $variables = $this->fields->variables($version);
@@ -40,6 +42,7 @@ class ResolveLetterDocumentSnapshot
             throw ValidationException::withMessages(['signers' => 'Setiap slot yang digunakan harus diisi pegawai berbeda.']);
         }
 
+        $masters = ['employees' => [], 'references' => []];
         $values = [];
         $totalRows = 0;
         $rows = [];
@@ -52,6 +55,9 @@ class ResolveLetterDocumentSnapshot
                     if ($choice === null || ($choice instanceof Employee && $choice->status !== AsnStatusEnum::AKTIF)
                         || ($choice instanceof ReferenceItem && $choice->reference_group_id !== $variable->reference_group_id)) {
                         throw ValidationException::withMessages(['values.' . $variable->uuid => 'Pilihan tidak aktif, tidak tersedia, atau bukan milik sumber variabel ini.']);
+                    }
+                    if ($choice instanceof ReferenceItem) {
+                        $this->reference($choice, $frozenMasters, $masters);
                     }
                 }
             }
@@ -66,13 +72,13 @@ class ResolveLetterDocumentSnapshot
                 } else {
                     $rows[] = ['anchor' => $anchor, 'count' => count($selected)];
                     foreach ($selected as $index => $uuid) {
-                        $employee = $variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? $employees->get($uuid) : null;
+                        $employee = $variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? $this->employee($employees->get($uuid), $frozenMasters, $masters) : null;
                         $employeeValues = $employee === null ? [] : $this->employees->resolve($employee, [], $asOf);
                         foreach ($variable->columns as $column) {
                             $attribute = $column->source_attribute;
                             $value = match ($attribute) {
                                 'row_number' => (string) ($index + 1),
-                                'content' => $references->get($uuid)->content,
+                                'content' => $this->reference($references->get($uuid), $frozenMasters, $masters),
                                 default => $employeeValues[$attribute] ?? '',
                             };
                             if ($employee !== null && EmployeeAttributeCatalog::isDate($attribute) && $employee->getAttribute($attribute) !== null) {
@@ -83,11 +89,11 @@ class ResolveLetterDocumentSnapshot
                     }
                 }
             } elseif ($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE) {
-                $values = [...$values, ...$this->employees->tokens($variable->name, filled($input) ? $employees->get($input) : null, $variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(), $asOf)];
+                $values = [...$values, ...$this->employees->tokens($variable->name, filled($input) ? $this->employee($employees->get($input), $frozenMasters, $masters) : null, $variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(), $asOf)];
             } else {
                 $value = blank($input) ? (string) $variable->default_text : match ($variable->type) {
                     LetterTemplateVariableTypeEnum::DATE => CarbonImmutable::parse($input)->format('d-m-Y'),
-                    LetterTemplateVariableTypeEnum::COMBOBOX => $references->get($input)->content,
+                    LetterTemplateVariableTypeEnum::COMBOBOX => $this->reference($references->get($input), $frozenMasters, $masters),
                     default => $input,
                 };
                 $values[$variable->name] = $value;
@@ -100,7 +106,7 @@ class ResolveLetterDocumentSnapshot
             if ($employee === null || $employee->status !== AsnStatusEnum::AKTIF || !$slot->candidates->contains('employee_id', $employee->id)) {
                 throw ValidationException::withMessages(['signers.' . $uuid => 'Pilih kandidat pegawai aktif milik slot ini.']);
             }
-            $values = [...$values, ...$this->employees->tokens($prefix, $employee, $slot->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(), $asOf)];
+            $values = [...$values, ...$this->employees->tokens($prefix, $this->employee($employee, $frozenMasters, $masters), $slot->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(), $asOf)];
         }
 
         $values = [...$values, ...$this->system->values($number, $asOf, $version->letter_date_format ?? 'd-m-Y')];
@@ -116,8 +122,31 @@ class ResolveLetterDocumentSnapshot
                 ])->all(),
                 'signers' => $version->signerSlots->map(fn($slot): array => ['uuid' => $slot->uuid, 'attributes' => $slot->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all()])->all(),
             ],
-            'values' => $values, 'rows' => $rows,
+            'values' => $values, 'rows' => $rows, 'masters' => $masters,
         ];
+    }
+
+    /** @param array{employees?: array, references?: array} $frozenMasters */
+    private function employee(Employee $employee, array $frozenMasters, array &$masters): Employee
+    {
+        $stored = $frozenMasters['employees'][$employee->uuid] ?? null;
+        if ($stored === null) {
+            $attributes = array_intersect_key($employee->getAttributes(), array_flip([...array_column(EmployeeAttributeCatalog::options(), 'id'), 'uuid', 'front_title', 'back_title', 'name']));
+            $stored = ['attributes' => $attributes, 'job_title' => $employee->jobTitle?->only(['name', 'group'])];
+        }
+        $masters['employees'][$employee->uuid] = $stored;
+        $resolved = (new Employee())->newFromBuilder($stored['attributes']);
+        $resolved->setRelation('jobTitle', $stored['job_title'] === null ? null : (new JobTitle())->newFromBuilder($stored['job_title']));
+
+        return $resolved;
+    }
+
+    private function reference(ReferenceItem $reference, array $frozenMasters, array &$masters): string
+    {
+        $stored = $frozenMasters['references'][$reference->uuid] ?? ['content' => $reference->content];
+        $masters['references'][$reference->uuid] = $stored;
+
+        return $stored['content'];
     }
 
     /**

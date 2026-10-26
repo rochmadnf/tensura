@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Enums\AsnStatusEnum;
 use App\Enums\LetterTemplateOptionSourceEnum;
+use App\Enums\LetterTemplateVersionStatusEnum;
 use App\Http\Requests\SearchOptionsRequest;
 use App\Http\Resources\MasterData\LetterTemplateConfigurationResource;
+use App\Models\Letter;
 use App\Models\LetterNumber;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\JobTitle;
+use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\ReferenceGroup;
@@ -23,8 +26,13 @@ class OptionController extends Controller
     {
         $source = $request->validated('source');
         $context = $request->validated('context');
+        if ($source === 'letter-creators') {
+            return $this->letterCreators($request);
+        }
         $query = match ($source) {
             'classifications' => LetterNumber::query(),
+            'letter-templates' => LetterTemplate::query()->where('is_active', true)->whereHas('activeVersion', fn(Builder $query): Builder => $query->where('status', LetterTemplateVersionStatusEnum::PUBLISHED)),
+            'letter-templates-all' => LetterTemplate::query(),
             'job-titles' => JobTitle::query()->when($request->validated('groups', []) !== [], fn(Builder $query): Builder => $query->whereIn('group', $request->validated('groups'))),
             'reference-groups' => ReferenceGroup::query(),
             'employees' => Employee::query()->where('status', AsnStatusEnum::AKTIF),
@@ -54,6 +62,20 @@ class OptionController extends Controller
             'items' => $query->orderBy($order)->orderBy('id')->limit(10)->get()->map($this->option(...))->values(),
             'selected' => $selected,
         ])->header('Cache-Control', 'private, no-store');
+    }
+
+    private function letterCreators(SearchOptionsRequest $request): JsonResponse
+    {
+        $query = Letter::query()->select('creator_uuid', 'creator_name')->distinct();
+        $term = trim($request->validated('q') ?? '');
+        $selected = (clone $query)->whereIn('creator_uuid', $request->validated('selected', []))->get();
+        if (mb_strlen($term) >= 2) {
+            $term = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term)) . '%';
+            $query->whereRaw("LOWER(creator_name) LIKE ? ESCAPE '!'", [$term]);
+        }
+        $map = fn($record): array => ['value' => $record->creator_uuid, 'label' => $record->creator_name];
+
+        return response()->json(['items' => $query->orderBy('creator_name')->orderBy('creator_uuid')->limit(10)->get()->unique('creator_uuid')->values()->map($map), 'selected' => $selected->unique('creator_uuid')->values()->map($map)])->header('Cache-Control', 'private, no-store');
     }
 
     private function variableOptions(string $uuid): Builder

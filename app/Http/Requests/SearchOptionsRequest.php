@@ -16,7 +16,7 @@ class SearchOptionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'source' => ['required', Rule::in(['classifications', 'job-titles', 'reference-groups', 'employees', 'variable-options', 'signer-candidates'])],
+            'source' => ['required', Rule::in(['classifications', 'job-titles', 'reference-groups', 'employees', 'variable-options', 'signer-candidates', 'letter-templates', 'letter-templates-all', 'letter-creators'])],
             'groups' => ['sometimes', 'array', 'max:20'],
             'groups.*' => ['integer', Rule::enum(JobTitleGroupEnum::class)],
             'q' => ['nullable', 'string', 'max:255'],

@@ -1,4 +1,5 @@
 import ref from '@/routes/ref';
+import { index as letterIndex } from '@/routes/ltr';
 import * as React from 'react';
 
 import {
@@ -45,7 +46,7 @@ const navigations = {
         {
             id: 'a306324d-b2b7-401c-a2be-7b8ed37fdf62',
             title: 'Surat',
-            url: '#',
+            url: letterIndex().url,
             icon: <HugeiconsIcon icon={MailsIcon} strokeWidth={2} />,
         },
     ],

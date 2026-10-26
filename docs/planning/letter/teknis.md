@@ -1,6 +1,6 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: tahap 1–4 selesai diimplementasikan dan diverifikasi nonvisual; tahap 5–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
+Status: tahap 1–5 selesai diimplementasikan dan diverifikasi nonvisual; tahap 6–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Acuan bisnis: [probis Surat](probis.md).
 
 Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
@@ -19,6 +19,14 @@ Profil uji menyimpan penggunaan font dalam JSONB versi 1 beserta keterbatasan pe
 Verifikasi tahap 3–4: 225 test PHPUnit/1.685 assertion pada suite terarah lulus; 12 test font diulang setelah penyempurnaan profil/config dan lulus. Sebanyak 65 test frontend terkait, Pint, lint, TypeScript, dan build lulus. Tidak ada pengujian browser visual atau cetak oleh agent.
 
 Batas tahap 4: font sistem tidak otomatis dibagikan ke browser; unggah berkas yang sama agar font dapat dilayani aplikasi. Font variabel/koleksi belum termasuk unggahan awal. Style tabel bersyarat, font simbol bullet otomatis, sebagian DrawingML, atau tema yang tidak dapat dipetakan menampilkan keterbatasan eksplisit; bukan klaim seluruh layout sudah setara Word. Uji tampilan/cetak tetap mengikuti checklist pengguna.
+
+Tahap 5 menyediakan menu `/letters`, daftar/pencarian/filter/pagination, pembuatan serta detail/edit/hapus draft bersama, formulir dari token yang dipakai, tanggal/periode/nomor manual yang belum dipesan, snapshot master, dan audit tersimpan. Tabel `letters`, `letter_drafts` (satu per surat), serta `letter_audits` telah tersedia pada database aplikasi lokal; constraint tanggal/periode, posisi manual, UUID, dan relasi diperiksa. Tidak ada alokasi nomor maupun generate berkas Surat pada tahap ini.
+
+Simpan dan operasi perubahan memeriksa revision di bawah urutan lock templat → surat → draft. Konflik menyebut pengubah terakhir, sementara editor mempertahankan input dan definisi field awal agar dapat disalin sekalipun templat telah disesuaikan operator lain. Batal/Escape bersifat lokal. Hapus draft baru memerlukan konfirmasi serta revision terkini dan menghapus riwayat draft tersebut; status selain draft awal ditolak.
+
+Snapshot JSONB versi 1 menyimpan pilihan berurutan, atribut master yang diperlukan, nilai efektif, konfigurasi, locale, dan tanggal acuan. Master disimpan per identitas record dalam satu draft agar nilai pegawai/referensi konsisten di seluruh isian; cache record yang tidak lagi dipilih dibuang. Mengubah tanggal menghitung ulang masa kerja dari tanggal bergabung yang dibekukan, tanpa mengambil master baru. Refresh master dan penyesuaian templat memiliki ringkasan dan token HMAC yang mengikat surat, revision, konfigurasi target, serta data yang diperiksa. Penyesuaian mempertahankan nama/jenis/sumber kompatibel dan UUID pilihan, memetakan penandatangan hanya bila tidak ambigu, serta menandai draft belum lengkap bila isian baru/berubah perlu dipilih ulang. Perubahan templat tidak mengambil ulang nilai master kompatibel secara diam-diam.
+
+Verifikasi tahap 5: 107 test PHPUnit/1.067 assertion terkait lulus, termasuk regresi renderer, options, dan listing; seluruh 345 test frontend lulus. Pint, lint terarah file perubahan, dan build lulus. TypeScript lulus memakai konfigurasi HEAD yang disalin ke `/tmp` dengan path absolut; konfigurasi kerja tidak diubah. Pemeriksaan global standar terakhir tertahan karena penambahan `baseUrl` pada `tsconfig.json` di luar perubahan Surat, yang sudah tidak didukung TypeScript 7. Pengujian dua operator mencakup penolakan payload usang; konkurensi antarkoneksi menyeluruh tetap tahap 10. Checklist visual pengguna belum dijalankan.
 
 ## 1. Aturan pelaksanaan
 

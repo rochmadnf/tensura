@@ -22,6 +22,9 @@ interface DeleteResourceActionProps {
     description: ReactNode;
     successMessage: string;
     errorMessage: string;
+    data?: Record<string, string | number | boolean>;
+    disabled?: boolean;
+    onOpenChange?: (value: boolean) => void;
 }
 
 export function DeleteResourceAction({
@@ -31,21 +34,26 @@ export function DeleteResourceAction({
     description,
     successMessage,
     errorMessage,
+    data = {},
+    disabled = false,
+    onOpenChange,
 }: DeleteResourceActionProps) {
     const [open, setOpen] = useState(false);
     const operationLock = useRef(false);
-    const { delete: destroy, processing } = useForm({});
+    const { delete: destroy, processing } = useForm(data);
 
     function handleDelete() {
-        if (operationLock.current) return;
+        if (operationLock.current || disabled) return;
         operationLock.current = true;
         destroy(url, {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
+                onOpenChange?.(false);
                 gooeyToast.success('Berhasil', { description: successMessage });
             },
-            onError: (errors) => gooeyToast.error('Galat', { description: errors.deletion ?? errorMessage }),
+            onError: (errors) =>
+                gooeyToast.error('Galat', { description: errors.deletion ?? Object.values(errors)[0] ?? errorMessage }),
             onFinish: () => {
                 operationLock.current = false;
             },
@@ -56,7 +64,10 @@ export function DeleteResourceAction({
         <AlertDialog
             open={open}
             onOpenChange={(value) => {
-                if (!operationLock.current) setOpen(value);
+                if (!operationLock.current) {
+                    setOpen(value);
+                    onOpenChange?.(value);
+                }
             }}
         >
             <AlertDialogTrigger
@@ -64,7 +75,7 @@ export function DeleteResourceAction({
                     <TableActionButton
                         variant="destructive"
                         icon={Delete02Icon}
-                        disabled={processing}
+                        disabled={processing || disabled}
                         label={`Hapus ${name}`}
                         tooltip="Hapus"
                     />
@@ -74,10 +85,10 @@ export function DeleteResourceAction({
                 <AlertDialogTitle>{title}</AlertDialogTitle>
                 <AlertDialogDescription>{description}</AlertDialogDescription>
                 <AlertDialogFooter>
-                    <AlertDialogCancel render={<Button variant="outline" disabled={processing} />}>
+                    <AlertDialogCancel render={<Button variant="outline" disabled={processing || disabled} />}>
                         Batal
                     </AlertDialogCancel>
-                    <Button variant="destructive" onClick={handleDelete} disabled={processing}>
+                    <Button variant="destructive" onClick={handleDelete} disabled={processing || disabled}>
                         <HugeiconsIcon
                             icon={processing ? LoaderIcon : Delete02Icon}
                             strokeWidth={2}

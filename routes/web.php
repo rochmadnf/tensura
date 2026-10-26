@@ -10,6 +10,8 @@ use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentFontController;
+use App\Http\Controllers\LetterController;
+use App\Http\Controllers\LetterDraftChangeController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
@@ -32,6 +34,13 @@ use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
+        Route::get('master-refresh', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'masters')->name('ltr.masters.preview');
+        Route::post('master-refresh', [LetterDraftChangeController::class, 'apply'])->defaults('kind', 'masters')->name('ltr.masters.apply');
+        Route::get('template-adjustment', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'template')->name('ltr.adjustment.preview');
+        Route::post('template-adjustment', [LetterDraftChangeController::class, 'apply'])->defaults('kind', 'template')->name('ltr.adjustment.apply');
+    });
+    Route::resource('letters', LetterController::class)->scoped(['letter' => 'uuid'])->whereUuid('letter')->names('ltr');
     Route::get('document-fonts', [DocumentFontController::class, 'index'])->name('document-fonts.index');
     Route::post('document-fonts', [DocumentFontController::class, 'store'])->middleware('throttle:20,1')->name('document-fonts.store');
     Route::get('document-fonts/{documentFont:uuid}/file', [DocumentFontController::class, 'file'])->whereUuid('documentFont')->name('document-fonts.file');
