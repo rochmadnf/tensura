@@ -12,6 +12,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentFontController;
 use App\Http\Controllers\LetterController;
 use App\Http\Controllers\LetterDraftChangeController;
+use App\Http\Controllers\LetterOperationController;
+use App\Http\Controllers\LetterPreviewController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\EmployeeExportController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
@@ -35,7 +37,13 @@ use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
     Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
+        Route::post('previews', [LetterPreviewController::class, 'store'])->middleware('throttle:20,1')->name('ltr.previews.store');
+        Route::get('previews/{artifact:uuid}/file', [LetterPreviewController::class, 'file'])->whereUuid('artifact')->name('ltr.previews.file');
+        Route::post('previews/{artifact:uuid}/rendered', [LetterPreviewController::class, 'rendered'])->whereUuid('artifact')->name('ltr.previews.rendered');
+        Route::post('previews/{artifact:uuid}/confirm', [LetterPreviewController::class, 'confirm'])->whereUuid('artifact')->name('ltr.previews.confirm');
+        Route::get('operations/{operation:uuid}', [LetterOperationController::class, 'show'])->whereUuid('operation')->name('ltr.operations.show');
         Route::get('master-refresh', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'masters')->name('ltr.masters.preview');
         Route::post('master-refresh', [LetterDraftChangeController::class, 'apply'])->defaults('kind', 'masters')->name('ltr.masters.apply');
         Route::get('template-adjustment', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'template')->name('ltr.adjustment.preview');

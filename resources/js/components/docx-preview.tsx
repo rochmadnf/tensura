@@ -1,5 +1,5 @@
 import type { DocumentFontReport } from '@/schemas/document-font';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 import {
     ArrowLeft01Icon,
     ArrowRight01Icon,
@@ -21,29 +21,53 @@ export function DocxPreview({
     maxBytes,
     disabled = false,
     fontReport,
+    draft = false,
+    title = 'Preview Hasil Uji DOCX',
+    onOpenChange,
+    onReady,
+    footer,
 }: {
     url: string;
     maxBytes: number;
     disabled?: boolean;
     fontReport?: DocumentFontReport;
+    draft?: boolean;
+    title?: string;
+    onOpenChange?: (open: boolean) => void;
+    onReady?: () => Promise<void>;
+    footer?: ReactNode;
 }) {
     const [open, setOpen] = useState(false);
+    function changeOpen(value: boolean) {
+        setOpen(value);
+        onOpenChange?.(value);
+    }
     return (
         <>
-            <Button type="button" variant="outline" disabled={disabled} onClick={() => setOpen(true)}>
+            <Button type="button" variant="outline" disabled={disabled} onClick={() => changeOpen(true)}>
                 <HugeiconsIcon icon={ViewIcon} data-icon="inline-start" aria-hidden="true" />
                 Preview DOCX
             </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={changeOpen}>
                 <DialogContent className="flex h-[90dvh] max-w-[calc(100%-2rem)] flex-col sm:max-w-[calc(100%-4rem)]">
                     <DialogHeader>
-                        <DialogTitle>Preview Hasil Uji DOCX</DialogTitle>
+                        <DialogTitle>{title}</DialogTitle>
                         <DialogDescription>
                             Hanya-baca. Pemenggalan halaman dan hasil cetak browser dapat berbeda dari Word. Periksa
                             hasil sebelum mengonfirmasi.
                         </DialogDescription>
                     </DialogHeader>
-                    {open && <PreviewDocument key={url} url={url} maxBytes={maxBytes} fontReport={fontReport} />}
+                    {open && (
+                        <PreviewDocument
+                            key={url}
+                            url={url}
+                            maxBytes={maxBytes}
+                            fontReport={fontReport}
+                            draft={draft}
+                            onReady={onReady}
+                        />
+                    )}
+                    {footer}
                 </DialogContent>
             </Dialog>
         </>
@@ -54,10 +78,14 @@ function PreviewDocument({
     url,
     maxBytes,
     fontReport,
+    draft,
+    onReady,
 }: {
     url: string;
     maxBytes: number;
     fontReport?: DocumentFontReport;
+    draft: boolean;
+    onReady?: () => Promise<void>;
 }) {
     const frame = useRef<HTMLIFrameElement>(null);
     const pages = useRef<HTMLElement[]>([]);
@@ -67,10 +95,14 @@ function PreviewDocument({
     const [fontWarnings, setFontWarnings] = useState<string[]>([]);
     const [page, setPage] = useState(1);
     const [zoom, setZoom] = useState(100);
+    const reportReady = useEffectEvent(async () => {
+        await onReady?.();
+    });
 
     useEffect(() => {
         if (!loaded || !frame.current?.contentDocument) return;
         const document = frame.current.contentDocument;
+        document.body.dataset.draft = String(draft);
         const abort = new AbortController();
         setStatus({ ready: false, error: null });
         pages.current = [];
@@ -91,6 +123,8 @@ function PreviewDocument({
                     throw new Error('Halaman dokumen tidak dapat ditampilkan. Unduh DOCX untuk memeriksanya.');
                 pages.current = rendered;
                 setPage(1);
+                await reportReady();
+                if (abort.signal.aborted) return;
                 setStatus({ ready: true, error: null });
             } catch (error) {
                 if (!abort.signal.aborted)
@@ -106,7 +140,7 @@ function PreviewDocument({
             abort.abort();
             document.fonts.clear();
         };
-    }, [loaded, attempt, url, maxBytes, fontReport]);
+    }, [loaded, attempt, url, maxBytes, fontReport, draft]);
 
     useEffect(() => {
         if (frame.current?.contentDocument) frame.current.contentDocument.body.style.zoom = String(zoom / 100);

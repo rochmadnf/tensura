@@ -9,14 +9,18 @@ import type { LetterAudit, LetterResource } from '@/schemas/letter';
 import { destroy, index, show } from '@/routes/ltr';
 import { LetterForm } from './components/letter-form';
 import { LetterChangeAction } from './components/change-action';
+import { LetterPreviewPanel } from './components/preview-panel';
+import type { LetterPreview } from '@/schemas/letter-preview';
 
 type AuditPage = { data: LetterAudit[]; current_page: number; last_page: number };
 export default function LetterShow({
     resource: { data: letter },
     audits,
+    preview,
 }: {
     resource: { data: LetterResource };
     audits: AuditPage;
+    preview: LetterPreview;
 }) {
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -47,7 +51,8 @@ export default function LetterShow({
                             <FieldDescription key={reason}>{reason}</FieldDescription>
                         ))}
                         <FieldDescription>
-                            Draft dapat disimpan dan dilanjutkan. Preview dan penerbitan sedang disiapkan.
+                            Draft dapat disimpan dan diperiksa melalui preview. Penerbitan tersedia pada tahap
+                            berikutnya.
                         </FieldDescription>
                         {draft && letter.editable && (
                             <div className="flex flex-wrap gap-2">
@@ -102,6 +107,16 @@ export default function LetterShow({
                         onEdit={() => setEditing(true)}
                         onClose={() => setEditing(false)}
                         onProcessingChange={setSaving}
+                    />
+                )}
+                {draft && (
+                    <LetterPreviewPanel
+                        key={`${letter.id}-${draft.revision}`}
+                        letterId={letter.id}
+                        revision={draft.revision}
+                        preview={preview}
+                        disabled={editing || saving || (operation !== null && operation !== 'preview')}
+                        onOpenChange={(open) => setOperation(open ? 'preview' : null)}
                     />
                 )}
                 <FormCard

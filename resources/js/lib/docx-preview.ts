@@ -3,7 +3,7 @@ import type { HElement } from 'docx-preview';
 export const DOCX_PREVIEW_FRAME = `<!doctype html><html lang="id"><head>
 <meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:; base-uri 'none'; form-action 'none'">
 <style>html{color-scheme:light}body{margin:0}main>.docx-wrapper{padding:16px}section.docx{flex-shrink:0}
-@media print{body{zoom:1!important}.docx-wrapper{padding:0!important;background:none!important}section.docx{margin:0!important;box-shadow:none!important}}</style>
+@media print{body{zoom:1!important}.docx-wrapper{padding:0!important;background:none!important}section.docx{margin:0!important;box-shadow:none!important}body[data-draft="true"] section.docx{position:relative}body[data-draft="true"] section.docx::after{content:"DRAFT";position:absolute;top:45%;left:20%;font:700 90pt Arial,sans-serif;color:#b45309;opacity:.18;transform:rotate(-30deg);pointer-events:none}}</style>
 </head><body><main aria-label="Isi dokumen"></main></body></html>`;
 
 export function previewElement(document: Document, element: HElement | Node | string): Node {

@@ -3,6 +3,7 @@
 namespace App\Services\Letter;
 
 use App\Models\DocumentFont;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -15,6 +16,23 @@ class DocumentFontRegistry
     private ?array $inventory = null;
 
     private array $hashes = [];
+
+    private ?Collection $managed = null;
+
+    private ?array $fallbacks = null;
+
+    private ?string $previewRenderer = null;
+
+    public function freeze(): self
+    {
+        $copy = clone $this;
+        $copy->inventory(true);
+        $copy->managed = DocumentFont::query()->where('status', 'ready')->get()->keyBy('sha256');
+        $copy->fallbacks = config('document-fonts.fallbacks');
+        $copy->previewRenderer = config('document-fonts.preview_renderer');
+
+        return $copy;
+    }
 
     /**
      * Reused by Fontconfig inspection and the future PDF worker. No global/system installation.
@@ -130,9 +148,9 @@ class DocumentFontRegistry
     public function report(array $requirements): array
     {
         $inventory = $this->inventory();
-        $managed = DocumentFont::query()->where('status', 'ready')->get()->keyBy('sha256');
+        $managed = $this->managed ?? DocumentFont::query()->where('status', 'ready')->get()->keyBy('sha256');
         $fallback = null;
-        foreach (config('document-fonts.fallbacks') as $family) {
+        foreach ($this->fallbacks ?? config('document-fonts.fallbacks') as $family) {
             if ($this->match(['family' => $family, 'bold' => false, 'italic' => false], $inventory['faces']) !== null) {
                 $fallback = $family;
                 break;
@@ -159,7 +177,7 @@ class DocumentFontRegistry
         $needsFallback = $entries === [] || collect($report['entries'])->contains(fn(array $entry): bool => $entry['hash'] === null);
         $fallbackFace = !$needsFallback || $report['fallback'] === null ? null : $this->match(['family' => $report['fallback'], 'bold' => false, 'italic' => false], $this->inventory()['faces']);
 
-        return hash('sha256', json_encode(['schema' => 1, 'renderer' => config('document-fonts.preview_renderer'), 'available' => $report['available'], 'entries' => $entries, 'fallback_hash' => $fallbackFace === null ? null : $this->fileHash($fallbackFace['path'])], JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode(['schema' => 1, 'renderer' => $this->previewRenderer ?? config('document-fonts.preview_renderer'), 'available' => $report['available'], 'entries' => $entries, 'fallback_hash' => $fallbackFace === null ? null : $this->fileHash($fallbackFace['path'])], JSON_THROW_ON_ERROR));
     }
 
     public function conversionProfile(array $requirements): array

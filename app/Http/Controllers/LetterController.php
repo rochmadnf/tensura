@@ -12,6 +12,7 @@ use App\Models\Letter;
 use App\Models\MasterData\LetterTemplate;
 use App\Services\Letter\LetterFormDefinition;
 use App\Services\Letter\ManageLetterDraft;
+use App\Services\Letter\ManageLetterPreview;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,11 +58,11 @@ class LetterController extends Controller
         return redirect()->route('ltr.show', $letter->uuid);
     }
 
-    public function show(Letter $letter): Response
+    public function show(Request $request, Letter $letter, ManageLetterPreview $previews): Response
     {
         $letter->load(['template', 'draft.templateVersion.letterNumber']);
 
-        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'audits' => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
+        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'preview' => fn(): array => $previews->detail($letter, $request->user()), 'audits' => fn() => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
     }
 
     public function edit(Letter $letter): RedirectResponse

@@ -56,4 +56,14 @@ class Letter extends Model
     {
         return $this->hasMany(LetterAudit::class);
     }
+
+    public function artifacts(): HasMany
+    {
+        return $this->hasMany(LetterArtifact::class);
+    }
+
+    public function operations(): HasMany
+    {
+        return $this->hasMany(LetterOperation::class);
+    }
 }

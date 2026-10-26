@@ -28,6 +28,9 @@ class RenderLetterDocument
                     $processor->cloneRepeatedRow($row['anchor'], $row['count']);
                 }
             }
+            if ($snapshot['draft_preview'] ?? false) {
+                $processor->markDraftNumber();
+            }
             $processor->fillLiteralValues($snapshot['values']);
             $parts = array_replace($this->inspector->read($source), $processor->renderedParts());
             $fontUsage = $this->fonts->inspect($parts);
