@@ -24,9 +24,11 @@
         "laravel-patterns",
         "migrate-v8-to-v9",
         "table-state",
+        "vercel-react-best-practices",
         "shadcn",
         "typescript-advanced-types",
         "ui-styling",
-        "ui-ux-pro-max"
+        "ui-ux-pro-max",
+        "writing-guidelines"
     ]
 }
