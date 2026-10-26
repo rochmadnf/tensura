@@ -29,7 +29,7 @@ export function NavGroups({
                         <SidebarMenuButton
                             isActive={item.id === page.id}
                             render={
-                                <Link href={item.url}>
+                                <Link href={item.url} aria-current={item.id === page.id ? 'page' : undefined}>
                                     {item.icon}
                                     <span>{item.name}</span>
                                 </Link>

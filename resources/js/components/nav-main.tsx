@@ -28,7 +28,8 @@ export function NavMain({
                     <SidebarMenuItem className="flex items-center gap-2">
                         <SidebarMenuButton
                             tooltip="Buat Instan"
-                            className="h-10 min-w-8 bg-slate-900 text-primary-foreground duration-200 ease-linear hover:bg-slate-900/90 hover:text-primary-foreground active:bg-slate-900/90 active:text-primary-foreground"
+                            variant="primary"
+                            className="h-10 min-w-8 transition-colors duration-200 ease-linear"
                         >
                             <HugeiconsIcon icon={MailPlusIcon} strokeWidth={2} />
                             <span>Buat Instan</span>
@@ -40,7 +41,7 @@ export function NavMain({
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 render={
-                                    <Link href={item.url}>
+                                    <Link href={item.url} aria-current={item.id === page.id ? 'page' : undefined}>
                                         {item.icon}
                                         <span>{item.title}</span>
                                     </Link>
