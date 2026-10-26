@@ -7,18 +7,21 @@ import { Badge } from '@/components/ui/badge';
 import { FieldDescription, FieldError } from '@/components/ui/field';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { store, file, rendered, confirm } from '@/routes/ltr/previews';
-import type { LetterOperation, LetterPreview } from '@/schemas/letter-preview';
+import { LetterPdfReview } from './pdf-review';
+import type { LetterOperation, LetterPreview, LetterPdf } from '@/schemas/letter-preview';
 
 export function LetterPreviewPanel({
     letterId,
     revision,
     preview,
+    pdf,
     disabled,
     onOpenChange,
 }: {
     letterId: string;
     revision: number;
     preview: LetterPreview;
+    pdf: LetterPdf;
     disabled: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -40,7 +43,7 @@ export function LetterPreviewPanel({
                 previous?.id === result.id && previous.status_revision >= result.status_revision ? previous : result,
             );
             if (['succeeded', 'failed', 'stale'].includes(result.status))
-                router.reload({ only: ['preview'], showProgress: false });
+                router.reload({ only: ['preview', 'pdf'], showProgress: false });
         }
         window.addEventListener('letter-operation', changed);
         return () => window.removeEventListener('letter-operation', changed);
@@ -59,7 +62,7 @@ export function LetterPreviewPanel({
         try {
             const response = (await generation.post(store(letterId).url)) as { operation: LetterOperation };
             setOperation(response.operation);
-            router.reload({ only: ['preview'], showProgress: false });
+            router.reload({ only: ['preview', 'pdf'], showProgress: false });
         } catch {
             setError('Preview belum dapat diminta. Periksa pesan dan coba lagi.');
         }
@@ -145,6 +148,14 @@ export function LetterPreviewPanel({
                         />
                     )}
                 </div>
+                <LetterPdfReview
+                    key={pdf.source_id ?? 'no-pdf'}
+                    letterId={letterId}
+                    revision={revision}
+                    pdf={pdf}
+                    disabled={disabled || busy || stale}
+                    onOpenChange={onOpenChange}
+                />
                 {confirmed && (
                     <FieldDescription>
                         Pemeriksaan Anda tersimpan untuk hasil ini. Perubahan draft, templat, atau font terkait
@@ -152,8 +163,7 @@ export function LetterPreviewPanel({
                     </FieldDescription>
                 )}
                 <FieldDescription>
-                    Kesesuaian layout dan cetak viewer DOCX perlu Anda periksa. Penerbitan tersedia pada tahap
-                    berikutnya.
+                    Periksa layout dan cetak sebelum menerbitkan. PDF dapat diminta bila tampilan DOCX kurang sesuai.
                 </FieldDescription>
             </div>
         </FormCard>

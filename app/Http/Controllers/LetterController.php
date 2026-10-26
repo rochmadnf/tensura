@@ -13,6 +13,7 @@ use App\Models\MasterData\LetterTemplate;
 use App\Services\Letter\LetterFormDefinition;
 use App\Services\Letter\ManageLetterDraft;
 use App\Services\Letter\ManageLetterIssuance;
+use App\Services\Letter\ManageLetterPdf;
 use App\Services\Letter\ManageLetterPreview;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -59,11 +60,11 @@ class LetterController extends Controller
         return redirect()->route('ltr.show', $letter->uuid);
     }
 
-    public function show(Request $request, Letter $letter, ManageLetterPreview $previews, ManageLetterIssuance $issuance): Response
+    public function show(Request $request, Letter $letter, ManageLetterPreview $previews, ManageLetterIssuance $issuance, ManageLetterPdf $pdfs): Response
     {
         $letter->load(['template', 'draft.templateVersion.letterNumber', 'currentVersion.wordArtifact']);
 
-        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'issuance' => fn(): array => $issuance->detail($letter, $request->user()), 'preview' => fn(): array => $previews->detail($letter, $request->user()), 'audits' => fn() => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
+        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'pdf' => fn(): array => $pdfs->detail($letter, $request->user()), 'issuance' => fn(): array => $issuance->detail($letter, $request->user()), 'preview' => fn(): array => $previews->detail($letter, $request->user()), 'audits' => fn() => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
     }
 
     public function edit(Letter $letter): RedirectResponse

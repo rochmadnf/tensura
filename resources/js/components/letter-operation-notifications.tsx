@@ -17,13 +17,20 @@ export function LetterOperationNotifications() {
             onOperation: (operation) =>
                 window.dispatchEvent(new CustomEvent('letter-operation', { detail: operation })),
             onTerminal: (operation) => {
-                const label = operation.kind === 'issue' ? 'Penerbitan surat' : 'Preview surat';
+                const label =
+                    operation.kind === 'issue'
+                        ? 'Penerbitan surat'
+                        : operation.kind === 'pdf'
+                          ? 'Konversi PDF'
+                          : 'Preview surat';
                 const notify = operation.status === 'succeeded' ? gooeyToast.success : gooeyToast.warning;
                 notify(
                     operation.status === 'succeeded'
                         ? operation.kind === 'issue'
                             ? 'Surat berhasil diterbitkan'
-                            : 'Preview surat siap'
+                            : operation.kind === 'pdf'
+                              ? 'PDF surat siap'
+                              : 'Preview surat siap'
                         : `${label}: ${operation.status_label}`,
                     {
                         id: `letter-${operation.id}-${operation.status_revision}`,

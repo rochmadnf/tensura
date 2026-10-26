@@ -35,7 +35,7 @@ class DocumentFontRegistry
     }
 
     /**
-     * Reused by Fontconfig inspection and the future PDF worker. No global/system installation.
+     * Shared by Fontconfig inspection and PDF conversion. No global/system installation.
      *
      * @return array<string, string>
      */
@@ -197,8 +197,16 @@ class DocumentFontRegistry
             throw new RuntimeException('LibreOffice belum tersedia.');
         }
         $converter = trim($version->output());
+        $fallbackHashes = [];
+        foreach ($report['entries'] as $entry) {
+            if (!$entry['available']) {
+                $face = $this->match(['family' => $report['fallback'], 'bold' => $entry['bold'], 'italic' => $entry['italic']], $this->inventory()['faces']);
+                $fallbackHashes[($entry['bold'] ? 'bold' : 'regular') . ($entry['italic'] ? '-italic' : '')] = $face === null ? null : $this->fileHash($face['path']);
+            }
+        }
+        ksort($fallbackHashes);
 
-        return ['environment' => $this->environment($substitutions), 'substitutions' => $substitutions, 'converter' => $converter, 'fingerprint' => hash('sha256', $this->fingerprint($requirements) . '|' . $converter)];
+        return ['environment' => $this->environment($substitutions), 'substitutions' => $substitutions, 'converter' => $converter, 'fingerprint' => hash('sha256', $this->fingerprint($requirements) . '|' . $converter . '|' . json_encode($fallbackHashes, JSON_THROW_ON_ERROR))];
     }
 
     private function fileHash(string $path): ?string

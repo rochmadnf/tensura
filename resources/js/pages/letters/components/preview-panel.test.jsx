@@ -47,7 +47,14 @@ const preview = {
     reason: null,
     max_bytes: 1000,
 };
-const props = { letterId: 'letter', revision: 1, preview, disabled: false, onOpenChange: vi.fn() };
+const props = {
+    letterId: 'letter',
+    revision: 1,
+    preview,
+    pdf: { source_id: 'artifact', operation: null, artifact: null, reason: null, max_bytes: 1000 },
+    disabled: false,
+    onOpenChange: vi.fn(),
+};
 function render(overrides = {}) {
     state.index = 0;
     state.http = 0;
@@ -96,5 +103,5 @@ it('requests preview without navigating and only reloads preview props', async (
     await Promise.resolve();
     await Promise.resolve();
     expect(state.generate).toHaveBeenCalledWith('/letters/letter/previews');
-    expect(state.reload).toHaveBeenCalledWith({ only: ['preview'], showProgress: false });
+    expect(state.reload).toHaveBeenCalledWith({ only: ['preview', 'pdf'], showProgress: false });
 });

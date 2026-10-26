@@ -15,6 +15,7 @@ use App\Http\Controllers\LetterDocumentController;
 use App\Http\Controllers\LetterDraftChangeController;
 use App\Http\Controllers\LetterIssuanceController;
 use App\Http\Controllers\LetterOperationController;
+use App\Http\Controllers\LetterPdfController;
 use App\Http\Controllers\LetterPreviewController;
 use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\EmployeeExportController;
@@ -42,6 +43,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
     Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
+        Route::post('artifacts/{artifact:uuid}/pdf', [LetterPdfController::class, 'store'])->whereUuid('artifact')->middleware('throttle:20,1')->name('ltr.pdfs.store');
+        Route::get('pdfs/{artifact:uuid}/file', [LetterPdfController::class, 'file'])->whereUuid('artifact')->name('ltr.pdfs.file');
+        Route::get('pdfs/{artifact:uuid}/download', [LetterPdfController::class, 'file'])->whereUuid('artifact')->name('ltr.pdfs.download');
         Route::post('issue', [LetterIssuanceController::class, 'store'])->middleware('throttle:20,1')->name('ltr.issue');
         Route::get('versions/{version:uuid}/word', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.file');
         Route::get('versions/{version:uuid}/download', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.download');

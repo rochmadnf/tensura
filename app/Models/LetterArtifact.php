@@ -16,7 +16,12 @@ class LetterArtifact extends Model
     /** @use HasFactory<LetterArtifactFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_id', 'letter_draft_id', 'letter_version_id', 'letter_operation_id', 'kind', 'draft_revision', 'state_fingerprint', 'disk', 'path', 'sha256', 'size', 'font_fingerprint', 'font_usage', 'expires_at'];
+    protected $fillable = ['letter_id', 'letter_draft_id', 'letter_version_id', 'source_artifact_id', 'letter_operation_id', 'kind', 'draft_revision', 'state_fingerprint', 'disk', 'path', 'sha256', 'size', 'font_fingerprint', 'font_usage', 'expires_at'];
+
+    public function sourceArtifact(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'source_artifact_id');
+    }
 
     protected function casts(): array
     {

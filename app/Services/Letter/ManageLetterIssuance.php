@@ -46,7 +46,7 @@ class ManageLetterIssuance
                     }
                     throw ValidationException::withMessages(['issuance' => 'Penerbitan surat ini sedang diproses oleh operator lain. Muat ulang status sebelum mencoba lagi.']);
                 }
-                $operation = $letter->operations()->create(['letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'issue', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => Status::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'revision' => $draft->revision, 'artifact' => $artifact->uuid, 'fingerprint' => $data['fingerprint'], 'publication_month' => $data['publication_month'], 'state' => $artifact->state_fingerprint, 'snapshot' => $artifact->operation->payload['snapshot'], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256, 'subject' => $letter->subject]]);
+                $operation = $letter->operations()->create(['letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'issue', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => Status::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'revision' => $draft->revision, 'artifact' => $data['artifact'], 'preview_kind' => $data['artifact'] === $artifact->uuid ? 'docx' : 'pdf', 'fingerprint' => $data['fingerprint'], 'publication_month' => $data['publication_month'], 'state' => $artifact->state_fingerprint, 'snapshot' => $artifact->operation->payload['snapshot'], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256, 'subject' => $letter->subject]]);
                 $this->events->notify($operation);
 
                 return $operation;
@@ -70,6 +70,9 @@ class ManageLetterIssuance
 
     private function replay(string $key, User $actor, string $hash): ?LetterOperation
     {
+        if (DB::table('letter_pdf_requests')->where('actor_uuid', $actor->uuid)->where('idempotency_key', $key)->exists()) {
+            throw ValidationException::withMessages(['idempotency_key' => 'Kunci permintaan telah digunakan untuk operasi berbeda.']);
+        }
         $operation = LetterOperation::query()->where('actor_uuid', $actor->uuid)->where('idempotency_key', $key)->first();
         if ($operation !== null && ($operation->kind !== 'issue' || !hash_equals($hash, $operation->request_hash))) {
             throw ValidationException::withMessages(['idempotency_key' => 'Kunci permintaan telah digunakan untuk operasi berbeda.']);

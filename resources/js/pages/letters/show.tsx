@@ -13,7 +13,7 @@ import { LetterPreviewPanel } from './components/preview-panel';
 import { LetterIssueAction } from './components/issue-action';
 import { LetterOfficialDocument } from './components/official-document';
 import type { LetterIssuance } from '@/schemas/letter-preview';
-import type { LetterPreview } from '@/schemas/letter-preview';
+import type { LetterPreview, LetterPdf } from '@/schemas/letter-preview';
 
 type AuditPage = { data: LetterAudit[]; current_page: number; last_page: number };
 export default function LetterShow({
@@ -21,11 +21,13 @@ export default function LetterShow({
     audits,
     preview,
     issuance,
+    pdf,
 }: {
     resource: { data: LetterResource };
     audits: AuditPage;
     preview: LetterPreview;
     issuance: LetterIssuance;
+    pdf: LetterPdf;
 }) {
     const [issuing, setIssuing] = useState(
         !!issuance.operation && ['queued', 'running'].includes(issuance.operation.status),
@@ -118,7 +120,14 @@ export default function LetterShow({
                         )}
                     </div>
                 </FormCard>
-                {letter.official && <LetterOfficialDocument letterId={letter.id} official={letter.official} />}
+                {letter.official && (
+                    <LetterOfficialDocument
+                        key={letter.official.id}
+                        letterId={letter.id}
+                        official={letter.official}
+                        pdf={pdf}
+                    />
+                )}
                 {editing && !letter.editable && (
                     <FieldDescription>
                         Status surat berubah. Salin input yang belum disimpan sebelum menutup editor atau memuat versi
@@ -151,6 +160,7 @@ export default function LetterShow({
                         letterId={letter.id}
                         revision={draft.revision}
                         preview={preview}
+                        pdf={pdf}
                         disabled={editing || saving || issuing || (operation !== null && operation !== 'preview')}
                         onOpenChange={(open) => setOperation(open ? 'preview' : null)}
                     />
@@ -164,7 +174,14 @@ export default function LetterShow({
                         <LetterIssueAction
                             letterId={letter.id}
                             revision={draft.revision}
-                            preview={preview}
+                            preview={
+                                pdf?.artifact?.confirmed
+                                    ? {
+                                          ...preview,
+                                          artifact: { ...pdf.artifact, expires_at: preview.artifact?.expires_at ?? '' },
+                                      }
+                                    : preview
+                            }
                             issuance={issuance}
                             disabled={editing || saving || (operation !== null && operation !== 'issue')}
                             onOpenChange={(open) => setOperation(open ? 'issue' : null)}

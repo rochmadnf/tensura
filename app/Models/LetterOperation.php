@@ -17,7 +17,7 @@ class LetterOperation extends Model
     /** @use HasFactory<LetterOperationFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_id', 'letter_draft_id', 'actor_uuid', 'actor_name', 'kind', 'idempotency_key', 'request_hash', 'draft_revision', 'status', 'status_revision', 'attempts', 'lease_token', 'lease_expires_at', 'finished_at', 'message', 'payload'];
+    protected $fillable = ['letter_id', 'letter_draft_id', 'source_artifact_id', 'actor_uuid', 'actor_name', 'kind', 'idempotency_key', 'request_hash', 'draft_revision', 'status', 'status_revision', 'attempts', 'lease_token', 'lease_expires_at', 'finished_at', 'message', 'payload'];
 
     protected function casts(): array
     {
@@ -42,5 +42,10 @@ class LetterOperation extends Model
     public function artifact(): HasOne
     {
         return $this->hasOne(LetterArtifact::class);
+    }
+
+    public function sourceArtifact(): BelongsTo
+    {
+        return $this->belongsTo(LetterArtifact::class, 'source_artifact_id');
     }
 }

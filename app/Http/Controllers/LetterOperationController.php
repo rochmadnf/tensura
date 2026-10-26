@@ -9,6 +9,7 @@ use App\Services\Letter\LetterOperationEvents;
 use App\Services\Letter\LetterOperationListener;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -16,7 +17,7 @@ class LetterOperationController extends Controller
 {
     public function show(Request $request, Letter $letter, LetterOperation $operation): JsonResponse
     {
-        abort_unless($operation->letter_id === $letter->id && $operation->actor_uuid === $request->user()->uuid, 404);
+        abort_unless($operation->letter_id === $letter->id && ($operation->actor_uuid === $request->user()->uuid || DB::table('letter_pdf_requests')->where('letter_operation_id', $operation->id)->where('actor_uuid', $request->user()->uuid)->exists()), 404);
 
         return response()->json(['operation' => (new LetterOperationResource($operation))->resolve()]);
     }

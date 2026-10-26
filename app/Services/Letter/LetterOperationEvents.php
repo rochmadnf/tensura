@@ -6,6 +6,7 @@ use App\Enums\LetterOperationStatusEnum;
 use App\Http\Resources\LetterOperationResource;
 use App\Models\LetterOperation;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 
 class LetterOperationEvents
@@ -25,7 +26,7 @@ class LetterOperationEvents
     /** @return list<array> */
     public function snapshot(string $actorUuid, ?string $operationUuid = null): array
     {
-        return LetterOperation::query()->select(['id', 'uuid', 'letter_id', 'kind', 'draft_revision', 'status', 'status_revision', 'message', 'updated_at'])->with('letter:id,uuid,subject')->where('actor_uuid', $actorUuid)
+        return LetterOperation::query()->select(['id', 'uuid', 'letter_id', 'source_artifact_id', 'kind', 'draft_revision', 'status', 'status_revision', 'message', 'updated_at'])->with(['letter:id,uuid,subject', 'sourceArtifact:id,uuid'])->where(fn(Builder $query): Builder => $query->where('actor_uuid', $actorUuid)->orWhereExists(fn(QueryBuilder $request): QueryBuilder => $request->select('letter_pdf_requests.id')->from('letter_pdf_requests')->whereColumn('letter_pdf_requests.letter_operation_id', 'letter_operations.id')->where('letter_pdf_requests.actor_uuid', $actorUuid)))
             ->where(fn(Builder $query): Builder => $query->whereIn('status', [LetterOperationStatusEnum::QUEUED, LetterOperationStatusEnum::RUNNING])->orWhere('updated_at', '>=', now()->subDays(config('letters.sse.history_days'))))
             ->when($operationUuid, fn(Builder $query): Builder => $query->where('uuid', $operationUuid))
             ->orderBy('id')->get()->map(fn(LetterOperation $operation): array => (new LetterOperationResource($operation))->resolve())->all();

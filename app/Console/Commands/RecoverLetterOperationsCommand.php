@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Enums\LetterOperationStatusEnum as Status;
+use App\Jobs\ConvertLetterToPdf;
 use App\Jobs\GenerateLetterPreview;
 use App\Jobs\IssueLetter;
 use App\Models\LetterOperation;
@@ -19,7 +20,7 @@ class RecoverLetterOperationsCommand extends Command
 
     public function handle(LetterOperationEvents $events): int
     {
-        LetterOperation::query()->whereIn('kind', ['preview', 'issue'])->where(function (Builder $query): void {
+        LetterOperation::query()->whereIn('kind', ['preview', 'issue', 'pdf'])->where(function (Builder $query): void {
             $query->where(fn(Builder $query): Builder => $query->where('status', Status::QUEUED)->where('updated_at', '<=', now()->subMinutes(2)))
                 ->orWhere(fn(Builder $query): Builder => $query->where('status', Status::RUNNING)->where('lease_expires_at', '<=', now()));
         })->orderBy('id')->chunkById(100, function ($operations) use ($events): void {
@@ -30,13 +31,15 @@ class RecoverLetterOperationsCommand extends Command
                         return;
                     }
                     if ($operation->attempts >= config('letters.max_attempts')) {
-                        $message = $operation->kind === 'issue' ? 'Penerbitan terhenti setelah beberapa percobaan. Periksa status dan coba lagi.' : 'Proses terhenti setelah beberapa percobaan. Generate ulang preview.';
+                        $message = $operation->kind === 'pdf' ? 'Konversi PDF terhenti. Word tetap tersedia; coba PDF kembali.' : ($operation->kind === 'issue' ? 'Penerbitan terhenti setelah beberapa percobaan. Periksa status dan coba lagi.' : 'Proses terhenti setelah beberapa percobaan. Generate ulang preview.');
                         $events->transition($operation, Status::FAILED, $message, ['lease_token' => null, 'lease_expires_at' => null]);
 
                         return;
                     }
                     $events->transition($operation, Status::QUEUED, 'Melanjutkan proses yang tertunda.', ['lease_token' => null, 'lease_expires_at' => null]);
-                    if ($operation->kind === 'issue') {
+                    if ($operation->kind === 'pdf') {
+                        ConvertLetterToPdf::dispatch($operation->uuid)->afterCommit();
+                    } elseif ($operation->kind === 'issue') {
                         IssueLetter::dispatch($operation->uuid)->afterCommit();
                     } else {
                         GenerateLetterPreview::dispatch($operation->uuid)->afterCommit();

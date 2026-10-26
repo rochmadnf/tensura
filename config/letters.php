@@ -2,7 +2,8 @@
 
 return [
     'disk' => 'local',
-    'paths' => ['previews' => 'letters/previews', 'staging' => 'letters/staging', 'official' => 'letters/official'],
+    'paths' => ['previews' => 'letters/previews', 'staging' => 'letters/staging', 'official' => 'letters/official', 'pdfs' => 'letters/pdfs'],
+    'pdf' => ['timeout' => 60, 'max_bytes' => 30 * 1024 * 1024, 'profile_revision' => 'libreoffice-pdf-v1'],
     'preview_hours' => 24,
     'max_output_bytes' => 20 * 1024 * 1024,
     'render_timeout' => 30,

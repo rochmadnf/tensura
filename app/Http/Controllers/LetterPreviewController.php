@@ -25,12 +25,12 @@ class LetterPreviewController extends Controller
         abort_unless($artifact->letter_id === $letter->id && $artifact->kind === 'docx', 404);
         $state->assertCurrent($letter, $artifact);
 
-        return response()->file(Storage::disk($artifact->disk)->path($artifact->path), ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition' => 'inline; filename="draft.docx"', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+        return response()->file(Storage::disk($artifact->disk)->path($artifact->path), ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition' => 'inline; filename="draft.docx"', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'])->setPrivate();
     }
 
     public function rendered(CheckLetterPreviewRequest $request, Letter $letter, LetterArtifact $artifact, ManageLetterPreview $previews): JsonResponse
     {
-        abort_unless($artifact->letter_id === $letter->id && $artifact->kind === 'docx', 404);
+        abort_unless($artifact->letter_id === $letter->id && in_array($artifact->kind, ['docx', 'pdf'], true) && $artifact->letter_version_id === null, 404);
         $previews->check($letter, $artifact, $request->validated(), $request->user(), false);
 
         return response()->json(['rendered' => true]);
@@ -38,7 +38,7 @@ class LetterPreviewController extends Controller
 
     public function confirm(CheckLetterPreviewRequest $request, Letter $letter, LetterArtifact $artifact, ManageLetterPreview $previews): JsonResponse
     {
-        abort_unless($artifact->letter_id === $letter->id && $artifact->kind === 'docx', 404);
+        abort_unless($artifact->letter_id === $letter->id && in_array($artifact->kind, ['docx', 'pdf'], true) && $artifact->letter_version_id === null, 404);
         $previews->check($letter, $artifact, $request->validated(), $request->user(), true);
 
         return response()->json(['confirmed' => true]);

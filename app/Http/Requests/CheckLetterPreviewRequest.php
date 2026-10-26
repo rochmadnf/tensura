@@ -13,6 +13,6 @@ class CheckLetterPreviewRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['revision' => ['required', 'integer', 'between:1,2147483647'], 'fingerprint' => ['required', 'string', 'size:64'], 'preview_kind' => ['required', 'in:docx'], 'confirmed' => [$this->routeIs('ltr.previews.confirm') ? 'accepted' : 'exclude']];
+        return ['revision' => ['required', 'integer', 'between:1,2147483647'], 'fingerprint' => ['required', 'string', 'size:64'], 'preview_kind' => ['required', 'in:docx,pdf'], 'confirmed' => [$this->routeIs('ltr.previews.confirm') ? 'accepted' : 'exclude']];
     }
 }

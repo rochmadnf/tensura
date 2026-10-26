@@ -17,7 +17,7 @@ use Throwable;
 
 class ManageLetterPreview
 {
-    public function __construct(private LetterPreviewState $state, private LetterDraftState $tokens, private LetterOperationEvents $events, private DocumentFontRegistry $fonts) {}
+    public function __construct(private LetterPreviewState $state, private LetterDraftState $tokens, private LetterOperationEvents $events, private DocumentFontRegistry $fonts, private LetterPdfState $pdfs) {}
 
     /** @param array{revision: int, idempotency_key: string} $data */
     public function request(Letter $letter, array $data, User $actor): LetterOperation
@@ -83,6 +83,9 @@ class ManageLetterPreview
 
     private function replay(string $key, User $actor, string $hash): ?LetterOperation
     {
+        if (DB::table('letter_pdf_requests')->where('actor_uuid', $actor->uuid)->where('idempotency_key', $key)->exists()) {
+            throw ValidationException::withMessages(['idempotency_key' => 'Kunci permintaan telah digunakan untuk operasi berbeda.']);
+        }
         $operation = LetterOperation::query()->where('actor_uuid', $actor->uuid)->where('idempotency_key', $key)->first();
         if ($operation !== null && !hash_equals($hash, $operation->request_hash)) {
             throw ValidationException::withMessages(['idempotency_key' => 'Kunci permintaan telah digunakan untuk operasi berbeda.']);
@@ -95,8 +98,15 @@ class ManageLetterPreview
     {
         DB::transaction(function () use ($letter, $artifact, $data, $actor, $confirm): void {
             [$letter] = $this->state->lock($letter, (int) $data['revision']);
-            $this->state->assertCurrent($letter, $artifact);
-            $fingerprint = $this->state->evidence($artifact);
+            if ($data['preview_kind'] !== $artifact->kind) {
+                throw ValidationException::withMessages(['preview_kind' => 'Jenis viewer tidak sesuai dokumen.']);
+            }
+            if ($artifact->kind === 'pdf') {
+                $this->pdfs->assertCurrent($letter, $artifact);
+            } else {
+                $this->state->assertCurrent($letter, $artifact);
+            }
+            $fingerprint = $artifact->kind === 'pdf' ? $this->pdfs->evidence($artifact) : $this->state->evidence($artifact);
             if (!hash_equals($fingerprint, $data['fingerprint'])) {
                 throw ValidationException::withMessages(['preview' => 'Hasil yang diperiksa berubah. Buka preview terbaru.']);
             }
@@ -109,9 +119,9 @@ class ManageLetterPreview
                     return;
                 }
                 $check->update(['confirmed_at' => now()]);
-                $letter->audits()->create(['actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'event' => 'preview.confirmed', 'description' => 'Preview DOCX draft telah diperiksa.', 'draft_revision' => $artifact->draft_revision, 'changes' => ['schema_version' => 1, 'entries' => [], 'artifact' => $artifact->uuid, 'fingerprint' => $fingerprint], 'occurred_at' => now()]);
+                $letter->audits()->create(['actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'event' => 'preview.confirmed', 'description' => 'Preview ' . strtoupper($artifact->kind) . ' draft telah diperiksa.', 'draft_revision' => $artifact->draft_revision, 'changes' => ['schema_version' => 1, 'entries' => [], 'artifact' => $artifact->uuid, 'fingerprint' => $fingerprint], 'occurred_at' => now()]);
             } elseif ($check === null) {
-                $artifact->checks()->create(['actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'preview_kind' => 'docx', 'fingerprint' => $fingerprint, 'rendered_at' => now()]);
+                $artifact->checks()->create(['actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'preview_kind' => $artifact->kind, 'fingerprint' => $fingerprint, 'rendered_at' => now()]);
             }
         }, 5);
     }
@@ -122,7 +132,7 @@ class ManageLetterPreview
         if ($letter->status !== LetterStatusEnum::DRAFT) {
             return ['revision' => $letter->draft?->revision, 'operation' => null, 'artifact' => null, 'can_generate' => false, 'reason' => null, 'max_bytes' => config('letters.max_output_bytes')];
         }
-        $artifact = LetterArtifact::query()->where('letter_id', $letter->id)->where('draft_revision', $letter->draft?->revision)->orderByDesc('id')->first();
+        $artifact = LetterArtifact::query()->where('letter_id', $letter->id)->where('draft_revision', $letter->draft?->revision)->where('kind', 'docx')->whereNull('letter_version_id')->orderByDesc('id')->first();
         $reason = null;
         $canGenerate = false;
         try {

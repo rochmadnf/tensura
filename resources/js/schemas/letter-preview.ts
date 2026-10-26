@@ -4,7 +4,8 @@ export type LetterOperation = {
     id: string;
     letter_id: string;
     subject: string;
-    kind: 'preview' | 'issue';
+    kind: 'preview' | 'issue' | 'pdf';
+    source_id?: string | null;
     revision: number;
     status: 'queued' | 'running' | 'succeeded' | 'failed' | 'stale';
     status_label: string;
@@ -45,4 +46,19 @@ export type LetterOfficial = {
     resolved: Record<string, string>;
     max_bytes: number;
     font_report: DocumentFontReport;
+};
+
+export type LetterPdf = {
+    source_id: string | null;
+    operation: LetterOperation | null;
+    artifact: {
+        id: string;
+        fingerprint: string;
+        confirmed: boolean;
+        font_report: DocumentFontReport;
+        substitutions: Record<string, string>;
+        converter: string;
+    } | null;
+    reason: string | null;
+    max_bytes: number;
 };

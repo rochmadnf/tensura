@@ -19,9 +19,9 @@ class LetterDocumentController extends Controller
         abort_unless($disk->exists($artifact->path) && $disk->size($artifact->path) === $artifact->size && hash_file('sha256', $disk->path($artifact->path)) === $artifact->sha256, 410, 'Dokumen resmi tidak tersedia atau integritasnya berubah. Hubungi pengelola aplikasi.');
         $headers = ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'];
         if ($request->routeIs('ltr.versions.download')) {
-            return response()->download($disk->path($artifact->path), 'surat-' . $letter->uuid . '-v' . $version->version_number . '.docx', $headers);
+            return response()->download($disk->path($artifact->path), 'surat-' . $letter->uuid . '-v' . $version->version_number . '.docx', $headers)->setPrivate();
         }
 
-        return response()->file($disk->path($artifact->path), [...$headers, 'Content-Disposition' => 'inline; filename="surat.docx"']);
+        return response()->file($disk->path($artifact->path), [...$headers, 'Content-Disposition' => 'inline; filename="surat.docx"'])->setPrivate();
     }
 }

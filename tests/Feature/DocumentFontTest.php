@@ -140,6 +140,28 @@ class DocumentFontTest extends TestCase
         $this->assertStringContainsString('<family>Arial</family>', file_get_contents($profile['environment']['FONTCONFIG_FILE']));
     }
 
+    public function test_pdf_profile_tracks_the_used_bold_fallback_without_invalidating_available_fonts(): void
+    {
+        $disk = Storage::disk('local');
+        $disk->put('fallback-regular.ttf', 'regular fallback');
+        $disk->put('fallback-bold.ttf', 'bold fallback');
+        $disk->put('available.ttf', 'available font');
+        $regular = ['family' => 'Arial', 'aliases' => ['Arial'], 'style' => 'Regular', 'weight' => 80, 'bold' => false, 'italic' => false, 'path' => $disk->path('fallback-regular.ttf'), 'index' => 0];
+        $faces = [$regular, [...$regular, 'style' => 'Bold', 'bold' => true, 'weight' => 200, 'path' => $disk->path('fallback-bold.ttf')], [...$regular, 'family' => 'Available Family', 'aliases' => ['Available Family'], 'path' => $disk->path('available.ttf')]];
+        $registry = $this->partialMock(DocumentFontRegistry::class);
+        $registry->shouldReceive('inventory')->andReturnUsing(function () use (&$faces): array { return ['available' => true, 'faces' => $faces, 'warning' => null]; });
+        Process::fake(['*libreoffice*' => Process::result(output: 'LibreOffice test-version')]);
+        $missing = [['family' => 'Missing Family', 'bold' => true, 'italic' => false]];
+        $available = [['family' => 'Available Family', 'bold' => false, 'italic' => false]];
+        $before = $registry->conversionProfile($missing)['fingerprint'];
+        $unaffected = $registry->conversionProfile($available)['fingerprint'];
+        $disk->put('new-bold.ttf', 'updated bold fallback');
+        $faces[1]['path'] = $disk->path('new-bold.ttf');
+        $this->assertNotSame($before, $registry->conversionProfile($missing)['fingerprint']);
+        $this->assertSame($unaffected, $registry->conversionProfile($available)['fingerprint']);
+        Process::assertRan(fn($process): bool => in_array('--version', $process->command, true));
+    }
+
     private function scanBytes(string $bytes, string $extension): array
     {
         Storage::disk('local')->put('sample.' . $extension, $bytes);
