@@ -42,7 +42,7 @@ Isi keputusan berikut dari permintaan pengguna, sesi sebelumnya, dan kode yang a
 ### C. Perilaku
 
 7. **Operasi apa saja?** Default: index, create, store, edit, update, destroy (tanpa show).
-8. **Kolom mana yang tidak boleh diubah saat edit?** (contoh LetterNumber: `page_number`, `sequence_number`). Kolom itu tampil read-only dan tidak diterima oleh `Update{Nama}Request`.
+8. **Kolom mana yang tidak boleh diubah saat edit?** Kolom tersebut tidak diterima oleh `Update{Nama}Request`. LetterNumber kini menyimpan identitas melalui form create/edit; counter lama hanya ditampilkan selama transisi dan angka awal dikelola pada detail per periode, bukan pada form identitas.
 9. **Perilaku penghapusan**: permanen, arsip snapshot yang dapat dipulihkan, atau kebutuhan soft delete tersendiri. CRUD sederhana mengikuti penghapusan permanen JobTitle/LetterNumber jika tidak ada kebutuhan pemulihan. Reference memakai arsip snapshot, bukan `SoftDeletes`. Jika perlu arsip, tentukan entitas/induk-anak, pemulihan, konflik, dan hapus permanen arsip; ikuti bagian arsip di LARAVEL_PATTERNS.md. Perubahan skema/perilaku di luar lingkup yang disepakati memerlukan persetujuan.
 10. **Validasi khusus**: unik, format, rentang, pesan galat bila berbeda dari pesan bawaan.
 11. **Otorisasi**: cukup login (default) atau perlu role/policy per record?
@@ -210,7 +210,7 @@ pnpm run build
 | Pencarian dan tabel | Keempat CRUD dan list arsip memakai `Searchable`, `SectionData`, dan `ResourceDataTable`                                | Gunakan abstraksi bersama; tidak ada lagi alasan meniru query/pagination manual lama LetterNumber                                                           |
 | Identitas Resource  | CRUD memakai `id` berisi UUID; arsip memakai `uuid`                                                                     | Selaraskan tipe frontend dan `getRowId` dengan kontrak yang dipilih                                                                                         |
 | UUID database       | JobTitle/Employee/LetterNumber memakai indeks biasa; Reference dan tabel arsip sudah memakai constraint unik            | Periksa skema aktual; tentukan constraint berdasarkan invariannya, termasuk kebutuhan restore/konkurensi; jangan mengubah indeks fitur lama tanpa kebutuhan |
-| Form update         | LetterNumber melindungi counter; fitur lain memiliki field dan aturan sendiri                                           | Satu form fitur untuk create/edit dengan payload dan validasi sesuai operasi                                                                                |
+| Form update         | LetterNumber create/update hanya nama/kode; periode memakai operasi persiapan tersendiri; counter lama dipertahankan sementara | Satu form fitur untuk create/edit dengan payload dan validasi sesuai operasi                                                                                |
 | Hapus               | JobTitle/Employee/LetterNumber permanen; Reference memakai arsip snapshot                                               | Tentukan kebutuhan pemulihan; gunakan alur backend dan dialog yang sesuai                                                                                   |
 
 - `Employee` sudah memiliki factory/`HasFactory`, `casts()` protected, serta test filter relasi/tanggal. Gunakan sebagai referensi untuk kebutuhan tersebut.

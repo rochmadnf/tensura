@@ -14,7 +14,7 @@ class LetterNumberResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: string, name: string, code: string, page_number: int, sequence_number: int}
+     * @return array{id: string, name: string, code: string, page_number: ?int, sequence_number: ?int, needs_initialization: bool}
      */
     public function toArray(Request $request): array
     {
@@ -24,6 +24,7 @@ class LetterNumberResource extends JsonResource
             'code' => $this->classification_code,
             'page_number' => $this->page_number,
             'sequence_number' => $this->sequence_number,
+            'needs_initialization' => $this->resource->needsPeriodInitialization(),
         ];
     }
 }

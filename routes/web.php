@@ -13,6 +13,7 @@ use App\Http\Controllers\MasterData\EmployeeController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
+use App\Http\Controllers\MasterData\LetterNumberPeriodController;
 use App\Http\Controllers\MasterData\LetterTemplateAuditController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
@@ -119,6 +120,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('ln.index');
             Route::get('/create', 'create')->name('ln.create');
             Route::post('/store', 'store')->name('ln.store');
+            Route::get('/{letterNumber:uuid}', 'show')->name('ln.show');
+            Route::post('/{letterNumber:uuid}/periods', [LetterNumberPeriodController::class, 'store'])->name('ln.periods.store');
             Route::get('/{letterNumber:uuid}/edit', 'edit')->name('ln.edit');
             Route::patch('/{letterNumber:uuid}', 'update')->name('ln.update');
             Route::delete('/{letterNumber:uuid}', 'destroy')->name('ln.destroy');

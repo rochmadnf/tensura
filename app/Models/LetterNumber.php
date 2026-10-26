@@ -31,4 +31,14 @@ class LetterNumber extends Model
     {
         return $this->hasMany(LetterTemplateVersion::class, 'letter_number_id');
     }
+
+    public function periods(): HasMany
+    {
+        return $this->hasMany(LetterNumberPeriod::class);
+    }
+
+    public function needsPeriodInitialization(): bool
+    {
+        return $this->initial_period_id === null && ($this->page_number !== null || $this->sequence_number !== null);
+    }
 }

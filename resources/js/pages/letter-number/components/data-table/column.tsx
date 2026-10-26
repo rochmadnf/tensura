@@ -1,7 +1,7 @@
 import { TableActionButton } from '@/components/table-action-button';
 import { Subscribe } from '@tanstack/react-table';
 import { createDataTableColumnHelper } from '@/components/data-table';
-import { Edit04Icon } from '@hugeicons/core-free-icons';
+import { Edit04Icon, InfoIcon } from '@hugeicons/core-free-icons';
 import ln from '@/routes/ln';
 
 import { DeleteAction } from './delete-action';
@@ -10,8 +10,9 @@ export type LetterNumberColumns = {
     id: string;
     name: string;
     code: string;
-    page_number: number;
-    sequence_number: number;
+    page_number: number | null;
+    sequence_number: number | null;
+    needs_initialization: boolean;
 };
 
 const columnHelper = createDataTableColumnHelper<LetterNumberColumns>();
@@ -42,14 +43,14 @@ export const columns = columnHelper.columns([
         ),
     }),
     columnHelper.accessor('page_number', {
-        header: 'Nomor Halaman',
+        header: 'Halaman Lama',
         meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
-        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue()}</span>,
+        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('sequence_number', {
-        header: 'Nomor Urut',
+        header: 'Urutan Lama',
         meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
-        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue()}</span>,
+        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue() ?? '—'}</span>,
     }),
     columnHelper.display({
         id: 'actions',
@@ -57,6 +58,13 @@ export const columns = columnHelper.columns([
         meta: { className: 'w-15 text-center', skeletonClassName: 'mx-auto w-8' },
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
+                <TableActionButton
+                    variant="info"
+                    href={ln.show(row.original.id).url}
+                    label={`Detail ${row.original.name}`}
+                    icon={InfoIcon}
+                    tooltip="Detail dan periode"
+                />
                 <TableActionButton
                     variant="warning"
                     href={ln.edit(row.original.id).url}

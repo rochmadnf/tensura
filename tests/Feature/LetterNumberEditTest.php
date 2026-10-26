@@ -160,7 +160,7 @@ class LetterNumberEditTest extends TestCase
         ])->assertNotFound();
     }
 
-    public function test_create_still_saves_all_four_fields(): void
+    public function test_create_saves_identity_and_ignores_legacy_counter_input(): void
     {
         $data = [
             'classification_name' => 'Surat Keluar',
@@ -172,6 +172,9 @@ class LetterNumberEditTest extends TestCase
         $response = $this->actingAs(UserFactory::new()->create())->post(route('ln.store'), $data);
 
         $response->assertRedirectToRoute('ln.index')->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('letter_numbers', $data);
+        $this->assertDatabaseHas('letter_numbers', [
+            'classification_name' => 'Surat Keluar', 'classification_code' => '007',
+            'page_number' => null, 'sequence_number' => null, 'initial_period_id' => null,
+        ]);
     }
 }

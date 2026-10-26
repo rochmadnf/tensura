@@ -5,6 +5,7 @@ namespace App\Http\Controllers\MasterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLetterNumberRequest;
 use App\Http\Requests\UpdateLetterNumberRequest;
+use App\Http\Resources\LetterNumberPeriodResource;
 use App\Http\Resources\LetterNumberResource;
 use App\Models\LetterNumber;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +49,7 @@ class LetterNumberController extends Controller
     public function store(StoreLetterNumberRequest $request): RedirectResponse
     {
         LetterNumber::create(
-            $request->safe()->only(['classification_name', 'classification_code', 'page_number', 'sequence_number']),
+            $request->safe()->only(['classification_name', 'classification_code']),
         );
 
         return redirect()->route('ln.index');
@@ -59,6 +60,18 @@ class LetterNumberController extends Controller
         return inertia('letter-number/edit', [
             'page' => ['id' => $this->pageId],
             'resource' => LetterNumberResource::make($letterNumber),
+        ]);
+    }
+
+    public function show(Request $request, LetterNumber $letterNumber): InertiaResponse
+    {
+        $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100]) ? $request->integer('per_page') : 10;
+
+        return inertia('letter-number/show', [
+            'page' => ['id' => $this->pageId],
+            'resource' => LetterNumberResource::make($letterNumber),
+            'resources' => LetterNumberPeriodResource::collection($letterNumber->periods()->orderByDesc('year')->orderByDesc('month')->paginate($perPage)->withQueryString()),
+            'periodDefaults' => ['year' => now()->year, 'month' => now()->month],
         ]);
     }
 
@@ -75,6 +88,9 @@ class LetterNumberController extends Controller
             $letterNumber = LetterNumber::query()->whereKey($letterNumber->id)->lockForUpdate()->firstOrFail();
             if ($letterNumber->templateVersions()->exists()) {
                 throw ValidationException::withMessages(['deletion' => 'Klasifikasi tidak dapat dihapus karena masih dirujuk templat surat, termasuk versi historis atau diarsipkan.']);
+            }
+            if ($letterNumber->periods()->exists()) {
+                throw ValidationException::withMessages(['deletion' => 'Klasifikasi tidak dapat dihapus karena memiliki periode penomoran.']);
             }
             $letterNumber->delete();
         }, 5);

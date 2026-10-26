@@ -1,6 +1,6 @@
 # Tahap 2 — Penomoran per Periode
 
-Status implementasi: direncanakan. Status uji mandiri pengguna: belum dijalankan.
+Status implementasi: selesai dan migration telah diterapkan pada database aplikasi lokal. Status uji mandiri pengguna: belum dijalankan.
 
 Acuan: [rencana teknis](../../planning/letter/teknis.md). Gunakan data sintetis/database uji; agent tidak menjalankan uji visual ini.
 
@@ -22,4 +22,4 @@ Data Master → Penomoran Surat memiliki detail klasifikasi dan Urutan per Perio
 
 ## Hasil pengguna
 
-Tanggal, hasil aktual, dan temuan: belum diisi. Aksi Lihat pemakaian boleh masih kosong sampai tahap penerbitan tersedia; jangan menganggap tahap 2 sudah dapat menerbitkan surat.
+Tanggal, hasil aktual, dan temuan: belum diisi. Daftar pemakaian belum diaktifkan sampai tahap penerbitan tersedia; halaman menjelaskan batas ini. Jangan menganggap tahap 2 sudah dapat menerbitkan surat. Periode yang tersimpan hanya-baca; pilih periode dengan cermat sebelum menyimpan.
