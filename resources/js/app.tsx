@@ -31,6 +31,7 @@ createInertiaApp({
     },
     progress: {
         color: '#2b7fff',
+        showSpinner: true,
     },
 }).catch((error: unknown) => {
     console.error('Gagal menginisialisasi aplikasi:', error);
