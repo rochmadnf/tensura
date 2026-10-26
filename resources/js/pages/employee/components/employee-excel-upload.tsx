@@ -1,6 +1,13 @@
 import { useEffect, type ChangeEvent, type DragEvent } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Delete02Icon, Upload04Icon, Xls01Icon } from '@hugeicons/core-free-icons';
+import {
+    Delete02Icon,
+    FileSyncIcon,
+    Folder02Icon,
+    FolderOpenIcon,
+    Upload04Icon,
+    Xls01Icon,
+} from '@hugeicons/core-free-icons';
 import { cn } from 'cn';
 import { Button } from '@/components/ui/button';
 import { formatBytes, useFileUpload } from '@/hooks/use-file-upload';
@@ -15,7 +22,7 @@ interface EmployeeExcelUploadProps {
 export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: EmployeeExcelUploadProps) {
     const [{ files, isDragging }, actions] = useFileUpload({
         accept: '.xlsx',
-        maxSize: 2 * 1024 * 1024,
+        maxSize: 5 * 1024 * 1024,
         multiple: false,
         maxFiles: 1,
         onFilesAdded: ([item]) => {
@@ -43,8 +50,8 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
             onError('Gunakan file Excel berformat .xlsx.');
             return;
         }
-        if (chosen[0].size > 2 * 1024 * 1024) {
-            onError('Ukuran file maksimal 2 MB.');
+        if (chosen[0].size > 5 * 1024 * 1024) {
+            onError('Ukuran file maksimal 5 MB.');
             return;
         }
         actions.addFiles(chosen);
@@ -69,7 +76,7 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
             aria-disabled={disabled}
             data-dragging={!disabled && isDragging}
             className={cn(
-                'flex min-w-0 flex-col gap-4 rounded-lg border border-dashed border-input p-5 sm:p-6',
+                'flex min-w-0 flex-col gap-4 rounded-lg border border-dashed border-gray-500/60 p-5 sm:p-6',
                 !disabled && isDragging && 'border-primary bg-muted',
                 disabled && 'opacity-60',
             )}
@@ -100,7 +107,7 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
                     <p className="text-sm text-muted-foreground">
                         {selected
                             ? formatBytes(selected.file.size)
-                            : 'Atau pilih satu file .xlsx dari perangkat Anda. Maksimal 2 MB.'}
+                            : 'Atau pilih satu file .xlsx dari perangkat Anda. Maksimal 5 MB.'}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -112,8 +119,12 @@ export function EmployeeExcelUpload({ disabled, invalid, onChange, onError }: Em
                             if (!disabled) actions.openFileDialog();
                         }}
                     >
-                        <HugeiconsIcon icon={Upload04Icon} data-icon="inline-start" aria-hidden="true" />
-                        {selected ? 'Ganti File' : 'Pilih File Excel'}
+                        <HugeiconsIcon
+                            icon={selected ? FileSyncIcon : Folder02Icon}
+                            data-icon="inline-start"
+                            aria-hidden="true"
+                        />
+                        {selected ? 'Ganti File' : 'Cari File'}
                     </Button>
                     {selected && (
                         <Button

@@ -1,7 +1,14 @@
 import { useRef, useState } from 'react';
 import { Link } from '@inertiajs/react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { ArrowDown01Icon, Cancel01Icon, Download04Icon, Upload04Icon, Xls01Icon } from '@hugeicons/core-free-icons';
+import {
+    ArrowDown01Icon,
+    Cancel01Icon,
+    Download01Icon,
+    Download04Icon,
+    Upload01Icon,
+    Xls01Icon,
+} from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -20,6 +27,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { OptionSelect } from '@/components/option-select';
 import empl from '@/routes/empl';
 import employeeImport from '@/routes/empl/import';
@@ -44,16 +52,21 @@ export function EmployeeTransferMenu() {
     return (
         <>
             <DropdownMenu>
-                <DropdownMenuTrigger render={<Button ref={triggerRef} variant="secondary" />}>
-                    <HugeiconsIcon icon={Xls01Icon} data-icon="inline-start" aria-hidden="true" />
-                    Impor/Ekspor
-                    <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" aria-hidden="true" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-60">
+                <Tooltip>
+                    <TooltipTrigger
+                        render={<DropdownMenuTrigger render={<Button ref={triggerRef} variant="secondary" />} />}
+                        aria-label="Impor/Ekspor"
+                    >
+                        <HugeiconsIcon icon={Xls01Icon} data-icon="inline-start" aria-hidden="true" />
+                        <HugeiconsIcon icon={ArrowDown01Icon} data-icon="inline-end" aria-hidden="true" />
+                    </TooltipTrigger>
+                    <TooltipContent>Impor/Ekspor</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end" className="w-fit">
                     <DropdownMenuGroup>
                         <DropdownMenuItem render={<Link href={employeeImport.create().url} />}>
-                            <HugeiconsIcon icon={Upload04Icon} aria-hidden="true" />
-                            Impor Data Pegawai
+                            <HugeiconsIcon icon={Upload01Icon} aria-hidden="true" />
+                            Impor
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => {
@@ -61,8 +74,8 @@ export function EmployeeTransferMenu() {
                                 setOpen(true);
                             }}
                         >
-                            <HugeiconsIcon icon={Download04Icon} aria-hidden="true" />
-                            Ekspor Data Pegawai
+                            <HugeiconsIcon icon={Download01Icon} aria-hidden="true" />
+                            Ekspor
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                 </DropdownMenuContent>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { Download04Icon, HelpCircleIcon, Cancel01Icon } from '@hugeicons/core-free-icons';
+import { Cancel01Icon, Download01Icon } from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -26,19 +26,12 @@ export function EmployeeImportHelp({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-                    <HugeiconsIcon icon={HelpCircleIcon} data-icon="inline-start" aria-hidden="true" />
-                    Petunjuk
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!hasJobTitles || processing}
-                    onClick={() => setOpen(true)}
-                >
-                    <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
-                    Unduh Template
-                </Button>
+                {hasJobTitles ? (
+                    <Button type="button" variant="dark" disabled={processing} onClick={() => setOpen(true)}>
+                        <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" aria-hidden="true" />
+                        Unduh Templat
+                    </Button>
+                ) : null}
             </div>
             <DialogContent className="max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)_auto] sm:max-w-2xl">
                 <DialogHeader>
@@ -63,17 +56,18 @@ export function EmployeeImportHelp({
                     </DialogClose>
                     {hasJobTitles && !processing ? (
                         <Button
+                            variant="dark"
                             nativeButton={false}
                             render={<a href={employeeImport.template().url} download />}
                             onClick={() => setOpen(false)}
                         >
-                            <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
-                            Unduh Template
+                            <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" aria-hidden="true" />
+                            Unduh Templat
                         </Button>
                     ) : (
                         <Button disabled>
-                            <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
-                            Unduh Template
+                            <HugeiconsIcon icon={Download01Icon} data-icon="inline-start" aria-hidden="true" />
+                            Unduh Templat
                         </Button>
                     )}
                 </DialogFooter>
