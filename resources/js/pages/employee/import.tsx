@@ -22,7 +22,7 @@ import { IconTile } from '@/components/reui/icon-tile';
 import { EmployeeExcelUpload } from './components/employee-excel-upload';
 import { EmployeeImportHelp } from './components/employee-import-help';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Badge } from '@/components/reui/badge';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
 import empl from '@/routes/empl';
@@ -212,13 +212,13 @@ export default function EmployeeImport({
                                         label: 'Berhasil',
                                         count: result.imported,
                                         icon: IdVerifiedIcon,
-                                        className: 'text-emerald-500',
+                                        className: 'text-success',
                                     },
                                     {
                                         label: 'Duplikat',
                                         count: result.duplicate,
                                         icon: Copy02Icon,
-                                        className: 'text-yellow-500',
+                                        className: 'text-warning',
                                     },
                                     {
                                         label: 'Tidak Valid',
@@ -303,8 +303,8 @@ export default function EmployeeImport({
                                                             <Badge
                                                                 variant={
                                                                     issue.category === 'duplicate'
-                                                                        ? 'warning-light'
-                                                                        : 'destructive-light'
+                                                                        ? 'warning'
+                                                                        : 'destructive'
                                                                 }
                                                                 size="sm"
                                                             >
