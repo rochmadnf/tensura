@@ -87,6 +87,8 @@ class JobTitleSeeder extends Seeder
             ],
             ['name' => 'Penata Layanan Operasional', 'group' => JobTitleGroupEnum::ADMINISTRASI_PENUNJANG],
             ['name' => 'Pengadministrasi Perkantoran', 'group' => JobTitleGroupEnum::ADMINISTRASI_PENUNJANG],
+            ['name' => 'Kepala UPTD. Puskesmas Kamonji', 'group' => JobTitleGroupEnum::PIMPINAN],
+            ['name' => 'Kepala Tata Usaha UPTD. Puskesmas Kamonji', 'group' => JobTitleGroupEnum::PIMPINAN],
         ])->each(
             fn(array $record) => JobTitle::updateOrCreate(['name' => $record['name']], ['group' => $record['group']]),
         );
