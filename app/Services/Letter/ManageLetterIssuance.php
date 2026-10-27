@@ -27,7 +27,7 @@ class ManageLetterIssuance
         if ($replay !== null) {
             return $replay;
         }
-        if ($letter->status === LetterStatusEnum::PUBLISHED && $letter->currentVersion !== null) {
+        if ($letter->status === LetterStatusEnum::PUBLISHED && $letter->currentVersion !== null && !$letter->draft?->isWorking()) {
             return $letter->currentVersion->operation;
         }
         try {
@@ -46,7 +46,7 @@ class ManageLetterIssuance
                     }
                     throw ValidationException::withMessages(['issuance' => 'Penerbitan surat ini sedang diproses oleh operator lain. Muat ulang status sebelum mencoba lagi.']);
                 }
-                $operation = $letter->operations()->create(['letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'issue', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => Status::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'revision' => $draft->revision, 'artifact' => $data['artifact'], 'preview_kind' => $data['artifact'] === $artifact->uuid ? 'docx' : 'pdf', 'fingerprint' => $data['fingerprint'], 'publication_month' => $data['publication_month'], 'state' => $artifact->state_fingerprint, 'snapshot' => $artifact->operation->payload['snapshot'], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256, 'subject' => $letter->subject]]);
+                $operation = $letter->operations()->create(['letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'issue', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => Status::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'revision' => $draft->revision, 'draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'artifact' => $data['artifact'], 'preview_kind' => $data['artifact'] === $artifact->uuid ? 'docx' : 'pdf', 'fingerprint' => $data['fingerprint'], 'publication_month' => $data['publication_month'], 'state' => $artifact->state_fingerprint, 'snapshot' => $artifact->operation->payload['snapshot'], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256, 'subject' => $draft->subject ?? $letter->subject]]);
                 $this->events->notify($operation);
 
                 return $operation;

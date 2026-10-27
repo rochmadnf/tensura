@@ -2,8 +2,6 @@
 
 namespace App\Services\Letter;
 
-use App\Enums\LetterDraftKindEnum;
-use App\Enums\LetterStatusEnum;
 use App\Models\Letter;
 use App\Models\LetterDraft;
 use Illuminate\Validation\ValidationException;
@@ -12,14 +10,31 @@ class LetterDraftState
 {
     public function assertEditable(Letter $letter, LetterDraft $draft, int $revision): void
     {
-        if ($letter->status !== LetterStatusEnum::DRAFT || $draft->kind !== LetterDraftKindEnum::INITIAL) {
-            throw ValidationException::withMessages(['draft' => 'Operasi ini hanya tersedia untuk draft surat baru.']);
+        if (!$draft->setRelation('letter', $letter)->isWorking()) {
+            throw ValidationException::withMessages(['draft' => 'Draft ini sudah ditutup atau status surat berubah. Muat versi terbaru.']);
         }
         if ($draft->revision !== $revision) {
             throw ValidationException::withMessages(['revision' => $this->conflictMessage($draft)]);
         }
         if ($draft->revision === 2147483647) {
             throw ValidationException::withMessages(['draft' => 'Batas versi draft tercapai. Hubungi pengelola aplikasi.']);
+        }
+    }
+
+    public function identityRules(Letter $letter): array
+    {
+        $required = $letter->draft?->base_version_id !== null ? 'required' : 'nullable';
+
+        return ['draft_id' => [$required, 'uuid'], 'base_version' => [$required, 'uuid']];
+    }
+
+    public function assertIdentity(LetterDraft $draft, array $data): void
+    {
+        if ($draft->base_version_id !== null && (!isset($data['draft_id'], $data['base_version']))) {
+            throw ValidationException::withMessages(['draft' => 'Identitas draft dan versi resmi asal wajib dikirim. Muat versi terbaru.']);
+        }
+        if (($data['draft_id'] ?? $draft->uuid) !== $draft->uuid || ($data['base_version'] ?? $draft->baseVersion?->uuid) !== $draft->baseVersion?->uuid) {
+            throw ValidationException::withMessages(['draft' => 'Draft atau versi resmi asal berubah. Muat versi terbaru.']);
         }
     }
 

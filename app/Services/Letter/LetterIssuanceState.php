@@ -16,8 +16,10 @@ class LetterIssuanceState
     public function lock(Letter $letter, int $revision, bool $editable = true): array
     {
         [$letter, $draft] = $this->previews->lock($letter, $revision, $editable);
-        $classification = LetterNumber::query()->whereKey($draft->templateVersion->letter_number_id)->lockForUpdate()->firstOrFail();
-        $draft->templateVersion->setRelation('letterNumber', $classification);
+        $classification = LetterNumber::query()->whereKey($draft->numberClassification()->id)->lockForUpdate()->firstOrFail();
+        if ($draft->base_version_id === null) {
+            $draft->templateVersion->setRelation('letterNumber', $classification);
+        }
 
         return [$letter, $draft, $classification];
     }
@@ -25,6 +27,10 @@ class LetterIssuanceState
     /** @param array{artifact: string, fingerprint: string, publication_month: string} $data */
     public function inspected(Letter $letter, LetterDraft $draft, array $data, string $actor): LetterArtifact
     {
+        app(LetterDraftState::class)->assertIdentity($draft, $data);
+        if ($draft->base_version_id !== null && ($letter->current_version_id !== $draft->base_version_id || trim($draft->reason ?? '') === '')) {
+            throw ValidationException::withMessages(['reason' => 'Isi alasan dan pastikan versi resmi asal belum berubah sebelum menerbitkan.']);
+        }
         if ($draft->revision !== (int) ($data['revision'] ?? $draft->revision) || $data['publication_month'] !== now()->format('Y-m')) {
             throw ValidationException::withMessages(['issuance' => 'Draft atau bulan penerbitan berubah. Muat ulang status dan konfirmasi tanggal/periode lagi.']);
         }

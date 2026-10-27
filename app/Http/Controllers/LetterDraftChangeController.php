@@ -12,7 +12,7 @@ class LetterDraftChangeController extends Controller
 {
     public function preview(ChangeLetterDraftRequest $request, Letter $letter, ManageLetterDraft $drafts): JsonResponse
     {
-        return response()->json($drafts->previewChange($letter, (int) $request->validated('revision'), $request->route('kind')))->header('Cache-Control', 'private, no-store');
+        return response()->json($drafts->previewChange($letter, (int) $request->validated('revision'), $request->route('kind'), $request->validated()))->header('Cache-Control', 'private, no-store');
     }
 
     public function apply(ChangeLetterDraftRequest $request, Letter $letter, ManageLetterDraft $drafts): RedirectResponse

@@ -20,7 +20,10 @@ class LetterPreviewState
     {
         LetterTemplate::query()->whereKey($letter->letter_template_id)->sharedLock()->firstOrFail();
         $letter = Letter::query()->whereKey($letter->id)->lockForUpdate()->firstOrFail();
-        $draft = $letter->draft()->lockForUpdate()->firstOrFail();
+        $draft = $letter->draft()->lockForUpdate()->first();
+        if ($draft === null) {
+            throw ValidationException::withMessages(['draft' => 'Draft sudah dibuang. Muat versi terbaru.']);
+        }
         if ($editable) {
             $this->state->assertEditable($letter, $draft, $revision);
         }
@@ -40,7 +43,7 @@ class LetterPreviewState
 
     public function fingerprint(LetterDraft $draft): string
     {
-        return $this->state->token(['contract' => 2, 'classification' => $draft->templateVersion->letterNumber->classification_code, 'draft' => $draft->uuid, 'revision' => $draft->revision, 'snapshot' => $draft->snapshot, 'source' => $draft->templateVersion->source_sha256, 'configuration' => $this->configuration->hash($draft->templateVersion)]);
+        return $this->state->token(['contract' => 3, 'base' => $draft->base_version_id, 'reason' => $draft->reason, 'subject' => $draft->subject, 'classification' => $draft->numberClassification()->classification_code, 'draft' => $draft->uuid, 'revision' => $draft->revision, 'snapshot' => $draft->snapshot, 'source' => $draft->templateVersion->source_sha256, 'configuration' => $this->configuration->hash($draft->templateVersion)]);
     }
 
     public function assertSource(LetterDraft $draft): void

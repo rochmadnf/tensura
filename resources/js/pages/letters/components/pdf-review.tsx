@@ -33,6 +33,7 @@ export function LetterPdfReview({
             revision,
             fingerprint: artifact.fingerprint,
             preview_kind: 'pdf',
+            ...(pdf.draft_id ? { draft_id: pdf.draft_id, base_version: pdf.base_version } : {}),
             confirmed: true,
         }));
         const target = confirmed ? confirm : rendered;

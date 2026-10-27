@@ -1,12 +1,16 @@
 # Tahap 9 — Revisi, Pembatalan, Pemulihan, dan Riwayat
 
-Status implementasi: direncanakan. Status uji mandiri pengguna: belum dijalankan.
+Status implementasi: selesai, terverifikasi nonvisual. Status uji mandiri pengguna: belum dijalankan.
 
 Acuan: [rencana teknis](../../planning/letter/teknis.md). Siapkan surat A terbit dan surat B sebagai pemakai ulang nomor pada data uji.
 
 ## Yang sudah dapat dilakukan setelah tahap selesai
 
 Jalankan seluruh siklus Surat, buka versi historis, batalkan, gunakan ulang nomor, dan pulihkan melalui draft. Timeline menjelaskan pelaku/waktu/alasan serta perubahan nomor.
+
+Jalur: **Surat → detail surat Terbit → Buat revisi**, atau **Batalkan surat → isi alasan → konfirmasi → Pulihkan surat**. Isian dan alasan revisi/pemulihan disimpan melalui form draft, lalu generate/konfirmasi preview sebelum menerbitkan. Tombol **Buang draft** mempertahankan dokumen resmi. Bagian **Versi Dokumen** menyediakan dokumen historis beserta Word/PDF per versi.
+
+Migration tahap 9 sudah diterapkan pada database aplikasi lokal. Restart `composer run dev` atau worker yang terpisah. Preview sebelum kontrak pemeriksaan 3 harus digenerate dan dikonfirmasi ulang; isian tetap tersimpan. Status token pada dialog mencegah konfirmasi lama mengenai versi/draft yang sudah berubah.
 
 ## Checklist mandiri
 
@@ -26,3 +30,13 @@ Jalankan seluruh siklus Surat, buka versi historis, batalkan, gunakan ulang nomo
 ## Hasil pengguna
 
 Tanggal, rangkaian surat/nomor uji, dan temuan: belum diisi.
+
+## Batas pengujian
+
+Pengguna melaporkan alur fungsional di Linux berjalan baik dan sebagian pemeriksaan visual telah dilakukan. Checkbox di atas tetap menunggu rincian item yang sudah diuji. Agent menjalankan pemeriksaan nonvisual dan tidak menjalankan browser, screenshot, atau cetak manual.
+
+## Bukti otomatis
+
+102 test PHPUnit/1.269 assertion untuk lifecycle, draft, preview, penerbitan, PDF, font, serta alokasi nomor lulus. Test mencakup templat terbaru dengan klasifikasi berbeda, nomor/tanggal revisi tetap, alasan, draft bersama, editor usang, pembuangan draft, pembatalan pekerjaan tertunda, klaim pemulihan, nomor dipakai ulang, token modal usang, konfirmasi unduhan batal, dan riwayat baca tanpa audit tambahan.
+
+Suite frontend penuh menghasilkan 397 lulus/1 gagal di luar Surat: judul impor/ekspor Pegawai berbeda antara “Sesuai Filter” dan “Sesuai Pencarian/Filter”. 26 test frontend terarah lulus. Test Surat menguji token dialog yang dibekukan saat dibuka, aksi pemulihan/pembuangan, konfirmasi unduhan batal, serta regresi pemeriksaan PDF/DOCX dan penerbitan. Pint, lint, pemeriksaan tipe, dan build produksi lulus. Uji konkurensi proses terpisah dilengkapi pada tahap 10.

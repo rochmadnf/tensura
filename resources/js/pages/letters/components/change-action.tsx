@@ -22,12 +22,16 @@ import { preview as templatePreview, apply as applyTemplate } from '@/routes/ltr
 export function LetterChangeAction({
     letterId,
     revision,
+    draftId,
+    baseVersion,
     kind,
     disabled,
     onOpenChange,
 }: {
     letterId: string;
     revision: number;
+    draftId?: string;
+    baseVersion?: string | null;
     kind: 'masters' | 'template';
     disabled: boolean;
     onOpenChange: (value: boolean) => void;
@@ -49,7 +53,9 @@ export function LetterChangeAction({
         const abort = new AbortController();
         setResult(null);
         setError('');
-        const url = (kind === 'template' ? templatePreview : masterPreview)(letterId, { query: { revision } }).url;
+        const url = (kind === 'template' ? templatePreview : masterPreview)(letterId, {
+            query: { revision, ...(draftId ? { draft_id: draftId, base_version: baseVersion } : {}) },
+        }).url;
         fetch(url, { signal: abort.signal, credentials: 'same-origin', headers: { Accept: 'application/json' } })
             .then(async (response) => {
                 if (response.redirected || !response.headers.get('Content-Type')?.includes('application/json'))
@@ -74,7 +80,12 @@ export function LetterChangeAction({
     }, [open, letterId, revision, kind, attempt]);
     function apply() {
         if (!result || form.processing) return;
-        form.transform(() => ({ revision: result.revision, change_token: result.change_token, confirmed: true }));
+        form.transform(() => ({
+            revision: result.revision,
+            change_token: result.change_token,
+            confirmed: true,
+            ...(draftId ? { draft_id: draftId, base_version: baseVersion } : {}),
+        }));
         form.post((kind === 'template' ? applyTemplate : applyMaster)(letterId).url, {
             preserveScroll: true,
             onSuccess: () => {

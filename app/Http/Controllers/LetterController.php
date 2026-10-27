@@ -8,11 +8,13 @@ use App\Http\Requests\DestroyLetterDraftRequest;
 use App\Http\Requests\StoreLetterRequest;
 use App\Http\Requests\UpdateLetterDraftRequest;
 use App\Http\Resources\LetterResource;
+use App\Http\Resources\LetterVersionResource;
 use App\Models\Letter;
 use App\Models\MasterData\LetterTemplate;
 use App\Services\Letter\LetterFormDefinition;
 use App\Services\Letter\ManageLetterDraft;
 use App\Services\Letter\ManageLetterIssuance;
+use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\ManageLetterPdf;
 use App\Services\Letter\ManageLetterPreview;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,7 +37,7 @@ class LetterController extends Controller
         $month = collect($parsed['month'] ?? [])->first(fn(string $value): bool => ctype_digit($value) && (int) $value >= 1 && (int) $value <= 12);
         $keyword = Letter::normalizeSearchKeyword($request->query('keyword'));
         $perPage = in_array($request->integer('per_page'), [5, 10, 15, 20, 50, 100]) ? $request->integer('per_page') : 10;
-        $letters = Letter::query()->with(['template', 'draft.templateVersion', 'currentVersion'])
+        $letters = Letter::query()->with(['template', 'draft.templateVersion', 'draft.baseVersion', 'currentVersion'])
             ->search($keyword)->when($status, fn(Builder $query): Builder => $query->where('status', (int) $status))
             ->when($template, fn(Builder $query): Builder => $query->whereHas('template', fn(Builder $query): Builder => $query->where('uuid', $template)))
             ->when($creator, fn(Builder $query): Builder => $query->where('creator_uuid', $creator))
@@ -60,11 +62,11 @@ class LetterController extends Controller
         return redirect()->route('ltr.show', $letter->uuid);
     }
 
-    public function show(Request $request, Letter $letter, ManageLetterPreview $previews, ManageLetterIssuance $issuance, ManageLetterPdf $pdfs): Response
+    public function show(Request $request, Letter $letter, ManageLetterPreview $previews, ManageLetterIssuance $issuance, ManageLetterPdf $pdfs, ManageLetterLifecycle $lifecycle): Response
     {
         $letter->load(['template', 'draft.templateVersion.letterNumber', 'currentVersion.wordArtifact']);
 
-        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'pdf' => fn(): array => $pdfs->detail($letter, $request->user()), 'issuance' => fn(): array => $issuance->detail($letter, $request->user()), 'preview' => fn(): array => $previews->detail($letter, $request->user()), 'audits' => fn() => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
+        return inertia('letters/show', ['page' => ['id' => self::PAGE_ID], 'resource' => LetterResource::make($letter), 'lifecycle' => fn(): array => $lifecycle->detail($letter), 'versions' => fn() => $letter->versions()->with(['wordArtifact', 'assignment'])->orderByDesc('version_number')->paginate(5, ['*'], 'versions_page')->through(fn($version): array => ['official' => (new LetterVersionResource($version))->resolve(), 'pdf' => $pdfs->detail($letter, $request->user(), $version->wordArtifact), 'current' => $version->id === $letter->current_version_id])->withQueryString(), 'officialPdf' => fn(): array => $pdfs->detail($letter, $request->user(), $letter->currentVersion?->wordArtifact), 'pdf' => fn(): array => $pdfs->detail($letter, $request->user()), 'issuance' => fn(): array => $issuance->detail($letter, $request->user()), 'preview' => fn(): array => $previews->detail($letter, $request->user()), 'audits' => fn() => $letter->audits()->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10)->through(fn($audit): array => ['id' => $audit->uuid, 'actor' => $audit->actor_name, 'event' => $audit->event, 'description' => $audit->description, 'revision' => $audit->draft_revision, 'changes' => $audit->changes['entries'] ?? [], 'reason' => $audit->changes['reason'] ?? null, 'related_letter' => $audit->changes['related_letter'] ?? null, 'occurred_at' => $audit->occurred_at->toIso8601String()])->withQueryString()]);
     }
 
     public function edit(Letter $letter): RedirectResponse

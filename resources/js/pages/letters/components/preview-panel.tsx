@@ -58,7 +58,11 @@ export function LetterPreviewPanel({
     async function generate() {
         if (busy || working || disabled) return;
         setError('');
-        generation.transform(() => ({ revision, idempotency_key: crypto.randomUUID() }));
+        generation.transform(() => ({
+            revision,
+            idempotency_key: crypto.randomUUID(),
+            ...(preview.draft_id ? { draft_id: preview.draft_id, base_version: preview.base_version } : {}),
+        }));
         try {
             const response = (await generation.post(store(letterId).url)) as { operation: LetterOperation };
             setOperation(response.operation);
@@ -74,6 +78,7 @@ export function LetterPreviewPanel({
             revision,
             fingerprint: artifact.fingerprint,
             preview_kind: 'docx',
+            ...(preview.draft_id ? { draft_id: preview.draft_id, base_version: preview.base_version } : {}),
             confirmed: true,
         }));
         await checking.post(rendered({ letter: letterId, artifact: artifact.id }).url);
@@ -86,6 +91,7 @@ export function LetterPreviewPanel({
             revision,
             fingerprint: artifact.fingerprint,
             preview_kind: 'docx',
+            ...(preview.draft_id ? { draft_id: preview.draft_id, base_version: preview.base_version } : {}),
             confirmed: true,
         }));
         try {

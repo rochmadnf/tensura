@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\LetterStatusEnum;
 use App\Http\Requests\GenerateLetterPdfRequest;
 use App\Http\Resources\LetterOperationResource;
 use App\Models\Letter;
 use App\Models\LetterArtifact;
 use App\Services\Letter\LetterPdfState;
+use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\ManageLetterPdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +31,9 @@ class LetterPdfController extends Controller
         $headers = ['Content-Type' => 'application/pdf', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'];
         $path = Storage::disk($artifact->disk)->path($artifact->path);
         if ($request->routeIs('ltr.pdfs.download')) {
+            if ($letter->status === LetterStatusEnum::CANCELLED) {
+                abort_unless(is_string($request->query('confirmation')) && hash_equals(app(ManageLetterLifecycle::class)->token($letter), $request->query('confirmation')), 422, 'Konfirmasikan bahwa dokumen berasal dari surat yang sudah dibatalkan.');
+            }
             abort_unless($artifact->letter_version_id !== null, 404);
 
             return response()->download($path, 'surat-' . $letter->uuid . '-v' . $artifact->version->version_number . '.pdf', $headers)->setPrivate();

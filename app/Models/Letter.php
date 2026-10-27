@@ -20,7 +20,7 @@ class Letter extends Model
     /** @use HasFactory<LetterFactory> */
     use HasFactory, HasUuids, Searchable;
 
-    protected $fillable = ['subject', 'letter_template_id', 'created_by', 'creator_uuid', 'creator_name', 'status', 'official_number', 'official_date', 'current_version_id'];
+    protected $fillable = ['cancelled_at', 'cancelled_by_uuid', 'cancelled_by_name', 'cancellation_reason', 'subject', 'letter_template_id', 'created_by', 'creator_uuid', 'creator_name', 'status', 'official_number', 'official_date', 'current_version_id'];
 
     public function uniqueIds(): array
     {
@@ -29,7 +29,7 @@ class Letter extends Model
 
     protected function casts(): array
     {
-        return ['status' => LetterStatusEnum::class, 'official_date' => 'immutable_date'];
+        return ['cancelled_at' => 'immutable_datetime', 'status' => LetterStatusEnum::class, 'official_date' => 'immutable_date'];
     }
 
     protected function searchableColumns(): array

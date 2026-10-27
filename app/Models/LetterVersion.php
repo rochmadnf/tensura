@@ -16,7 +16,7 @@ class LetterVersion extends Model
     /** @use HasFactory<LetterVersionFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_id', 'version_number', 'template_version_id', 'letter_number_assignment_id', 'letter_operation_id', 'word_artifact_id', 'subject', 'number', 'letter_date', 'number_year', 'number_month', 'snapshot', 'inspection', 'actor_uuid', 'actor_name', 'issued_at'];
+    protected $fillable = ['reason', 'letter_id', 'version_number', 'template_version_id', 'letter_number_assignment_id', 'letter_operation_id', 'word_artifact_id', 'subject', 'number', 'letter_date', 'number_year', 'number_month', 'snapshot', 'inspection', 'actor_uuid', 'actor_name', 'issued_at'];
 
     public function uniqueIds(): array
     {

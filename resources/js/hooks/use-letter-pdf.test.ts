@@ -89,6 +89,9 @@ it('ignores other sources and does not replace terminal SSE state with a late qu
     resolve({ operation: operation(1, 'queued') });
     await pending;
     expect(render().operation?.status).toBe('succeeded');
-    expect(state.reload).toHaveBeenCalledWith({ only: ['pdf', 'audits'], showProgress: false });
+    expect(state.reload).toHaveBeenCalledWith({
+        only: ['pdf', 'officialPdf', 'versions', 'audits'],
+        showProgress: false,
+    });
     cleanups.forEach((cleanup) => cleanup?.());
 });

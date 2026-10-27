@@ -14,6 +14,8 @@ export type LetterOperation = {
     updated_at: string;
 };
 export type LetterPreview = {
+    draft_id?: string | null;
+    base_version?: string | null;
     revision: number;
     operation: LetterOperation | null;
     artifact: {
@@ -36,6 +38,8 @@ export type LetterIssuance = {
     period: string | null;
 };
 export type LetterOfficial = {
+    reason?: string | null;
+    word_id?: string;
     id: string;
     version: number;
     number: string;
@@ -49,6 +53,8 @@ export type LetterOfficial = {
 };
 
 export type LetterPdf = {
+    draft_id?: string | null;
+    base_version?: string | null;
     source_id: string | null;
     operation: LetterOperation | null;
     artifact: {

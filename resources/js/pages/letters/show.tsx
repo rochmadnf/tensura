@@ -12,6 +12,8 @@ import { LetterChangeAction } from './components/change-action';
 import { LetterPreviewPanel } from './components/preview-panel';
 import { LetterIssueAction } from './components/issue-action';
 import { LetterOfficialDocument } from './components/official-document';
+import { LetterLifecycleActions } from './components/lifecycle-actions';
+import type { LetterLifecycle } from '@/schemas/letter';
 import type { LetterIssuance } from '@/schemas/letter-preview';
 import type { LetterPreview, LetterPdf } from '@/schemas/letter-preview';
 
@@ -22,12 +24,22 @@ export default function LetterShow({
     preview,
     issuance,
     pdf,
+    lifecycle,
+    versions,
+    officialPdf,
 }: {
     resource: { data: LetterResource };
     audits: AuditPage;
     preview: LetterPreview;
     issuance: LetterIssuance;
     pdf: LetterPdf;
+    officialPdf?: LetterPdf;
+    lifecycle?: LetterLifecycle;
+    versions?: {
+        data: { official: import('@/schemas/letter-preview').LetterOfficial; pdf: LetterPdf; current: boolean }[];
+        current_page: number;
+        last_page: number;
+    };
 }) {
     const [issuing, setIssuing] = useState(
         !!issuance.operation && ['queued', 'running'].includes(issuance.operation.status),
@@ -56,9 +68,49 @@ export default function LetterShow({
                         <div className="flex flex-wrap items-center gap-3">
                             <Badge variant="secondary">{letter.status_label}</Badge>
                             <span className="text-sm text-muted-foreground">
-                                {letter.number ?? 'Belum memiliki nomor resmi'}
+                                {lifecycle?.number_owner ? (
+                                    <span
+                                        className="text-destructive"
+                                        title={`Nomor ini telah digunakan kembali oleh surat ‘${lifecycle.number_owner.subject}’.`}
+                                    >
+                                        {letter.number} ·{' '}
+                                        <Link href={show(lifecycle.number_owner.id).url} className="underline">
+                                            {lifecycle.number_owner.subject}
+                                        </Link>
+                                    </span>
+                                ) : (
+                                    (letter.number ?? 'Belum memiliki nomor resmi')
+                                )}
                             </span>
                         </div>
+                        {letter.status === 3 && (
+                            <FieldDescription>
+                                {lifecycle?.number_owner
+                                    ? 'Nomor sedang digunakan surat lain.'
+                                    : 'Nomor tersedia untuk digunakan kembali.'}{' '}
+                                {lifecycle?.reason} {lifecycle?.cancelled_by}{' '}
+                                {lifecycle?.cancelled_at
+                                    ? new Date(lifecycle.cancelled_at).toLocaleString('id-ID')
+                                    : ''}
+                            </FieldDescription>
+                        )}
+                        {lifecycle && (
+                            <LetterLifecycleActions
+                                letterId={letter.id}
+                                status={letter.status}
+                                lifecycle={lifecycle}
+                                disabled={
+                                    editing || saving || issuing || (operation !== null && operation !== 'lifecycle')
+                                }
+                                onOpenChange={(open) => setOperation(open ? 'lifecycle' : null)}
+                            />
+                        )}
+                        {lifecycle?.number_suggestion && (
+                            <FieldDescription>
+                                Saran nomor pemulihan: {lifecycle.number_suggestion.number}. Pilih halaman/nomor urut
+                                tersebut secara eksplisit pada draft, lalu periksa ulang.
+                            </FieldDescription>
+                        )}
                         {draft?.reasons.map((reason) => (
                             <FieldDescription key={reason}>{reason}</FieldDescription>
                         ))}
@@ -73,6 +125,8 @@ export default function LetterShow({
                                     <LetterChangeAction
                                         letterId={letter.id}
                                         revision={draft.revision}
+                                        draftId={draft.id}
+                                        baseVersion={draft.base_version}
                                         kind="template"
                                         disabled={
                                             editing ||
@@ -87,6 +141,8 @@ export default function LetterShow({
                                     <LetterChangeAction
                                         letterId={letter.id}
                                         revision={draft.revision}
+                                        draftId={draft.id}
+                                        baseVersion={draft.base_version}
                                         kind="masters"
                                         disabled={
                                             editing ||
@@ -97,25 +153,30 @@ export default function LetterShow({
                                         onOpenChange={(open) => setOperation(open ? 'masters' : null)}
                                     />
                                 )}
-                                <DeleteResourceAction
-                                    key={`delete-${letter.id}-${draft.revision}`}
-                                    url={destroy(letter.id).url}
-                                    name={letter.subject}
-                                    title="Hapus Draft Surat?"
-                                    description={
-                                        <>
-                                            Draft “{letter.subject}” beserta riwayat draft akan dihapus permanen. Draft
-                                            belum mengambil nomor surat.
-                                        </>
-                                    }
-                                    successMessage="Draft surat dihapus."
-                                    errorMessage="Draft belum dapat dihapus. Muat status terbaru."
-                                    data={{ revision: draft.revision, confirmed: true }}
-                                    disabled={
-                                        editing || saving || issuing || (operation !== null && operation !== 'delete')
-                                    }
-                                    onOpenChange={(open) => setOperation(open ? 'delete' : null)}
-                                />
+                                {(draft.kind ?? 1) === 1 && (
+                                    <DeleteResourceAction
+                                        key={`delete-${letter.id}-${draft.revision}`}
+                                        url={destroy(letter.id).url}
+                                        name={letter.subject}
+                                        title="Hapus Draft Surat?"
+                                        description={
+                                            <>
+                                                Draft “{letter.subject}” beserta riwayat draft akan dihapus permanen.
+                                                Draft belum mengambil nomor surat.
+                                            </>
+                                        }
+                                        successMessage="Draft surat dihapus."
+                                        errorMessage="Draft belum dapat dihapus. Muat status terbaru."
+                                        data={{ revision: draft.revision, confirmed: true }}
+                                        disabled={
+                                            editing ||
+                                            saving ||
+                                            issuing ||
+                                            (operation !== null && operation !== 'delete')
+                                        }
+                                        onOpenChange={(open) => setOperation(open ? 'delete' : null)}
+                                    />
+                                )}
                             </div>
                         )}
                     </div>
@@ -125,7 +186,9 @@ export default function LetterShow({
                         key={letter.official.id}
                         letterId={letter.id}
                         official={letter.official}
-                        pdf={pdf}
+                        pdf={officialPdf ?? pdf}
+                        cancelled={letter.status === 3}
+                        confirmation={lifecycle?.state_token}
                     />
                 )}
                 {editing && !letter.editable && (
@@ -189,6 +252,51 @@ export default function LetterShow({
                         />
                     </FormCard>
                 )}
+                {versions && versions.data.some((version) => !version.current) && (
+                    <FormCard
+                        sectioned
+                        title="Versi Dokumen"
+                        description="Versi terdahulu dipertahankan sebagai dokumen historis."
+                    >
+                        <div className="flex flex-col gap-4">
+                            {versions.data
+                                .filter((version) => !version.current)
+                                .map((version) => (
+                                    <LetterOfficialDocument
+                                        key={version.official.id}
+                                        letterId={letter.id}
+                                        official={version.official}
+                                        pdf={version.pdf}
+                                        historical
+                                        cancelled={letter.status === 3}
+                                        confirmation={lifecycle?.state_token}
+                                    />
+                                ))}
+                            <div className="flex gap-2">
+                                {versions.current_page > 1 && (
+                                    <Link
+                                        href={
+                                            show(letter.id, { query: { versions_page: versions.current_page - 1 } }).url
+                                        }
+                                        preserveScroll
+                                    >
+                                        Sebelumnya
+                                    </Link>
+                                )}
+                                {versions.current_page < versions.last_page && (
+                                    <Link
+                                        href={
+                                            show(letter.id, { query: { versions_page: versions.current_page + 1 } }).url
+                                        }
+                                        preserveScroll
+                                    >
+                                        Berikutnya
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </FormCard>
+                )}
                 <FormCard
                     sectioned
                     title="Riwayat Surat"
@@ -198,6 +306,12 @@ export default function LetterShow({
                         {audits.data.map((audit) => (
                             <article key={audit.id} className="flex flex-col gap-1">
                                 <p className="text-sm font-medium">{audit.description}</p>
+                                {audit.reason && <p className="text-sm">Alasan: {audit.reason}</p>}
+                                {audit.related_letter && (
+                                    <Link href={show(audit.related_letter).url} className="text-sm underline">
+                                        Lihat surat terkait
+                                    </Link>
+                                )}
                                 <p className="text-sm text-muted-foreground">
                                     {audit.actor} · {new Date(audit.occurred_at).toLocaleString('id-ID')} · revision{' '}
                                     {audit.revision}

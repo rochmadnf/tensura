@@ -47,12 +47,22 @@ class ManageLetterDraft
     {
         DB::transaction(function () use ($letter, $data, $actor): void {
             [$letter, $draft] = $this->lock($letter, (int) $data['revision']);
+            $this->state->assertIdentity($draft, $data);
+            if ($draft->base_version_id !== null) {
+                $base = $draft->baseVersion;
+                if ($data['letter_date'] !== $base->letter_date->toDateString() || (int) $data['number_year'] !== $base->number_year || (int) $data['number_month'] !== $base->number_month || (int) $data['numbering_mode'] !== 2 || ($draft->kind === LetterDraftKindEnum::REVISION && ((int) ($data['page_number'] ?? 0) !== $base->assignment->page_number || (int) ($data['sequence_number'] ?? 0) !== $base->assignment->sequence_number))) {
+                    throw ValidationException::withMessages(['draft' => 'Tanggal, periode, dan nomor revisi tidak dapat diubah. Pemulihan hanya dapat memilih nomor pada periode asal.']);
+                }
+            }
             $version = $draft->templateVersion;
             if ($version->uuid !== $data['template_version']) {
                 throw ValidationException::withMessages(['template_version' => 'Versi templat draft berubah. Muat versi terbaru sebelum menyimpan.']);
             }
             $data = $this->validate($version, $data);
             $snapshot = $this->snapshot($version, $data, $draft->snapshot);
+            if ($draft->base_version_id !== null) {
+                $snapshot['values']['nomor_surat'] = app(LetterSystemFields::class)->exampleNumber($draft->numberClassification()->classification_code, $draft->letter_date);
+            }
             $changes = $this->state->changes([
                 'Perihal' => $letter->subject, 'Tanggal Surat' => $draft->letter_date->toDateString(),
                 'Mode nomor' => $draft->numbering_mode->value === 1 ? 'Otomatis' : 'Manual',
@@ -68,17 +78,20 @@ class ManageLetterDraft
                 'Nomor urut' => isset($data['sequence_number']) ? (string) $data['sequence_number'] : null,
                 ...$snapshot['values'],
             ]);
-            $letter->subject = $data['subject'];
+            if ($draft->kind === LetterDraftKindEnum::INITIAL) {
+                $letter->subject = $data['subject'];
+            }
             $letter->touch();
-            $draft->fill([...$this->attributes($data, $snapshot, $actor), 'revision' => $draft->revision + 1])->save();
+            $draft->fill([...$this->attributes($data, $snapshot, $actor), 'revision' => $draft->revision + 1, 'subject' => $data['subject'], 'reason' => isset($data['reason']) ? trim($data['reason']) : $draft->reason])->save();
             $this->audit($letter, $draft, $actor, 'draft.saved', 'Isian draft disimpan; pemeriksaan dokumen perlu diulang.', $changes);
         }, 5);
     }
 
-    public function previewChange(Letter $letter, int $revision, string $kind): array
+    public function previewChange(Letter $letter, int $revision, string $kind, array $identity = []): array
     {
-        return DB::transaction(function () use ($letter, $revision, $kind): array {
+        return DB::transaction(function () use ($letter, $revision, $kind, $identity): array {
             [$letter, $draft] = $this->lock($letter, $revision);
+            $this->state->assertIdentity($draft, $identity);
             $plan = $this->plan($letter, $draft, $kind);
 
             return ['revision' => $draft->revision, 'target_version' => $plan['version']->version_number, 'changes' => $plan['changes'], 'change_token' => $this->changeToken($letter, $draft, $kind, $plan), 'complete' => $plan['snapshot']['complete']];
@@ -90,9 +103,13 @@ class ManageLetterDraft
     {
         DB::transaction(function () use ($letter, $data, $actor, $kind): void {
             [$letter, $draft] = $this->lock($letter, (int) $data['revision']);
+            $this->state->assertIdentity($draft, $data);
             $plan = $this->plan($letter, $draft, $kind);
             if (!hash_equals($this->changeToken($letter, $draft, $kind, $plan), $data['change_token'])) {
                 throw ValidationException::withMessages(['change_token' => 'Data atau versi templat berubah sejak ringkasan dibuka. Periksa ringkasan terbaru.']);
+            }
+            if ($draft->base_version_id !== null && isset($plan['snapshot']['values'])) {
+                $plan['snapshot']['values']['nomor_surat'] = app(LetterSystemFields::class)->exampleNumber($draft->numberClassification()->classification_code, $draft->letter_date);
             }
             $draft->fill(['template_version_id' => $plan['version']->id, 'form_data' => ['schema_version' => 1, ...$plan['data']], 'snapshot' => $plan['snapshot'], 'revision' => $draft->revision + 1, 'updated_by' => $actor->id, 'updater_uuid' => $actor->uuid, 'updater_name' => $actor->name])->save();
             $letter->touch();
@@ -103,7 +120,10 @@ class ManageLetterDraft
     public function destroy(Letter $letter, int $revision): void
     {
         DB::transaction(function () use ($letter, $revision): void {
-            [$letter] = $this->lock($letter, $revision);
+            [$letter, $draft] = $this->lock($letter, $revision);
+            if ($draft->kind !== LetterDraftKindEnum::INITIAL) {
+                throw ValidationException::withMessages(['draft' => 'Gunakan Buang Draft untuk revisi atau pemulihan.']);
+            }
             $letter->delete();
         }, 5);
     }
@@ -148,7 +168,7 @@ class ManageLetterDraft
 
     private function validate(LetterTemplateVersion $version, array $data): array
     {
-        $validator = Validator::make($data, [...$this->rules->identity(), ...$this->rules->fields($version)], [], $this->rules->attributes($version));
+        $validator = Validator::make($data, [...$this->rules->identity(), ...$this->rules->fields($version), 'reason' => ['nullable', 'string', 'max:2000']], [], $this->rules->attributes($version));
         $validator->after(fn($validator) => $this->rules->checkPeriod($validator, $data));
 
         return $validator->validate();

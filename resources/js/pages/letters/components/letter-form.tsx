@@ -54,6 +54,8 @@ export function LetterForm({
         letterInitialValues(configuration, templateId, today, resource),
     );
     const busy = disabled || form.processing;
+    const continuation = (resource?.draft?.kind ?? 1) !== 1;
+    const revisionOnly = resource?.draft?.kind === 2;
     const errors: Record<string, string | undefined> = form.errors;
     useEffect(() => {
         onProcessingChange?.(form.processing);
@@ -94,7 +96,7 @@ export function LetterForm({
             <FormCard
                 sectioned
                 title="Draft Surat"
-                description={`Templat ${resource.template.name} · versi ${configuration.number}. Nomor resmi diberikan saat penerbitan.`}
+                description={`Templat ${resource.template.name} · versi ${configuration.number}. ${continuation ? 'Tanggal dan periode asal dipertahankan.' : 'Nomor resmi diberikan saat penerbitan.'}`}
                 action={
                     resource.editable && (
                         <CardAction>
@@ -114,7 +116,7 @@ export function LetterForm({
                     <dl className="grid gap-3 sm:grid-cols-2">
                         <div>
                             <dt className="text-sm text-muted-foreground">Perihal</dt>
-                            <dd>{resource.subject}</dd>
+                            <dd>{resource.draft?.subject ?? resource.subject}</dd>
                         </div>
                         <div>
                             <dt className="text-sm text-muted-foreground">Tanggal Surat</dt>
@@ -230,13 +232,31 @@ export function LetterForm({
                         />
                         <FieldError>{errors.subject}</FieldError>
                     </Field>
+                    {continuation && (
+                        <Field data-invalid={!!errors.reason}>
+                            <FieldLabel htmlFor="letter-reason">
+                                Alasan {revisionOnly ? 'revisi' : 'pemulihan'} *
+                            </FieldLabel>
+                            <Textarea
+                                id="letter-reason"
+                                value={form.data.reason}
+                                maxLength={2000}
+                                disabled={busy}
+                                onChange={(event) => form.setData('reason', event.target.value)}
+                            />
+                            <FieldDescription>
+                                Wajib sebelum penerbitan dan akan tersimpan dalam riwayat.
+                            </FieldDescription>
+                            <FieldError>{errors.reason}</FieldError>
+                        </Field>
+                    )}
                     <Field data-invalid={!!errors.letter_date}>
                         <FieldLabel htmlFor="letter-date">Tanggal Surat *</FieldLabel>
                         <DatePickerInput
                             id="letter-date"
                             name="letter_date"
                             value={form.data.letter_date}
-                            disabled={busy}
+                            disabled={busy || continuation}
                             onValueChange={(value) => {
                                 form.setData('letter_date', value);
                                 if (value) {
@@ -263,7 +283,7 @@ export function LetterForm({
                                 form.setData('sequence_number', null);
                             }}
                             placeholder="Pilih mode"
-                            disabled={busy}
+                            disabled={busy || continuation}
                         />
                         <FieldError>{errors.numbering_mode}</FieldError>
                         <FieldDescription>
@@ -305,7 +325,11 @@ export function LetterForm({
                                                 : 2147483647
                                     }
                                     value={form.data[name] ?? ''}
-                                    disabled={busy}
+                                    disabled={
+                                        busy ||
+                                        (continuation &&
+                                            (name === 'number_year' || name === 'number_month' || revisionOnly))
+                                    }
                                     aria-invalid={!!errors[name]}
                                     onChange={(event) =>
                                         form.setData(

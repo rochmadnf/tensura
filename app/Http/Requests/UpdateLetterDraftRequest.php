@@ -13,7 +13,7 @@ class UpdateLetterDraftRequest extends StoreLetterRequest
         $result = parent::rules($rules);
         unset($result['template']);
 
-        return [...$result, 'revision' => ['required', 'integer', 'between:1,2147483647']];
+        return [...$result, ...app(LetterDraftState::class)->identityRules($this->route('letter')), 'reason' => ['nullable', 'string', 'max:2000'], 'revision' => ['required', 'integer', 'between:1,2147483647']];
     }
 
     public function after(): array

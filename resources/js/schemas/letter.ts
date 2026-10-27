@@ -9,6 +9,7 @@ import {
     nonEmpty,
     nullable,
     object,
+    optional,
     pipe,
     record,
     string,
@@ -39,6 +40,10 @@ export type LetterConfiguration = {
     signers: { id: string; label: string; options: { value: string; label: string }[] }[];
 };
 export type LetterDraft = {
+    kind?: number;
+    subject?: string;
+    reason?: string | null;
+    base_version?: string | null;
     id: string;
     revision: number;
     template_version: string;
@@ -92,6 +97,8 @@ export type LetterAudit = {
     revision: number;
     occurred_at: string;
     changes: LetterChange[];
+    reason?: string | null;
+    related_letter?: string | null;
 };
 
 const numeric = (max: number) => pipe(string(), nonEmpty(), toNumber(), integer(), minValue(1), maxValue(max));
@@ -100,6 +107,9 @@ export function createLetterSchema(configuration: LetterConfiguration) {
         template: pipe(string(), uuid()),
         template_version: pipe(string(), uuid()),
         revision: numeric(2147483647),
+        draft_id: optional(nullable(pipe(string(), uuid()))),
+        base_version: optional(nullable(pipe(string(), uuid()))),
+        reason: optional(pipe(string(), trim(), maxLength(2000))),
         subject: pipe(string(), trim(), nonEmpty('Perihal wajib diisi.'), maxLength(255)),
         letter_date: pipe(string(), nonEmpty('Tanggal surat wajib diisi.')),
         numbering_mode: pipe(string(), toNumber(), integer(), minValue(1), maxValue(2)),
@@ -180,7 +190,10 @@ export function letterInitialValues(
         template,
         template_version: configuration.version,
         revision: String(draft?.revision ?? 1),
-        subject: resource?.subject ?? '',
+        draft_id: draft?.id ?? null,
+        base_version: draft?.base_version ?? null,
+        reason: draft?.reason ?? '',
+        subject: draft?.subject ?? resource?.subject ?? '',
         letter_date: draft?.letter_date ?? today,
         numbering_mode: String(draft?.numbering_mode ?? 1),
         number_year: String(draft?.number_year ?? Number(today.slice(0, 4))),
@@ -201,3 +214,15 @@ export function letterInitialValues(
 export function preserveLetterSelectionOrder(previous: string[], selected: string[]): string[] {
     return [...previous.filter((id) => selected.includes(id)), ...selected.filter((id) => !previous.includes(id))];
 }
+
+export type LetterLifecycle = {
+    number_suggestion?: { page: number; sequence: number; number: string } | null;
+    state_token: string;
+    base_version: string | null;
+    has_draft: boolean;
+    draft_kind: number | null;
+    cancelled_at: string | null;
+    cancelled_by: string | null;
+    reason: string | null;
+    number_owner: { id: string; subject: string } | null;
+};

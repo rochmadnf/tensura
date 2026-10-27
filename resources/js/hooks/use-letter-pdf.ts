@@ -28,7 +28,7 @@ export function useLetterPdf(letterId: string, pdf: LetterPdf) {
             if (result.kind !== 'pdf' || result.letter_id !== letterId || result.source_id !== pdf.source_id) return;
             accept(result);
             if (['succeeded', 'failed', 'stale'].includes(result.status))
-                router.reload({ only: ['pdf', 'audits'], showProgress: false });
+                router.reload({ only: ['pdf', 'officialPdf', 'versions', 'audits'], showProgress: false });
         }
         window.addEventListener('letter-operation', changed);
         return () => window.removeEventListener('letter-operation', changed);
@@ -44,7 +44,7 @@ export function useLetterPdf(letterId: string, pdf: LetterPdf) {
                 operation: LetterOperation;
             };
             accept(response.operation);
-            router.reload({ only: ['pdf'], showProgress: false });
+            router.reload({ only: ['pdf', 'officialPdf', 'versions'], showProgress: false });
         } catch {
             setError('PDF belum dapat diminta. Word tetap tersedia; silakan coba lagi.');
         }

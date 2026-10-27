@@ -1,3 +1,4 @@
+import { CancelledDownloadLink } from './cancelled-download-link';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import { FormCard } from '@/components/form-card';
@@ -22,16 +23,22 @@ export function LetterOfficialDocument({
     letterId,
     official,
     pdf,
+    historical = false,
+    cancelled = false,
+    confirmation,
 }: {
     letterId: string;
     official: LetterOfficial;
     pdf: LetterPdf;
+    historical?: boolean;
+    cancelled?: boolean;
+    confirmation?: string;
 }) {
     const conversion = useLetterPdf(letterId, pdf);
     return (
         <FormCard
             sectioned
-            title="Dokumen Resmi"
+            title={historical ? 'Dokumen Historis' : cancelled ? 'Dokumen Surat Batal' : 'Dokumen Resmi'}
             description={`Versi ${official.version} · diterbitkan oleh ${official.issued_by} pada ${new Date(official.issued_at).toLocaleString('id-ID')}`}
         >
             <div className="flex flex-col gap-4">
@@ -56,15 +63,31 @@ export function LetterOfficialDocument({
                         <DropdownMenuContent align="start">
                             <DropdownMenuGroup>
                                 <DropdownMenuItem
-                                    render={<a href={download({ letter: letterId, version: official.id }).url} />}
+                                    render={
+                                        <CancelledDownloadLink
+                                            cancelled={cancelled}
+                                            href={
+                                                download(
+                                                    { letter: letterId, version: official.id },
+                                                    { query: cancelled ? { confirmation } : {} },
+                                                ).url
+                                            }
+                                        />
+                                    }
                                 >
                                     Word (.docx)
                                 </DropdownMenuItem>
                                 {pdf.artifact ? (
                                     <DropdownMenuItem
                                         render={
-                                            <a
-                                                href={pdfDownload({ letter: letterId, artifact: pdf.artifact.id }).url}
+                                            <CancelledDownloadLink
+                                                cancelled={cancelled}
+                                                href={
+                                                    pdfDownload(
+                                                        { letter: letterId, artifact: pdf.artifact.id },
+                                                        { query: cancelled ? { confirmation } : {} },
+                                                    ).url
+                                                }
                                             />
                                         }
                                     >
@@ -92,6 +115,7 @@ export function LetterOfficialDocument({
                     pengganti.
                 </FieldDescription>
                 <LetterPdfStatus pdf={pdf} operation={conversion.operation} error={conversion.error} />
+                {official.reason && <p className="text-sm">Alasan: {official.reason}</p>}
                 <details>
                     <summary className="cursor-pointer text-sm">Lihat nilai yang diterbitkan</summary>
                     <dl className="flex flex-col gap-2">

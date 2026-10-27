@@ -73,6 +73,7 @@ class DocumentFontRegistry
             return $this->inventory;
         }
         $this->hashes = [];
+        $this->managed = null;
         try {
             $result = Process::env($this->environment())->timeout(config('document-fonts.timeout_seconds'))->run([config('document-fonts.executables.list'), '--format', self::FORMAT]);
             if ($result->failed()) {
@@ -148,7 +149,7 @@ class DocumentFontRegistry
     public function report(array $requirements): array
     {
         $inventory = $this->inventory();
-        $managed = $this->managed ?? DocumentFont::query()->where('status', 'ready')->get()->keyBy('sha256');
+        $managed = $this->managed ??= DocumentFont::query()->where('status', 'ready')->get()->keyBy('sha256');
         $fallback = null;
         foreach ($this->fallbacks ?? config('document-fonts.fallbacks') as $family) {
             if ($this->match(['family' => $family, 'bold' => false, 'italic' => false], $inventory['faces']) !== null) {

@@ -82,9 +82,9 @@ class ManageLetterPdf
         return $operation;
     }
 
-    public function detail(Letter $letter, User $actor): array
+    public function detail(Letter $letter, User $actor, ?LetterArtifact $source = null): array
     {
-        $word = $letter->currentVersion?->wordArtifact ?? $letter->artifacts()->whereNull('letter_version_id')->where('kind', 'docx')->where('draft_revision', $letter->draft?->revision)->latest('id')->first();
+        $word = $source ?? ($letter->draft?->isWorking() ? null : $letter->currentVersion?->wordArtifact) ?? $letter->artifacts()->whereNull('letter_version_id')->where('kind', 'docx')->where('draft_revision', $letter->draft?->revision)->latest('id')->first();
         $result = ['source_id' => null, 'operation' => null, 'artifact' => null, 'reason' => null, 'max_bytes' => config('letters.pdf.max_bytes')];
         if ($word === null) {
             return $result;
@@ -92,6 +92,8 @@ class ManageLetterPdf
         try {
             $this->state->assertWord($letter, $word);
             $result['source_id'] = $word->uuid;
+            $result['draft_id'] = $word->draft?->uuid;
+            $result['base_version'] = $word->draft?->baseVersion?->uuid;
             $operation = $letter->operations()->where('source_artifact_id', $word->id)->where('kind', 'pdf')->latest('id')->first();
             $result['operation'] = $operation === null ? null : (new LetterOperationResource($operation))->resolve();
             $pdf = $letter->artifacts()->where('source_artifact_id', $word->id)->where('kind', 'pdf')->latest('id')->first();

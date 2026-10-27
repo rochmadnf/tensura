@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LetterDraftKindEnum;
 use App\Enums\LetterNumberingModeEnum;
+use App\Enums\LetterStatusEnum;
 use App\Models\MasterData\LetterTemplateVersion;
 use Database\Factories\LetterDraftFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -18,7 +19,7 @@ class LetterDraft extends Model
     /** @use HasFactory<LetterDraftFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['letter_id', 'template_version_id', 'kind', 'letter_date', 'numbering_mode', 'number_year', 'number_month', 'page_number', 'sequence_number', 'revision', 'form_data', 'snapshot', 'updated_by', 'updater_uuid', 'updater_name'];
+    protected $fillable = ['base_version_id', 'subject', 'reason', 'letter_id', 'template_version_id', 'kind', 'letter_date', 'numbering_mode', 'number_year', 'number_month', 'page_number', 'sequence_number', 'revision', 'form_data', 'snapshot', 'updated_by', 'updater_uuid', 'updater_name'];
 
     public function uniqueIds(): array
     {
@@ -33,6 +34,27 @@ class LetterDraft extends Model
     public function letter(): BelongsTo
     {
         return $this->belongsTo(Letter::class);
+    }
+
+    public function baseVersion(): BelongsTo
+    {
+        return $this->belongsTo(LetterVersion::class, 'base_version_id');
+    }
+
+    public function numberClassification(): LetterNumber
+    {
+        return $this->baseVersion?->assignment->period->letterNumber ?? $this->templateVersion->letterNumber;
+    }
+
+    public function isWorking(): bool
+    {
+        $letter = $this->letter;
+
+        return match ($this->kind) {
+            LetterDraftKindEnum::INITIAL => $letter->status === LetterStatusEnum::DRAFT,
+            LetterDraftKindEnum::REVISION => $letter->status === LetterStatusEnum::PUBLISHED && $this->base_version_id === $letter->current_version_id,
+            LetterDraftKindEnum::RECOVERY => $letter->status === LetterStatusEnum::CANCELLED && $this->base_version_id === $letter->current_version_id,
+        };
     }
 
     public function templateVersion(): BelongsTo

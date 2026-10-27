@@ -67,7 +67,11 @@ export function LetterIssueAction({
             if (result.kind !== 'issue' || result.letter_id !== letterId) return;
             const accepted = acceptOperation(result);
             const active = ['queued', 'running'].includes(accepted.status);
-            if (!active) router.reload({ only: ['resource', 'issuance', 'preview', 'audits'], showProgress: false });
+            if (!active)
+                router.reload({
+                    only: ['resource', 'preview', 'issuance', 'pdf', 'officialPdf', 'versions', 'lifecycle', 'audits'],
+                    showProgress: false,
+                });
         }
         window.addEventListener('letter-operation', changed);
         return () => window.removeEventListener('letter-operation', changed);
@@ -93,6 +97,7 @@ export function LetterIssueAction({
         form.transform(() => ({
             revision,
             artifact: artifact.id,
+            ...(preview.draft_id ? { draft_id: preview.draft_id, base_version: preview.base_version } : {}),
             fingerprint: artifact.fingerprint,
             idempotency_key: idempotencyKey,
             publication_month: issuance.publication_month,
@@ -104,7 +109,10 @@ export function LetterIssueAction({
             acceptOperation(result.operation);
             setOpen(false);
             onOpenChange(false);
-            router.reload({ only: ['resource', 'issuance', 'preview', 'audits'], showProgress: false });
+            router.reload({
+                only: ['resource', 'preview', 'issuance', 'pdf', 'officialPdf', 'versions', 'lifecycle', 'audits'],
+                showProgress: false,
+            });
         } catch {
             setError('Penerbitan belum diterima. Periksa pesan atau muat status terbaru sebelum mencoba lagi.');
         }

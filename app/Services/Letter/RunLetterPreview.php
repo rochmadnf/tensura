@@ -22,7 +22,16 @@ class RunLetterPreview
             if ($operation === null || $operation->status->terminal()) {
                 return null;
             }
-            [$letter, $draft] = $this->state->lock($operation->letter, $operation->draft_revision, false);
+            try {
+                [$letter, $draft] = $this->state->lock($operation->letter, $operation->draft_revision, false);
+            } catch (ValidationException) {
+                $operation = LetterOperation::query()->whereKey($operation->id)->lockForUpdate()->firstOrFail();
+                if (!$operation->status->terminal()) {
+                    $this->events->transition($operation, Status::STALE, 'Draft sudah ditutup.');
+                }
+
+                return null;
+            }
             $operation = LetterOperation::query()->whereKey($operation->id)->lockForUpdate()->first();
             if ($operation === null || $operation->status->terminal() || $operation->lease_expires_at?->isFuture()) {
                 return null;
@@ -33,7 +42,7 @@ class RunLetterPreview
                 return null;
             }
             try {
-                if ($draft->revision !== $operation->draft_revision) {
+                if ($draft->id !== $operation->letter_draft_id || $draft->revision !== $operation->draft_revision) {
                     throw ValidationException::withMessages(['preview' => 'Draft berubah.']);
                 }
                 $this->state->assertReady($letter, $draft);

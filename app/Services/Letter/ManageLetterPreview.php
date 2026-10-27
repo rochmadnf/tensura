@@ -3,7 +3,6 @@
 namespace App\Services\Letter;
 
 use App\Enums\LetterOperationStatusEnum;
-use App\Enums\LetterStatusEnum;
 use App\Http\Resources\LetterOperationResource;
 use App\Jobs\GenerateLetterPreview;
 use App\Models\Letter;
@@ -39,6 +38,7 @@ class ManageLetterPreview
 
                     return $existing;
                 }
+                $this->tokens->assertIdentity($draft, $data);
                 $this->state->assertReady($letter, $draft);
                 $this->state->assertSource($draft);
                 $fingerprint = $this->state->fingerprint($draft);
@@ -59,7 +59,7 @@ class ManageLetterPreview
                     } catch (ValidationException) {
                     }
                 }
-                $operation = LetterOperation::query()->create(['letter_id' => $letter->id, 'letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'preview', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => LetterOperationStatusEnum::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'state' => $fingerprint, 'requested_profile' => $profile, 'snapshot' => [...$draft->snapshot, 'values' => [...$draft->snapshot['values'], 'nomor_surat' => app(LetterSystemFields::class)->exampleNumber($draft->templateVersion->letterNumber->classification_code, $draft->letter_date)]], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256]]);
+                $operation = LetterOperation::query()->create(['letter_id' => $letter->id, 'letter_draft_id' => $draft->id, 'actor_uuid' => $actor->uuid, 'actor_name' => $actor->name, 'kind' => 'preview', 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'draft_revision' => $draft->revision, 'status' => LetterOperationStatusEnum::QUEUED, 'status_revision' => 1, 'payload' => ['schema_version' => 1, 'state' => $fingerprint, 'requested_profile' => $profile, 'snapshot' => [...$draft->snapshot, 'values' => [...$draft->snapshot['values'], 'nomor_surat' => app(LetterSystemFields::class)->exampleNumber($draft->numberClassification()->classification_code, $draft->letter_date)]], 'source_disk' => $draft->templateVersion->source_disk, 'source_path' => $draft->templateVersion->source_path, 'source_sha256' => $draft->templateVersion->source_sha256]]);
                 $this->events->notify($operation);
 
                 return $operation;
@@ -97,7 +97,8 @@ class ManageLetterPreview
     public function check(Letter $letter, LetterArtifact $artifact, array $data, User $actor, bool $confirm): void
     {
         DB::transaction(function () use ($letter, $artifact, $data, $actor, $confirm): void {
-            [$letter] = $this->state->lock($letter, (int) $data['revision']);
+            [$letter, $draft] = $this->state->lock($letter, (int) $data['revision']);
+            $this->tokens->assertIdentity($draft, $data);
             if ($data['preview_kind'] !== $artifact->kind) {
                 throw ValidationException::withMessages(['preview_kind' => 'Jenis viewer tidak sesuai dokumen.']);
             }
@@ -129,8 +130,8 @@ class ManageLetterPreview
     public function detail(Letter $letter, User $actor): array
     {
         $latest = LetterOperation::query()->where('letter_id', $letter->id)->where('kind', 'preview')->where('actor_uuid', $actor->uuid)->orderByDesc('id')->first();
-        if ($letter->status !== LetterStatusEnum::DRAFT) {
-            return ['revision' => $letter->draft?->revision, 'operation' => null, 'artifact' => null, 'can_generate' => false, 'reason' => null, 'max_bytes' => config('letters.max_output_bytes')];
+        if (!$letter->draft?->isWorking()) {
+            return ['draft_id' => $letter->draft?->uuid, 'base_version' => $letter->draft?->baseVersion?->uuid, 'revision' => $letter->draft?->revision, 'operation' => null, 'artifact' => null, 'can_generate' => false, 'reason' => null, 'max_bytes' => config('letters.max_output_bytes')];
         }
         $artifact = LetterArtifact::query()->where('letter_id', $letter->id)->where('draft_revision', $letter->draft?->revision)->where('kind', 'docx')->whereNull('letter_version_id')->orderByDesc('id')->first();
         $reason = null;
@@ -151,6 +152,6 @@ class ManageLetterPreview
         }
         $check = $artifact?->checks()->where('actor_uuid', $actor->uuid)->first();
 
-        return ['revision' => $letter->draft?->revision, 'operation' => $latest === null ? null : (new LetterOperationResource($latest))->resolve(), 'artifact' => $artifact === null ? null : ['id' => $artifact->uuid, 'fingerprint' => $this->state->evidence($artifact), 'font_report' => [...$this->fonts->report($artifact->font_usage['requirements']), 'limitations' => $artifact->font_usage['limitations']], 'expires_at' => $artifact->expires_at->toIso8601String(), 'confirmed' => $check?->confirmed_at !== null], 'can_generate' => $canGenerate, 'reason' => $reason, 'max_bytes' => config('letters.max_output_bytes')];
+        return ['draft_id' => $letter->draft?->uuid, 'base_version' => $letter->draft?->baseVersion?->uuid, 'revision' => $letter->draft?->revision, 'operation' => $latest === null ? null : (new LetterOperationResource($latest))->resolve(), 'artifact' => $artifact === null ? null : ['id' => $artifact->uuid, 'fingerprint' => $this->state->evidence($artifact), 'font_report' => [...$this->fonts->report($artifact->font_usage['requirements']), 'limitations' => $artifact->font_usage['limitations']], 'expires_at' => $artifact->expires_at->toIso8601String(), 'confirmed' => $check?->confirmed_at !== null], 'can_generate' => $canGenerate, 'reason' => $reason, 'max_bytes' => config('letters.max_output_bytes')];
     }
 }

@@ -117,7 +117,7 @@ it('keeps the same idempotency key after a lost response and refreshes the publi
     expect(second.artifact).toBe('artifact');
     expect(second.keep_period).toBe(true);
     expect(state.reload).toHaveBeenCalledWith({
-        only: ['resource', 'issuance', 'preview', 'audits'],
+        only: ['resource', 'preview', 'issuance', 'pdf', 'officialPdf', 'versions', 'lifecycle', 'audits'],
         showProgress: false,
     });
 });

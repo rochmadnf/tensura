@@ -1,6 +1,6 @@
 # Surat — Rencana Teknis Bertahap
 
-Status: tahap 1–8 selesai diimplementasikan dan diverifikasi nonvisual; tahap 9–10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Pengguna mengizinkan dropdown Unduh tetap dibuat pada tahap 7 dan akan melaporkan hasil uji viewer kemudian. Acuan bisnis: [probis Surat](probis.md).
+Status: tahap 1–8 selesai diimplementasikan dan diverifikasi nonvisual; tahap 9 selesai diimplementasikan dan diverifikasi nonvisual; tahap 10 belum selesai. Kelayakan tampilan/cetak viewer belum dinilai pengguna. Pengguna mengizinkan dropdown Unduh tetap dibuat pada tahap 7 dan akan melaporkan hasil uji viewer kemudian. Acuan bisnis: [probis Surat](probis.md).
 
 Tahap 1 menyediakan tombol Preview DOCX pada hasil generate uji Templat Surat, kontrol halaman/zoom/fit width/Cetak, frame terisolasi dan pembatasan ukuran. Verifikasi: 36 test PHPUnit/293 assertion untuk endpoint generate/unduh existing dan 12 test frontend terarah; TypeScript serta build lulus. Checklist visual/cetak tahap 1 tetap belum dijalankan oleh agent.
 
@@ -69,6 +69,16 @@ Viewer memakai EmbedPDF headless 2.15.1 (core, engines, document-manager, viewpo
 Setelah pembaruan, jalankan migration dan restart `composer run dev` agar worker/server memuat kode serta Vite membaca paket baru. Tidak perlu mengulang seluruh pemeriksaan DOCX tahap 7 hanya karena pemasangan tahap 8. Cleanup menyeluruh, uji konkurensi/crash antarkoneksi, dan deployment health check tetap tahap 10. Checklist serta bukti pemeriksaan ada di [tahap 8](../../tests/letter/tahap-8.md).
 
 Verifikasi tahap 8: **75 test PHPUnit/838 assertion** pada PDF, preview, penerbitan, SSE, font, dan alokasi nomor lulus; **35 test frontend terarah** lulus. Suite frontend penuh menghasilkan **382 lulus/1 gagal**: `employee-transfer.test.jsx` masih mengharapkan batas Excel 2 MB, sedangkan perubahan pengguna di luar Surat menaikkannya menjadi 5 MB. Perubahan Pegawai tersebut tidak diubah atau dimasukkan commit tahap 8. Pint, lint global, pemeriksaan tipe standar, dan build produksi lulus. Build memberi peringatan ukuran chunk aplikasi/engine PDF serta externalisasi modul Node `crypto` dari paket EmbedPDF; viewer/engine dimuat lazy dan WASM disertakan sebagai aset aplikasi. Pengujian visual dan cetak browser belum dilakukan oleh agent.
+
+Tahap 9 menambahkan revisi, pembatalan, pemulihan, dan dokumen historis. Draft lanjutan terikat versi resmi asal, UUID, serta revision yang tidak direset ketika draft dibuat ulang. Alasan/perihal draft dipisahkan dari versi resmi; revisi tidak mengubah nomor/tanggal/klaim atau counter. Pembuatan draft lanjutan memakai templat aktif terbaru dari templat yang sama dan pemetaan nilai kompatibel tanpa refresh master diam-diam. Jika konfigurasi belum lengkap, draft harus dilengkapi dan diperiksa ulang.
+
+Pembatalan mengikat konfirmasi ke state ketika dialog dibuka, menyimpan alasan/pelaku/waktu, melepas klaim aktif, membuang draft lanjutan, dan mengusangkan pekerjaan draft dalam satu transaksi. Dokumen resmi/historis tetap tersimpan. Detail surat batal mengikuti pemakai nomor saat ini dengan penanda merah, tooltip, dan tautan; riwayat mencatat penggunaan ulang dan ketika nomor kembali tersedia. Pemulihan mempertahankan tanggal/periode/klasifikasi asal, memakai kembali nomor tersedia atau pilihan pengganti eksplisit, lalu membuat versi resmi baru dengan klaim mode pemulihan tanpa increment otomatis.
+
+Halaman detail menampilkan aksi siklus, penanda draft revisi/pemulihan, alasan, riwayat versi berhalaman, serta dropdown Word/PDF per versi. Unduhan surat batal memerlukan konfirmasi status dengan token state terkini. PDF historis yang belum ada dibuat dari Word versi tersebut; PDF resmi terdahulu tetap dipertahankan. SSE hanya menyegarkan metadata terkait agar editor yang sedang terbuka tetap dapat disalin ketika state berubah.
+
+Migration tahap 9 menambahkan asal versi, perihal/alasan draft, alasan versi, dan metadata pembatalan. Bukti pemeriksaan memakai kontrak fingerprint 3; preview lama harus digenerate dan dikonfirmasi ulang, tanpa menghapus input. Restart worker setelah pembaruan. Pengguna melaporkan pengujian fungsional Linux berjalan baik dan sebagian visual telah diuji; item visual tertentu belum ditandai tanpa rincian hasil pengguna.
+
+Verifikasi tahap 9: 102 test PHPUnit/1.269 assertion terkait lulus. Suite frontend penuh: 397 lulus/1 gagal di Pegawai karena perbedaan judul “Sesuai Filter” dan “Sesuai Pencarian/Filter”; perubahan tersebut berada di luar Surat. Test frontend Surat, Pint, lint, pemeriksaan tipe, serta build lulus. Checklist visual tetap milik pengguna.
 
 ## 1. Aturan pelaksanaan
 
