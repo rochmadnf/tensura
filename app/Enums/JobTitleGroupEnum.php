@@ -15,6 +15,7 @@ enum JobTitleGroupEnum: int
     case KESEHATAN_MASYARAKAT = 9;
     case LABORATORIUM = 10;
     case ADMINISTRASI_PENUNJANG = 11;
+    case PIMPINAN = 12;
 
     public function label(): string
     {
@@ -30,6 +31,7 @@ enum JobTitleGroupEnum: int
             self::KESEHATAN_MASYARAKAT => 'Kesehatan Masyarakat',
             self::LABORATORIUM => 'Laboratorium',
             self::ADMINISTRASI_PENUNJANG => 'Administrasi & Penunjang',
+            self::PIMPINAN => 'Pimpinan',
         };
     }
 
