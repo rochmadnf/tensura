@@ -31,7 +31,4 @@ Thumbs.db
 /resources/js/routes
 /resources/js/wayfinder
 
-.claude
-.agents
-.github
 .pgdata
