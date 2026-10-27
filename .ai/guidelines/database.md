@@ -1,4 +1,5 @@
 ## Database
-- PostgreSQL 18 lokal via mise (data di `.pgdata`, port 5433)
-- Gunakan migration Laravel, hindari raw SQL kecuali perlu dengan persetujuan
-- Pakai fitur khusus Postgres hanya jika ada alasan jelas
+
+- Local PostgreSQL 18 via mise (data in `.pgdata`, port 5433)
+- Use Laravel migrations; avoid raw SQL unless necessary and approved
+- Use Postgres-specific features only when there is a clear reason
