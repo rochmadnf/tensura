@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Release\ReadReleaseNotes;
 use Inertia\Response as InertiaResponse;
 
 class AboutController extends Controller
 {
-    public function index(): InertiaResponse
+    public function index(ReadReleaseNotes $notes): InertiaResponse
     {
         return inertia('about/index', [
             'page' => ['id' => 'about'],
-            'releases' => collect(config('releases'))
-                ->map(fn(array $release, string $version): array => ['version' => $version, ...$release])
-                ->values()
-                ->all(),
+            'releases' => $notes->read(),
         ]);
     }
 }

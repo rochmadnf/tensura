@@ -1,11 +1,9 @@
 import { Head, usePage } from '@inertiajs/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Release = {
     version: string;
-    summary: string;
-    features: { title: string; description: string }[];
-    notes: string[];
+    content_html: string;
 };
 
 const pageName = 'Tentang Aplikasi';
@@ -38,27 +36,12 @@ export default function About({ releases }: { releases: Release[] }) {
                                 <CardTitle>
                                     <h3>v{release.version}</h3>
                                 </CardTitle>
-                                <CardDescription>{release.summary}</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex flex-col gap-6">
-                                <dl className="divide-y">
-                                    {release.features.map((feature) => (
-                                        <div
-                                            key={feature.title}
-                                            className="flex flex-col gap-1 py-4 first:pt-0 last:pb-0 sm:flex-row sm:gap-6"
-                                        >
-                                            <dt className="text-sm font-medium sm:w-44 sm:shrink-0">{feature.title}</dt>
-                                            <dd className="min-w-0 text-sm leading-relaxed text-muted-foreground">
-                                                {feature.description}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </dl>
-                                {release.notes.map((note) => (
-                                    <p key={note} className="text-sm leading-relaxed text-muted-foreground">
-                                        {note}
-                                    </p>
-                                ))}
+                            <CardContent>
+                                <div
+                                    className="min-w-0 text-sm leading-relaxed wrap-anywhere text-muted-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_h1]:text-base [&_h1]:font-medium [&_h2]:text-base [&_h2]:font-medium [&_h3]:font-medium [&_li+li]:mt-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_p+p]:mt-3 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-5 [&>*+*]:mt-4"
+                                    dangerouslySetInnerHTML={{ __html: release.content_html }}
+                                />
                             </CardContent>
                         </Card>
                     ))}
