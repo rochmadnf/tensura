@@ -286,7 +286,7 @@ export default function EmployeeImport({
                                                                 }
                                                                 className={
                                                                     issue.category === 'duplicate'
-                                                                        ? 'text-yellow-500'
+                                                                        ? 'text-warning'
                                                                         : 'text-destructive'
                                                                 }
                                                                 strokeWidth={2}
