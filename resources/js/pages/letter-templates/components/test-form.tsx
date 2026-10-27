@@ -3,7 +3,7 @@ import { CheckmarkCircle02Icon, Download04Icon, PlayCircle02Icon } from '@hugeic
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { SubmitEventHandler } from 'react';
 import { FormCard } from '@/components/form-card';
-import { DocxPreview } from '@/components/docx-preview';
+import { PdfPreview } from '@/components/pdf-preview';
 import { OptionSelect } from '@/components/option-select';
 import { DatePickerInput } from '@/components/date-picker-input';
 import { Badge } from '@/components/ui/badge';
@@ -254,11 +254,12 @@ export function LetterTemplateTestForm({
                 {(test.state === 'ready' || test.state === 'confirmed') && test.test_token && (
                     <FieldGroup>
                         <div className="self-start">
-                            <DocxPreview
-                                url={download(args, { query: { test_token: test.test_token } }).url}
-                                maxBytes={test.limits.max_output_bytes}
-                                fontReport={test.fonts}
+                            <PdfPreview
+                                url={download(args, { query: { test_token: test.test_token, format: 'pdf' } }).url}
+                                maxBytes={test.limits.max_pdf_bytes}
                                 disabled={busy}
+                                title="Preview PDF Hasil Uji"
+                                draft
                             />
                         </div>
                         <Button
@@ -270,6 +271,23 @@ export function LetterTemplateTestForm({
                         >
                             <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
                             Unduh Hasil Uji DOCX
+                        </Button>
+                        <Button
+                            nativeButton={false}
+                            variant="outline"
+                            className="self-start"
+                            disabled={busy}
+                            render={
+                                <a
+                                    href={
+                                        download(args, {
+                                            query: { test_token: test.test_token, format: 'pdf', download: 1 },
+                                        }).url
+                                    }
+                                />
+                            }
+                        >
+                            Unduh Hasil Uji PDF
                         </Button>
                         {test.expires_at && (
                             <p className="text-sm text-muted-foreground">
@@ -288,7 +306,8 @@ export function LetterTemplateTestForm({
                                         disabled={busy}
                                     />
                                     <FieldLabel htmlFor="confirm-docx-visual">
-                                        Saya sudah membuka hasil uji DOCX terbaru dan memeriksa isi serta tata letaknya.
+                                        Saya sudah memeriksa isi dan tata letak hasil uji terbaru melalui PDF atau DOCX
+                                        yang diunduh.
                                     </FieldLabel>
                                 </Field>
                                 <FieldError>{confirmErrors.confirmed || confirmErrors.test_token}</FieldError>

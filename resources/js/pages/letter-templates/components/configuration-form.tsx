@@ -19,6 +19,7 @@ import { AddConfigurationItem, DeleteConfigurationItem, EditConfigurationItem } 
 import { ConfigurationVariableRow } from './configuration-variable-row';
 import { ConfigurationSlotRow } from './configuration-slot-row';
 import { ConfigurationAttributeTable } from './configuration-attribute-table';
+import { RepeatedTableGuide } from './repeated-table-guide';
 
 const newVariable = (): ConfigurationVariable => ({
     id: null,
@@ -328,6 +329,7 @@ export function LetterTemplateConfigurationForm({
                                                     )}
                                                 {variable.is_multiple && (
                                                     <div className="flex flex-col gap-2">
+                                                        <RepeatedTableGuide variable={variable} options={options} />
                                                         {variable.columns.map((column) => (
                                                             <div
                                                                 key={column.id}

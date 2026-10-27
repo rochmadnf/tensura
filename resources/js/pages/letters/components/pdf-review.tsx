@@ -4,7 +4,7 @@ import { PdfPreview } from '@/components/pdf-preview';
 import { Button } from '@/components/ui/button';
 import { FieldDescription, FieldError } from '@/components/ui/field';
 import { useLetterPdf } from '@/hooks/use-letter-pdf';
-import { file } from '@/routes/ltr/pdfs';
+import { file, download } from '@/routes/ltr/pdfs';
 import { rendered, confirm } from '@/routes/ltr/previews';
 import type { LetterPdf } from '@/schemas/letter-preview';
 import { LetterPdfStatus } from './pdf-status';
@@ -38,7 +38,7 @@ export function LetterPdfReview({
         }));
         const target = confirmed ? confirm : rendered;
         await checking.post(target({ letter: letterId, artifact: artifact.id }).url);
-        if (confirmed) router.reload({ only: ['pdf', 'audits'], showProgress: false });
+        if (confirmed) router.reload({ only: ['pdf', 'preview', 'audits'], showProgress: false });
     }
     return (
         <div className="flex flex-col items-start gap-3">
@@ -84,7 +84,17 @@ export function LetterPdfReview({
                         ? 'Menyiapkan PDF…'
                         : conversion.operation?.status === 'failed' || conversion.operation?.status === 'stale'
                           ? 'Coba PDF Lagi'
-                          : 'Lihat/Cetak PDF'}
+                          : 'Siapkan PDF'}
+                </Button>
+            )}
+            {artifact && (
+                <Button
+                    nativeButton={false}
+                    variant="outline"
+                    disabled={disabled}
+                    render={<a href={download({ letter: letterId, artifact: artifact.id }).url} />}
+                >
+                    Unduh PDF
                 </Button>
             )}
             <LetterPdfStatus

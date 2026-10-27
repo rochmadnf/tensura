@@ -13,7 +13,7 @@ use App\Models\LetterAudit;
 use App\Models\LetterOperation;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Services\Letter\CleanupLetterFiles;
-use App\Services\Letter\LetterPreviewState;
+use App\Services\Letter\LetterPdfState;
 use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\RunLetterIssuance;
 use App\Services\Letter\RunLetterPreview;
@@ -32,12 +32,15 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PHPUnit\Framework\Attributes\Group;
 use RuntimeException;
+use Tests\CreatesPdfArtifact;
 use Tests\TestCase;
 use Throwable;
 
 #[Group('letter-concurrency')]
 class LetterConcurrencyTest extends TestCase
 {
+    use CreatesPdfArtifact;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -322,7 +325,8 @@ class LetterConcurrencyTest extends TestCase
         $uuid = $this->postJson(route('ltr.previews.store', $letter->uuid), ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'idempotency_key' => (string) Str::uuid()])->assertAccepted()->json('operation.id');
         app(RunLetterPreview::class)->run($uuid);
         $artifact = LetterArtifact::query()->where('letter_draft_id', $draft->id)->where('kind', 'docx')->latest('id')->firstOrFail();
-        $check = ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'fingerprint' => app(LetterPreviewState::class)->evidence($artifact), 'preview_kind' => 'docx', 'confirmed' => true];
+        $artifact = $this->pdfArtifact($artifact);
+        $check = ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'fingerprint' => app(LetterPdfState::class)->evidence($artifact), 'preview_kind' => 'pdf', 'confirmed' => true];
         $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $check)->assertOk();
         $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $check)->assertOk();
         $response = $this->postJson(route('ltr.issue', $letter->uuid), ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'artifact' => $artifact->uuid, 'fingerprint' => $check['fingerprint'], 'publication_month' => '2026-10', 'keep_period' => true, 'confirmed' => true, 'idempotency_key' => (string) Str::uuid()]);

@@ -108,7 +108,16 @@ export function LetterTemplateDocumentForm({
                         render={<a href={exampleDownload(args).url} />}
                     >
                         <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
-                        Unduh DOCX Contoh
+                        Unduh contoh horizontal
+                    </Button>
+                    <Button
+                        nativeButton={false}
+                        variant="outline"
+                        size="sm"
+                        disabled={busy}
+                        render={<a href={exampleDownload(args, { query: { layout: 'vertical' } }).url} />}
+                    >
+                        Unduh contoh vertikal
                     </Button>
                     {!editing && editable && (
                         <TemplateEditAction label="DOCX sumber" disabled={busy} onClick={onEdit} inline />

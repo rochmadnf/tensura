@@ -63,7 +63,7 @@ it('requires completed PDF rendering and stores PDF-specific human confirmation'
     await confirm.props.onClick();
     await Promise.resolve();
     expect(state.post).toHaveBeenCalledWith('/letters/letter/previews/pdf/confirm');
-    expect(state.reload).toHaveBeenCalledWith({ only: ['pdf', 'audits'], showProgress: false });
+    expect(state.reload).toHaveBeenCalledWith({ only: ['pdf', 'preview', 'audits'], showProgress: false });
 });
 it('keeps confirmation disabled when acknowledgment fails', async () => {
     state.post.mockRejectedValueOnce(new Error('stale'));

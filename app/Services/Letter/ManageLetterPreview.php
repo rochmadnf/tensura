@@ -99,15 +99,11 @@ class ManageLetterPreview
         DB::transaction(function () use ($letter, $artifact, $data, $actor, $confirm): void {
             [$letter, $draft] = $this->state->lock($letter, (int) $data['revision']);
             $this->tokens->assertIdentity($draft, $data);
-            if ($data['preview_kind'] !== $artifact->kind) {
+            if ($artifact->kind !== 'pdf' || $data['preview_kind'] !== $artifact->kind) {
                 throw ValidationException::withMessages(['preview_kind' => 'Jenis viewer tidak sesuai dokumen.']);
             }
-            if ($artifact->kind === 'pdf') {
-                $this->pdfs->assertCurrent($letter, $artifact);
-            } else {
-                $this->state->assertCurrent($letter, $artifact);
-            }
-            $fingerprint = $artifact->kind === 'pdf' ? $this->pdfs->evidence($artifact) : $this->state->evidence($artifact);
+            $this->pdfs->assertCurrent($letter, $artifact);
+            $fingerprint = $this->pdfs->evidence($artifact);
             if (!hash_equals($fingerprint, $data['fingerprint'])) {
                 throw ValidationException::withMessages(['preview' => 'Hasil yang diperiksa berubah. Buka preview terbaru.']);
             }

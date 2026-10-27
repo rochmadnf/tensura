@@ -19,15 +19,19 @@ class ConvertLetterPdf
     /** @return array{path: string, sha256: string, size: int} */
     public function convert(LetterOperation $operation, LetterArtifact $word, string $lease, array $profile): array
     {
+        return $this->convertSource($this->directory($operation, $lease), Storage::disk($word->disk)->get($word->path), $word->sha256, $word->letter_version_id === null, $profile);
+    }
+
+    /** @return array{path: string, sha256: string, size: int} */
+    public function convertSource(string $directory, string $contents, string $sha256, bool $draft, array $profile): array
+    {
         $disk = Storage::disk(config('letters.disk'));
-        $directory = $this->directory($operation, $lease);
         $disk->makeDirectory($directory . '/output');
-        $source = Storage::disk($word->disk);
-        if (!$disk->put($directory . '/document.docx', $source->get($word->path)) || hash_file('sha256', $disk->path($directory . '/document.docx')) !== $word->sha256) {
+        if (!$disk->put($directory . '/document.docx', $contents) || hash_file('sha256', $disk->path($directory . '/document.docx')) !== $sha256) {
             throw ValidationException::withMessages(['pdf' => 'Word sumber berubah sebelum konversi.']);
         }
         $profileUrl = 'file://' . str_replace('%2F', '/', rawurlencode($disk->path($directory . '/profile')));
-        $filter = 'pdf:writer_pdf_Export' . ($word->letter_version_id === null ? ':' . json_encode(['TiledWatermark' => ['type' => 'string', 'value' => 'DRAFT']], JSON_THROW_ON_ERROR) : '');
+        $filter = 'pdf:writer_pdf_Export' . ($draft ? ':' . json_encode(['TiledWatermark' => ['type' => 'string', 'value' => 'DRAFT']], JSON_THROW_ON_ERROR) : '');
         $result = Process::path($disk->path($directory))->env([...$profile['environment'], 'SAL_USE_VCLPLUGIN' => 'svp'])->timeout(config('letters.pdf.timeout'))->run([config('document-fonts.executables.version'), '-env:UserInstallation=' . $profileUrl, '--headless', '--nologo', '--nodefault', '--nofirststartwizard', '--convert-to', $filter, '--outdir', $disk->path($directory . '/output'), $disk->path($directory . '/document.docx')]);
         if ($result->failed()) {
             throw new RuntimeException('LibreOffice conversion failed.');

@@ -25,7 +25,7 @@ class LetterPreviewController extends Controller
         abort_unless($artifact->letter_id === $letter->id && $artifact->kind === 'docx', 404);
         $state->assertCurrent($letter, $artifact);
 
-        return response()->file(Storage::disk($artifact->disk)->path($artifact->path), ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition' => 'inline; filename="draft.docx"', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'])->setPrivate();
+        return response()->download(Storage::disk($artifact->disk)->path($artifact->path), 'draft.docx', ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'])->setPrivate();
     }
 
     public function rendered(CheckLetterPreviewRequest $request, Letter $letter, LetterArtifact $artifact, ManageLetterPreview $previews): JsonResponse

@@ -11,7 +11,7 @@ use App\Models\Letter;
 use App\Models\LetterArtifact;
 use App\Models\LetterOperation;
 use App\Models\MasterData\LetterTemplateVersion;
-use App\Services\Letter\LetterPreviewState;
+use App\Services\Letter\LetterPdfState;
 use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\RunLetterIssuance;
 use App\Services\Letter\RunLetterPreview;
@@ -28,10 +28,12 @@ use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
+use Tests\CreatesPdfArtifact;
 use Tests\TestCase;
 
 class LetterLifecycleTest extends TestCase
 {
+    use CreatesPdfArtifact;
     use LazilyRefreshDatabase;
 
     public function test_revision_is_shared_keeps_official_identity_and_appends_a_version_without_a_new_claim(): void
@@ -100,7 +102,7 @@ class LetterLifecycleTest extends TestCase
         $this->assertSame(OperationStatus::STALE, LetterOperation::query()->where('uuid', $uuid)->sole()->status);
         app(RunLetterPreview::class)->run($uuid);
         $this->assertSame(1, $letter->versions()->count());
-        $this->get(route('ltr.versions.file', [$letter->uuid, $version->uuid]))->assertOk();
+        $this->get(route('ltr.versions.file', [$letter->uuid, $version->uuid]))->assertUnprocessable();
         $this->assertSame(1, $letter->audits()->where('event', 'letter.cancelled')->count());
         $this->assertSame('Tidak berlaku', $letter->fresh()->cancellation_reason);
     }
@@ -253,7 +255,8 @@ class LetterLifecycleTest extends TestCase
         $uuid = $this->postJson(route('ltr.previews.store', $letter->uuid), ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'idempotency_key' => (string) Str::uuid()])->assertAccepted()->json('operation.id');
         app(RunLetterPreview::class)->run($uuid);
         $artifact = LetterArtifact::query()->where('letter_draft_id', $draft->id)->where('kind', 'docx')->latest('id')->firstOrFail();
-        $check = ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'fingerprint' => app(LetterPreviewState::class)->evidence($artifact), 'preview_kind' => 'docx', 'confirmed' => true];
+        $artifact = $this->pdfArtifact($artifact);
+        $check = ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'fingerprint' => app(LetterPdfState::class)->evidence($artifact), 'preview_kind' => 'pdf', 'confirmed' => true];
         $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $check)->assertOk();
         $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $check)->assertOk();
         $response = $this->postJson(route('ltr.issue', $letter->uuid), ['draft_id' => $draft->uuid, 'base_version' => $draft->baseVersion?->uuid, 'revision' => $draft->revision, 'artifact' => $artifact->uuid, 'fingerprint' => $check['fingerprint'], 'publication_month' => '2026-10', 'keep_period' => true, 'confirmed' => true, 'idempotency_key' => (string) Str::uuid()]);

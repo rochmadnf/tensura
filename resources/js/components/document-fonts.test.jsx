@@ -36,9 +36,10 @@ describe('document font warning contract', () => {
         expect(all(tree, (node) => node.type === DocumentFonts)[0].props.uploadFor).toBe('Example');
         expect(text(tree)).toContain('Belum tersedia');
     });
-    it('distinguishes server availability from browser availability', () => {
+    it('reports server fonts without suggesting browser font uploads', () => {
         const report = { available: true, entries: [{ ...entry, available: true }], warning: null, fallback: 'Arial' };
-        expect(text(DocumentFontWarnings({ report }))).toContain('hanya tersedia di server');
+        expect(text(DocumentFontWarnings({ report }))).toContain('Tersedia di server');
+        expect(text(DocumentFontWarnings({ report }))).not.toContain('Viewer web');
         report.entries[0].browser_url = '/private-font';
         expect(text(DocumentFontWarnings({ report }))).not.toContain('hanya tersedia di server');
     });

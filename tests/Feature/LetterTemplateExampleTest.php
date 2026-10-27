@@ -13,6 +13,7 @@ use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVariableColumn;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\RenderLetterDocument;
 use App\Services\LetterTemplate\EmployeeAttributeCatalog;
 use App\Services\LetterTemplate\InspectLetterTemplateDocx;
 use App\Services\LetterTemplate\LetterTemplateProcessor;
@@ -116,6 +117,35 @@ class LetterTemplateExampleTest extends TestCase
         $this->assertStringContainsString('NIP $ {bukan_token}', $result['text']);
         $this->assertStringContainsString('format d F Y', $result['text']);
         $this->assertTrue($result['valid']);
+    }
+
+    public function test_vertical_example_uses_saved_group_name_and_renders_with_legacy_snapshot_shape(): void
+    {
+        Storage::fake('local');
+        $version = LetterTemplateVersion::factory()->create();
+        $variable = LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'pemohon', 'type' => 4, 'option_source' => 2, 'is_multiple' => true]);
+        $variable->columns()->create(['source_attribute' => 'name', 'placeholder' => 'pemohon_nama', 'sort_order' => 0]);
+        $variable->columns()->create(['source_attribute' => 'job_title', 'placeholder' => 'pemohon_jabatan', 'sort_order' => 1]);
+        $args = [$version->template->uuid, $version->uuid];
+        $response = $this->actingAs(UserFactory::new()->create())->get(route('lt.example.download', [...$args, 'layout' => 'vertical']))->assertOk()->assertDownload();
+        $source = $response->baseResponse->getFile()->getPathname();
+        $output = tempnam(sys_get_temp_dir(), 'vertical-example-');
+        try {
+            $result = app(ValidateLetterTemplateDocx::class)->inspectPlaceholders($source, $version);
+            $this->assertTrue($result['valid'], implode(' ', $result['errors']));
+            $this->assertContains('blok:pemohon', $result['placeholders']);
+            $values = ['nomor_surat' => 'XX.XX', 'tanggal_surat' => '01-01-2026', 'pemohon_nama#1' => 'Budi', 'pemohon_jabatan#1' => 'Kepala', 'pemohon_nama#2' => 'Ani', 'pemohon_jabatan#2' => 'Staf'];
+            app(RenderLetterDocument::class)->render($source, ['schema_version' => 1, 'values' => $values, 'rows' => [['anchor' => 'pemohon_nama', 'count' => 2]]], $output);
+            $text = app(InspectLetterTemplateDocx::class)->read($output)['word/document.xml']->textContent;
+            $this->assertStringContainsString('Budi', $text);
+            $this->assertStringContainsString('Ani', $text);
+            $this->assertStringNotContainsString('blok:', $text);
+            $this->assertStringNotContainsString('${', $text);
+        } finally {
+            unlink($source);
+            unlink($output);
+        }
+        $this->getJson(route('lt.example.download', [...$args, 'layout' => 'invalid']))->assertUnprocessable()->assertJsonValidationErrors('layout');
     }
 
     private function example(LetterTemplateVersion $version, bool $validate = false): array

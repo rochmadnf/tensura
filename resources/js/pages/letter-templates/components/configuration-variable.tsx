@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import type { ConfigurationOptions, ConfigurationVariable } from '@/schemas/letter-template-configuration';
 import { CopyPlaceholder } from './copy-placeholder';
+import { RepeatedTableGuide } from './repeated-table-guide';
 
 type VariableFieldsProps = {
     variable: ConfigurationVariable;
@@ -98,10 +99,11 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                         <FieldSet>
                             <FieldLegend>Kolom Tabel Berulang</FieldLegend>
                             <FieldDescription>
-                                Letakkan variabel setiap kolom pada satu baris tabel di DOCX.
+                                Susun satu baris horizontal atau beberapa baris vertikal dengan penanda blok di DOCX.
                             </FieldDescription>
                             <FieldError>{errors[`${prefix}.columns`]}</FieldError>
                             <FieldGroup>
+                                <RepeatedTableGuide variable={variable} options={options} />
                                 {variable.columns.map((column, columnIndex) => {
                                     const path = `${prefix}.columns.${columnIndex}`;
                                     const patchColumn = (changes: Partial<typeof column>) =>

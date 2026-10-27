@@ -1,7 +1,6 @@
 import { Children, isValidElement } from 'react';
 import { beforeEach, expect, it, vi } from 'vite-plus/test';
 import { LetterPreviewPanel } from './preview-panel';
-import { DocxPreview } from '@/components/docx-preview';
 import { Button } from '@/components/ui/button';
 
 const state = vi.hoisted(() => ({
@@ -68,23 +67,11 @@ beforeEach(() => {
     state.generate.mockResolvedValue({ operation: { id: 'operation', revision: 1, status: 'queued' } });
     state.check.mockResolvedValue({});
 });
-it('requires viewer-ready acknowledgment before human confirmation and only refreshes preview metadata', async () => {
-    let viewer = render().find((node) => node.type === DocxPreview);
-    expect(viewer.props.footer.props.disabled).toBe(true);
-    await viewer.props.onReady();
-    expect(state.check).toHaveBeenCalledWith(expect.stringContaining('/rendered'));
-    viewer = render().find((node) => node.type === DocxPreview);
-    expect(viewer.props.footer.props.disabled).toBe(false);
-    await viewer.props.footer.props.onClick();
-    await Promise.resolve();
-    expect(state.check).toHaveBeenCalledWith(expect.stringContaining('/confirm'));
-    expect(state.reload).toHaveBeenCalledWith({ only: ['preview', 'audits'], showProgress: false });
-});
-it('does not acknowledge a failed render request and keeps confirmation disabled', async () => {
-    state.check.mockRejectedValueOnce(new Error('stale'));
-    const viewer = render().find((node) => node.type === DocxPreview);
-    await expect(viewer.props.onReady()).rejects.toThrow('stale');
-    expect(render().find((node) => node.type === DocxPreview).props.footer.props.disabled).toBe(true);
+it('offers a direct Word download and delegates visual review to PDF', () => {
+    const tree = render();
+    const link = tree.find((node) => node.props.render?.props.href?.includes('/previews/artifact/file'));
+    expect(link.props.children).toBe('Unduh DOCX');
+    expect(state.check).not.toHaveBeenCalled();
 });
 it('blocks generation while editing, when a worker is active, or when the visible draft is stale', () => {
     for (const overrides of [

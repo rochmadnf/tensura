@@ -14,7 +14,7 @@ use Throwable;
 
 class BuildLetterTemplateExample
 {
-    public function build(LetterTemplateVersion $version): string
+    public function build(LetterTemplateVersion $version, string $layout = 'horizontal'): string
     {
         $version->loadMissing([
             'template',
@@ -78,25 +78,31 @@ class BuildLetterTemplateExample
                     $section->addText('Teks alternatif: ' . $this->plain($variable->default_text));
                 }
                 if ($variable->is_multiple) {
-                    $section->addText(
-                        'Contoh tabel berulang: pertahankan satu baris contoh dengan variabel kolom berikut. Jangan menggabungkan sel secara vertikal atau menaruh tabel ini pada header/footer.',
-                    );
-                    $table = $section->addTable(['borderSize' => 6, 'cellMargin' => 80]);
-                    $table->addRow();
-                    foreach ($variable->columns as $column) {
-                        $label =
-                            collect($variable->option_source?->columnOptions() ?? [])->firstWhere(
-                                'id',
-                                $column->source_attribute,
-                            )['label'] ?? $column->source_attribute;
-                        $format = EmployeeAttributeCatalog::isDate($column->source_attribute)
-                            ? ' — format ' . ($column->date_format ?? 'd-m-Y')
-                            : '';
-                        $table->addCell(2200)->addText($this->plain($label . $format), ['bold' => true]);
-                    }
-                    $table->addRow();
-                    foreach ($variable->columns as $column) {
-                        $table->addCell(2200)->addText('${' . $column->placeholder . '}');
+                    $section->addText($layout === 'vertical'
+                        ? 'Unsur satu pilihan disusun ke bawah. Penanda awal dan akhir membatasi seluruh baris satu orang. Baris kosong penutup menjadi pemisah antarorang dan dihapus pada orang terakhir.'
+                        : 'Satu pilihan menempati satu baris. Letakkan semua placeholder kelompok pada baris contoh yang sama; penanda blok tidak diperlukan.');
+                    $table = $section->addTable(['borderSize' => 0, 'cellMargin' => 80, 'layout' => 'fixed']);
+                    if ($layout === 'horizontal') {
+                        $table->addRow();
+                        foreach ($variable->columns as $column) {
+                            $table->addCell(2200)->addText($this->plain($column->source_attribute), ['bold' => true]);
+                        }
+                        $table->addRow();
+                        foreach ($variable->columns as $column) {
+                            $table->addCell(2200)->addText('${' . $column->placeholder . '}');
+                        }
+                    } else {
+                        foreach ($variable->columns as $index => $column) {
+                            $label = collect($variable->option_source?->columnOptions() ?? [])->firstWhere('id', $column->source_attribute)['label'] ?? $column->source_attribute;
+                            $table->addRow();
+                            $table->addCell(2200)->addText(($index === 0 ? '${blok:' . $variable->name . '}' : '') . $this->plain($label));
+                            $table->addCell(300)->addText(':');
+                            $table->addCell(5000)->addText('${' . $column->placeholder . '}');
+                        }
+                        $table->addRow(180);
+                        $table->addCell(2200)->addText('${/blok:' . $variable->name . '}');
+                        $table->addCell(300)->addText('');
+                        $table->addCell(5000)->addText('');
                     }
                 } else {
                     $section->addText(
@@ -133,7 +139,7 @@ class BuildLetterTemplateExample
                 [
                     '1. Simpan identitas, variabel, pemetaan kolom, dan kandidat penandatangan di web app.',
                     '2. Sesuaikan tata letak DOCX. Gunakan variabel yang dikonfigurasi; variabel dan token penandatangan boleh digunakan sebagian. Slot tanpa token tidak perlu diisi saat generate.',
-                    'Teks alternatif dipakai sebagai teks literal saat nilai kosong; tidak menggantikan isian wajib. Multiple opsional tanpa pilihan menghapus baris contoh, mempertahankan header/baris statis.',
+                    'Teks alternatif dipakai sebagai teks literal saat nilai kosong; tidak menggantikan isian wajib. Multiple opsional tanpa pilihan menghapus seluruh baris atau blok contoh, mempertahankan isi di luarnya.',
                     'Format tanggal memakai pola PHP dengan bahasa aplikasi. Masa kerja ditampilkan sampai hari tanpa bagian nol, berdasarkan tanggal pemrosesan.',
                     '3. Unggah DOCX sumber dan jalankan validasi struktur serta variabel. Perbaiki pesan galat bila ada.',
                     '4. Isi data contoh fiktif (misalnya Pegawai Contoh), generate hasil uji, buka DOCX, lalu konfirmasi pemeriksaan visual.',

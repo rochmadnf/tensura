@@ -56,27 +56,21 @@ class LetterPreviewTest extends TestCase
         $this->assertNull($letter->fresh()->official_number);
         app(RunLetterPreview::class)->run($first);
         $this->assertDatabaseCount('letter_artifacts', 1);
-        $this->get(route('ltr.previews.file', [$letter->uuid, $artifact->uuid]))->assertOk()->assertHeader('Content-Disposition', 'inline; filename="draft.docx"');
+        $this->get(route('ltr.previews.file', [$letter->uuid, $artifact->uuid]))->assertOk()->assertDownload('draft.docx');
         $this->assertSame([], Storage::disk('local')->allFiles(config('letters.paths.staging')));
     }
 
-    public function test_confirmation_requires_completed_render_explicit_consent_and_same_actor(): void
+    public function test_docx_cannot_be_acknowledged_or_confirmed_after_the_viewer_is_removed(): void
     {
         $letter = $this->draft();
         $this->render($this->requestPreview($letter));
         $artifact = LetterArtifact::sole();
-        $data = $this->checkData($artifact);
-        $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertUnprocessable()->assertJsonValidationErrors('preview');
-        $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
-        $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), [...$data, 'confirmed' => false])->assertUnprocessable()->assertJsonValidationErrors('confirmed');
-        $other = UserFactory::new()->create();
-        $this->actingAs($other)->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertUnprocessable()->assertJsonValidationErrors('preview');
-        $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
-        $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
-        $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
-        $this->assertDatabaseHas('letter_preview_checks', ['actor_uuid' => $other->uuid, 'fingerprint' => $data['fingerprint']]);
-        $this->assertSame(1, $letter->audits()->where('event', 'preview.confirmed')->count());
-        $this->assertNotNull($artifact->checks()->where('actor_uuid', $other->uuid)->first()->confirmed_at);
+        foreach (['rendered', 'confirm'] as $action) {
+            $this->postJson(route('ltr.previews.' . $action, [$letter->uuid, $artifact->uuid]), $this->checkData($artifact))
+                ->assertUnprocessable()->assertJsonValidationErrors('preview_kind');
+        }
+        $this->assertSame(0, $artifact->checks()->count());
+        $this->get(route('ltr.previews.file', [$letter->uuid, $artifact->uuid]))->assertDownload('draft.docx');
     }
 
     public function test_editing_a_draft_invalidates_old_files_and_evidence_and_queued_work_becomes_stale(): void
@@ -168,10 +162,10 @@ class LetterPreviewTest extends TestCase
         $this->render($this->requestPreview($letter));
         $artifact = LetterArtifact::sole();
         $data = $this->checkData($artifact);
-        $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
+        $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $data)->assertUnprocessable();
         config(['document-fonts.preview_renderer' => 'changed']);
         $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertUnprocessable();
-        $this->assertNull($artifact->checks()->sole()->confirmed_at);
+        $this->assertSame(0, $artifact->checks()->count());
     }
 
     public function test_authentication_uuid_scoping_and_operation_actor_are_enforced(): void

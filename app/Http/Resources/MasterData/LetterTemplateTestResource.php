@@ -40,7 +40,7 @@ class LetterTemplateTestResource extends JsonResource
             'tested_at' => $version->tested_at?->toIso8601String(), 'expires_at' => $version->test_expires_at?->toIso8601String(),
             'confirmed_at' => $version->visually_confirmed_at?->toIso8601String(), 'confirmed_by' => $version->visually_confirmed_by_name,
             'fonts' => [...app(DocumentFontRegistry::class)->report($version->test_font_requirements['requirements'] ?? []), 'limitations' => $version->test_font_requirements['limitations'] ?? []],
-            'limits' => config('letter-templates.test'),
+            'limits' => [...config('letter-templates.test'), 'max_pdf_bytes' => config('letters.pdf.max_bytes')],
             'variables' => $variables->map(fn(LetterTemplateVariable $variable): array => [
                 'id' => $variable->uuid, 'label' => $variable->label, 'type' => $variable->type->value, 'is_required' => $variable->is_required,
                 'is_multiple' => $variable->is_multiple,

@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class ValidateLetterTemplateDocx
 {
-    public function __construct(private InspectLetterTemplateDocx $inspector, private LetterTemplateConfigurationHash $configurationHash, private InvalidateLetterTemplateEvidence $evidence, private RecordLetterTemplateAudit $audit, private InspectDocumentFonts $fonts, private DocumentFontRegistry $fontRegistry) {}
+    public function __construct(private InspectLetterTemplateDocx $inspector, private LetterTemplateConfigurationHash $configurationHash, private InvalidateLetterTemplateEvidence $evidence, private RecordLetterTemplateAudit $audit, private InspectDocumentFonts $fonts, private DocumentFontRegistry $fontRegistry, private ReadRepeatedLetterBlocks $blocks) {}
 
     /** @return array{valid: bool, errors: list<string>, placeholders: list<string>, fonts?: array} */
     public function validate(LetterTemplate $template, LetterTemplateVersion $version, User $actor): array
@@ -78,6 +78,7 @@ class ValidateLetterTemplateDocx
                 $known = [...$known, ...($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name])];
             }
         }
+        $blocks = $this->blocks->read($parts, $multiple);
         $signers = [];
         foreach ($version->signerSlots as $index => $slot) {
             $prefix = $version->signerSlots->count() === 1 ? 'penandatangan' : 'penandatangan_' . ($index + 1);
@@ -128,6 +129,9 @@ class ValidateLetterTemplateDocx
                         throw ValidationException::withMessages(['docx' => 'Jumlah penggunaan variabel dalam dokumen terlalu banyak. Kurangi variabel yang berulang, lalu unggah kembali.']);
                     }
                     $found[] = $name;
+                    if (preg_match('/\A\/?blok:[a-z][a-z0-9_]*\z/', $name)) {
+                        continue;
+                    }
                     if (strlen($name) > config('letter-templates.placeholders.max_length') || !preg_match('/\A[a-z][a-z0-9_]*\z/D', $name)) {
                         $errors[] = 'Nama variabel tidak sesuai format. Salin variabel dari Konfigurasi Formulir Surat dan tempelkan kembali ke dokumen.';
                     } elseif (!in_array($name, $known, true)) {
@@ -140,10 +144,13 @@ class ValidateLetterTemplateDocx
 
                             continue;
                         }
+                        if (isset($blocks[$multiple[$name]])) {
+                            continue;
+                        }
                         $rowKey = $row->getNodePath();
                         $variable = $multiple[$name];
                         if ((isset($rows[$variable]) && $rows[$variable] !== $rowKey) || (isset($rowOwners[$rowKey]) && $rowOwners[$rowKey] !== $variable)) {
-                            $errors[] = 'Setiap pertanyaan dengan pilihan lebih dari satu harus menggunakan satu baris contoh tabel tersendiri. Letakkan semua variabel kolom pertanyaan tersebut dalam baris yang sama.';
+                            $errors[] = 'Gunakan satu baris contoh untuk tabel horizontal, atau pasang penanda awal dan akhir blok untuk tabel vertikal. Semua variabel kolom kelompok harus berada dalam baris atau blok yang sama.';
                         }
                         $rows[$variable] = $rowKey;
                         $rowOwners[$rowKey] = $variable;
