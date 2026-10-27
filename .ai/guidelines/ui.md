@@ -96,7 +96,7 @@ This repo ships many skills in `.ai/skills`. If a skill contradicts this file, *
 
 - Wrapper for list/create/edit pages: `<div className="container mx-auto">`. Detail/multi-card pages: `<div className="container mx-auto flex min-w-0 flex-col gap-6">`. Do not add other wrapper variants. `SectionData` already provides its own container.
 - `<Head title>` and `meta description` are in Indonesian; set `Component.layout = { pageName }` on the page component. The page title (h1) comes from `SiteHeader`; do not create another h1.
-- Heading scale (only these): card title = `CardTitle` / `FormCard title`; block title inside a card = `<h3 className="text-sm font-medium">`; entity name on a detail page = `<h2 className="text-xl font-semibold break-words">`, one per page.
+- Heading scale (only these): card title = `CardTitle` / `FormCard title`; block title inside a card = `<h3 className="text-sm font-medium">`; entity name on a detail page = `<h2 className="text-xl font-semibold wrap-break-word">`, one per page.
 - Bordered groups inside a card: use `Card` / `Item`. Do not rewrite `rounded-lg border p-3|p-4`.
 - Spacing: `gap-*`, not `space-*`. `size-*` when width = height. No manual `z-index`. Mobile: `useIsMobile`.
 
