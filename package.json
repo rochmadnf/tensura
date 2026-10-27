@@ -72,5 +72,6 @@
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.5",
         "fontaine": "~0.8.2"
-    }
+    },
+    "packageManager": "pnpm@12.15.0"
 }
