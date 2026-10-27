@@ -39,6 +39,6 @@ class LetterNumber extends Model
 
     public function needsPeriodInitialization(): bool
     {
-        return $this->initial_period_id === null && ($this->page_number !== null || $this->sequence_number !== null);
+        return array_key_exists('page_number', $this->getAttributes()) && $this->initial_period_id === null && ($this->page_number !== null || $this->sequence_number !== null);
     }
 }

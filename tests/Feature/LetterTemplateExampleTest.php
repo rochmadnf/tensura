@@ -36,7 +36,7 @@ class LetterTemplateExampleTest extends TestCase
         $this->actingAs(UserFactory::new()->create());
         $second = $this->example($version);
 
-        $this->assertSame([], $first['variables']);
+        $this->assertSame(['nomor_surat', 'tanggal_surat'], $first['variables']);
         $this->assertSame($first, $second);
         $this->assertStringContainsString('Surat $ {judul} & Contoh', $first['text']);
         $this->assertStringContainsString('Draft ini belum memiliki variabel', $first['text']);
@@ -61,7 +61,7 @@ class LetterTemplateExampleTest extends TestCase
 
         $result = $this->example($version, true);
 
-        $expected = ['pegawai_nama', 'pegawai_no', 'tujuan', ...array_keys(EmployeeAttributeCatalog::tokens('penandatangan'))];
+        $expected = ['nomor_surat', 'tanggal_surat', 'pegawai_nama', 'pegawai_no', 'tujuan', ...array_keys(EmployeeAttributeCatalog::tokens('penandatangan'))];
         sort($expected);
         $this->assertSame($expected, $result['variables']);
         $this->assertContains('penandatangan_pangkat', $result['variables']);
@@ -83,12 +83,12 @@ class LetterTemplateExampleTest extends TestCase
         $old = LetterTemplateVariable::factory()->for($history, 'version')->create(['name' => 'lama']);
         $current = LetterTemplateVariable::factory()->for($version, 'version')->create(['name' => 'baru']);
         $this->actingAs(UserFactory::new()->create());
-        $this->assertSame(['baru'], $this->example($version)['variables']);
+        $this->assertSame(['baru', 'nomor_surat', 'tanggal_surat'], $this->example($version)['variables']);
         $current->update(['name' => 'terbaru']);
-        $this->assertSame(['terbaru'], $this->example($version)['variables']);
+        $this->assertSame(['nomor_surat', 'tanggal_surat', 'terbaru'], $this->example($version)['variables']);
         $before = $history->fresh()->getAttributes();
 
-        $this->assertSame(['lama'], $this->example($history)['variables']);
+        $this->assertSame(['lama', 'nomor_surat', 'tanggal_surat'], $this->example($history)['variables']);
 
         $this->assertSame($before, $history->fresh()->getAttributes());
         $this->assertModelExists($old);
@@ -105,7 +105,9 @@ class LetterTemplateExampleTest extends TestCase
         $this->actingAs(UserFactory::new()->create());
         $result = $this->example($version, true);
 
-        $this->assertCount(26, $result['variables']);
+        $this->assertCount(28, $result['variables']);
+        $this->assertContains('nomor_surat', $result['variables']);
+        $this->assertContains('tanggal_surat', $result['variables']);
         $this->assertContains('pegawai_pangkat', $result['variables']);
         $this->assertContains('pegawai_golongan', $result['variables']);
         $this->assertContains('pegawai_masa_kerja_hari', $result['variables']);

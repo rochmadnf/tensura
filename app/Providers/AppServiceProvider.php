@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Services\Letter\DocumentFontRegistry;
+use App\Services\Letter\LetterHealth;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Queue\Events\Looping;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +25,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $lastHeartbeat = 0;
+        Queue::looping(function (Looping $event) use (&$lastHeartbeat): void {
+            if ($event->connectionName === 'letters' && in_array('letters', explode(',', $event->queue), true) && time() - $lastHeartbeat >= 15) {
+                try {
+                    LetterHealth::heartbeat('worker');
+                    $lastHeartbeat = time();
+                } catch (Throwable $exception) {
+                    report($exception);
+                }
+            }
+        });
         if ($this->app->isLocal()) {
             DevCommands::artisan('queue:work letters --queue=letters --tries=3 --timeout=90', 'letters');
             DevCommands::artisan('schedule:work', 'scheduler');

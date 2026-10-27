@@ -14,7 +14,7 @@ class LetterNumberResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: string, name: string, code: string, page_number: ?int, sequence_number: ?int, needs_initialization: bool}
+     * @return array{id: string, name: string, code: string, page_number?: ?int, sequence_number?: ?int, needs_initialization: bool}
      */
     public function toArray(Request $request): array
     {
@@ -22,8 +22,8 @@ class LetterNumberResource extends JsonResource
             'id' => $this->uuid,
             'name' => $this->classification_name,
             'code' => $this->classification_code,
-            'page_number' => $this->page_number,
-            'sequence_number' => $this->sequence_number,
+            'page_number' => $this->when(array_key_exists('page_number', $this->resource->getAttributes()), fn() => $this->page_number),
+            'sequence_number' => $this->when(array_key_exists('sequence_number', $this->resource->getAttributes()), fn() => $this->sequence_number),
             'needs_initialization' => $this->resource->needsPeriodInitialization(),
             'code_locked' => $this->when($request->routeIs('ln.edit'), fn(): bool => $this->periods()->whereHas('assignments')->exists()),
         ];

@@ -7,6 +7,7 @@ use App\Jobs\ConvertLetterToPdf;
 use App\Jobs\GenerateLetterPreview;
 use App\Jobs\IssueLetter;
 use App\Models\LetterOperation;
+use App\Services\Letter\LetterHealth;
 use App\Services\Letter\LetterOperationEvents;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,6 +48,8 @@ class RecoverLetterOperationsCommand extends Command
                 }, 5);
             }
         });
+
+        LetterHealth::heartbeat('scheduler');
 
         return self::SUCCESS;
     }

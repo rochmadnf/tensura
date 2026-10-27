@@ -10,8 +10,8 @@ export type LetterNumberColumns = {
     id: string;
     name: string;
     code: string;
-    page_number: number | null;
-    sequence_number: number | null;
+    page_number?: number | null;
+    sequence_number?: number | null;
     needs_initialization: boolean;
     code_locked?: boolean;
 };
@@ -42,16 +42,6 @@ export const columns = columnHelper.columns([
                 {cell.getValue()}
             </span>
         ),
-    }),
-    columnHelper.accessor('page_number', {
-        header: 'Halaman Lama',
-        meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
-        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue() ?? '—'}</span>,
-    }),
-    columnHelper.accessor('sequence_number', {
-        header: 'Urutan Lama',
-        meta: { className: 'w-40 text-center', skeletonClassName: 'mx-auto w-8' },
-        cell: ({ cell }) => <span className="tabular-nums">{cell.getValue() ?? '—'}</span>,
     }),
     columnHelper.display({
         id: 'actions',

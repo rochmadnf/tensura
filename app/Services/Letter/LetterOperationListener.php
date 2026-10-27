@@ -13,7 +13,7 @@ class LetterOperationListener
 
     private ?string $connectionName = null;
 
-    public function listen(): void
+    public function listen(?string $channel = null): void
     {
         $connection = DB::connection();
         $configuration = $connection->getConfig();
@@ -28,7 +28,7 @@ class LetterOperationListener
         if (!$this->listener instanceof Pgsql) {
             throw new RuntimeException('SSE Surat memerlukan driver PDO PostgreSQL PHP 8.4.');
         }
-        $channel = config('letters.sse.channel');
+        $channel ??= config('letters.sse.channel');
         if (!preg_match('/\A[a-z_][a-z0-9_]*\z/D', $channel)) {
             throw new RuntimeException('Invalid operation notification channel.');
         }
@@ -43,6 +43,21 @@ class LetterOperationListener
         $event = $this->listener->getNotify(PDO::FETCH_ASSOC, $milliseconds);
 
         return $event === false ? null : $event['payload'];
+    }
+
+    public function probe(): void
+    {
+        $channel = 'letter_health_' . bin2hex(random_bytes(8));
+        try {
+            $this->listen($channel);
+            $statement = $this->listener->prepare('select pg_notify(?, ?)');
+            $statement->execute([$channel, 'health']);
+            if ($this->wait(1000) !== 'health') {
+                throw new RuntimeException('Probe LISTEN/NOTIFY belum berhasil.');
+            }
+        } finally {
+            $this->close();
+        }
     }
 
     public function close(): void
