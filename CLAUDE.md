@@ -7,6 +7,34 @@
 - Use Laravel migrations; avoid raw SQL unless necessary and approved
 - Use Postgres-specific features only when there is a clear reason
 
+=== .ai/skills rules ===
+
+## Skill integration
+
+These project rules override conflicting skill instructions and examples.
+
+### Skills activation
+
+- This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain, within the scope allowed by these project rules. Do not wait until you are stuck.
+
+### Installed skills
+
+- `boost.json` is the allowlist for project-local skills. Keep skill directories and discovery symlinks in `.ai/skills`, `.agents/skills`, `.claude/skills`, and `.github/skills` aligned with its `skills` array. Remove obsolete entries and duplicate aliases when the list changes; do not delete the underlying packages in `vendor` or `node_modules`.
+
+### Documentation and API discovery
+
+- An empty documentation search does not prove that a feature is unavailable. Try broader queries, then inspect the installed package source and version before making that claim. If availability remains uncertain, state the uncertainty instead of inventing an API or declaring it unsupported.
+
+### Testing skill exceptions
+
+- Create behavior-specific fakes inside the test that needs them. Global test infrastructure may live in the base `TestCase::setUp()`: `Http::preventStrayRequests()`, `Sleep::fake()`, and `Exceptions::fake()` are exceptions to the testing skill's prohibition on fakes in `setUp()`. Add them only when needed by the suite, and preserve established test conventions.
+- Assertions for fakes apply to behavior under test. A global guard against network calls, real sleeping, or external exception reporting does not require an unrelated assertion in every test.
+
+### Laravel Excel skill paths
+
+- This repository is a Laravel application, not the Laravel Excel package repository. Resolve package source paths such as `src/Excel.php`, `src/Concerns/`, and `src/Fakes/ExcelFake.php` under `vendor/maatwebsite/excel/`. Follow this application's conventions for export/import classes and tests.
+- The installed skill's `../../references/package.md` and `../../examples/exports-imports.md` references are missing. Do not require these files or claim to have read them. Use the installed package source and available version-matched package documentation instead; disclose any coverage that cannot be verified.
+
 === .ai/ui rules ===
 
 ## UI (read before changing anything in `resources/js`)
@@ -23,7 +51,11 @@ This repo ships many skills in `.ai/skills`. If a skill contradicts this file, *
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `shadcn`                                                               | Composition rules (`FieldGroup`/`Field`, items inside groups, `Title` on dialogs), `gap-*`, `size-*`, semantic tokens; aligned with this project | Replacing existing components or tokens                                                                                                            |
 | `hugeicons`                                                            | Looking up valid icon names                                                                                                                      | —                                                                                                                                                  |
-| `ui-ux-pro-max`, `ui-styling`, `design-taste-frontend` / `taste-skill` | General accessibility/UX advice when reviewing                                                                                                   | Creating a new design system, palette, font, gradient, or decoration (`--design-system`); redesigning pages; Radix (`asChild`) and lucide examples |
+| `ui-ux-pro-max` | UX review only: task flows, usability, accessibility, keyboard navigation, feedback, and error recovery | UI design or implementation; choosing components, layouts, colors, fonts, icons, decoration, or generating a design system |
+| `design-taste-frontend` | Art direction for landing pages and public sites, within existing project tokens and components | Application pages; new palettes, fonts, gradients, decoration, or design generators; Radix (`asChild`) and lucide examples |
+
+- The UX-only restriction on `ui-ux-pro-max` overrides its description, workflow, scripts, and examples. Do not activate it for UI implementation. When reviewing UX, report usability findings; use the existing shared components and the appropriate implementation skills (`shadcn`, `tailwindcss-development`, `hugeicons`, and `inertia-react-development`) for any requested UI changes.
+- Examples in frontend skills describe APIs, not this project's UI conventions. Adapt Inertia, Wayfinder, and Tailwind examples to shared components, semantic tokens, Indonesian copy, `FieldError`, `FormActions`, and Wayfinder route functions. Do not copy raw controls, hardcoded route URLs, raw colors, or extra page h1 elements.
 
 - This project uses Base UI (`render`, `nativeButton`) and Hugeicons, not Radix (`asChild`) or lucide.
 - Colors, fonts, and radii come only from `resources/css/app.css`. Do not run design generators.
@@ -132,13 +164,8 @@ This repo ships many skills in `.ai/skills`. If a skill contradicts this file, *
 This application is a Laravel application running on PHP 8.4. Always use the APIs that match the installed major version of each package — do not assume a version.
 
 Before relying on a package's API, confirm its installed version:
-
 - PHP packages: run `composer show --direct` to list direct dependencies with versions, or `composer show <vendor/package>` for a single package.
 - JS packages: check `package.json` for the installed versions.
-
-## Skills Activation
-
-This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
 ## Conventions
 
@@ -203,7 +230,7 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 - Execute PHP in app context for debugging and testing code. Do not create models without user approval, prefer tests with factories instead. Prefer existing Artisan commands over custom tinker code.
 - Always use single quotes to prevent shell expansion: `php artisan tinker --execute 'Your::code();'`
-    - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
+  - Double quotes for PHP strings inside: `php artisan tinker --execute 'User::where("active", true)->count();'`
 
 === php rules ===
 
