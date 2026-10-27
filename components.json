@@ -23,6 +23,7 @@
   "menuAccent": "subtle",
   "registries": {
     "@hugeicons-animated": "https://hugeicons-animated.com/r/{name}.json",
-    "@reui": "https://reui.io/r/{style}/{name}.json"
+    "@reui": "https://reui.io/r/{style}/{name}.json",
+    "@soundcn": "https://soundcn.xyz/r/{name}.json"
   }
 }

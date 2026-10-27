@@ -39,10 +39,15 @@ use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\LetterTemplateVersionController;
 use App\Http\Controllers\MasterData\ReferenceGroupController;
 use App\Http\Controllers\MasterData\ReferenceItemController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/summary', [NotificationController::class, 'summary'])->name('notifications.summary');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.readAll');
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])->whereUuid('notification')->name('notifications.read');
     Route::get('about', [AboutController::class, 'index'])->name('about');
     Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
     Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {

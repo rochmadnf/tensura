@@ -16,7 +16,7 @@ use Throwable;
 
 class ManageLetterPdf
 {
-    public function __construct(private LetterPdfState $state, private LetterDraftState $tokens, private LetterOperationEvents $events) {}
+    public function __construct(private LetterPdfState $state, private LetterDraftState $tokens, private LetterOperationEvents $events, private RecordLetterNotification $notifications) {}
 
     public function request(Letter $letter, LetterArtifact $word, array $data, User $actor): LetterOperation
     {
@@ -50,6 +50,7 @@ class ManageLetterPdf
                     }
                 }
                 DB::table('letter_pdf_requests')->insert(['letter_operation_id' => $operation->id, 'actor_uuid' => $actor->uuid, 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'created_at' => now(), 'updated_at' => now()]);
+                $this->notifications->record($operation, $actor);
                 $this->events->notify($operation);
 
                 return $operation;

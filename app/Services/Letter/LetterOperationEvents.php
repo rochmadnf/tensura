@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class LetterOperationEvents
 {
+    public function __construct(private RecordLetterNotification $notifications) {}
+
     /** Must run in the same transaction as the durable operation change. */
     public function notify(LetterOperation $operation): void
     {
@@ -20,6 +22,7 @@ class LetterOperationEvents
     public function transition(LetterOperation $operation, LetterOperationStatusEnum $status, ?string $message = null, array $attributes = []): void
     {
         $operation->fill([...$attributes, 'status' => $status, 'message' => $message, 'status_revision' => $operation->status_revision + 1, 'finished_at' => $status->terminal() ? now() : null])->save();
+        $this->notifications->record($operation);
         $this->notify($operation);
     }
 

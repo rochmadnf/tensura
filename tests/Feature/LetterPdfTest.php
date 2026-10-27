@@ -52,6 +52,7 @@ class LetterPdfTest extends TestCase
         $this->actingAs($second);
         $this->assertSame($uuid, $this->requestPdf($letter, $word));
         $this->assertSame(1, $letter->operations()->where('kind', 'pdf')->count());
+        $this->assertDatabaseCount('notifications', 0);
         Bus::assertDispatched(ConvertLetterToPdf::class, fn($job) => $job->operationUuid === $uuid && $job->connection === 'letters' && $job->timeout === 90);
         $this->fakeConversion();
         app(RunLetterPdf::class)->run($uuid);
@@ -61,13 +62,35 @@ class LetterPdfTest extends TestCase
         $this->assertSame('Liberation Sans', $pdf->font_usage['substitutions']['Missing PDF Font']);
         $this->assertSame($original, Storage::disk('local')->get($word->path));
         foreach ([$firstActor, $second] as $actor) {
+            $notification = $actor->notifications()->sole();
+            $this->assertSame($uuid, $notification->data['operation_id']);
+            $this->assertSame('succeeded', $notification->data['status']);
+            $this->assertSame('pdf', $notification->data['kind']);
+            $this->assertNull($notification->read_at);
             $this->actingAs($actor)->getJson(route('ltr.operations.show', [$letter->uuid, $uuid]))->assertOk()->assertJsonPath('operation.status', 'succeeded');
             $snapshot = app(LetterOperationEvents::class)->snapshot($actor->uuid, $uuid);
             $this->assertSame($word->uuid, $snapshot[0]['source_id']);
             $this->assertSame('succeeded', $snapshot[0]['status']);
         }
-        $this->actingAs(UserFactory::new()->create())->getJson(route('ltr.operations.show', [$letter->uuid, $uuid]))->assertNotFound();
+        $lateActor = UserFactory::new()->create();
+        $this->actingAs($lateActor)->getJson(route('ltr.operations.show', [$letter->uuid, $uuid]))->assertNotFound();
+        $this->assertSame(0, $lateActor->notifications()->count());
+        $lateKey = (string) Str::uuid();
+        $this->assertSame($uuid, $this->requestPdf($letter, $word, $lateKey));
+        $lateNotification = $lateActor->notifications()->sole();
+        $this->assertSame($uuid, $lateNotification->data['operation_id']);
+        $this->assertSame('succeeded', $lateNotification->data['status']);
+        $this->assertNull($lateNotification->read_at);
+        $lateNotification->markAsRead();
+        $readAt = $lateNotification->fresh()->read_at->toIso8601String();
+        $this->assertSame($uuid, $this->requestPdf($letter, $word, $lateKey));
+        $this->assertSame($uuid, $this->requestPdf($letter, $word));
         app(RunLetterPdf::class)->run($uuid);
+        $this->assertSame($lateNotification->id, $lateActor->notifications()->sole()->id);
+        $this->assertSame($readAt, $lateNotification->fresh()->read_at->toIso8601String());
+        $this->assertDatabaseCount('notifications', 3);
+        $this->assertSame(1, $firstActor->notifications()->count());
+        $this->assertSame(1, $second->notifications()->count());
         $this->assertSame(1, $letter->artifacts()->where('kind', 'pdf')->count());
         $this->assertDatabaseCount('letter_number_assignments', 0);
         $this->assertDatabaseCount('letter_versions', 0);
@@ -93,6 +116,10 @@ class LetterPdfTest extends TestCase
         $this->get(route('ltr.show', $letter->uuid))->assertInertia(fn(AssertableInertia $page) => $page->where('pdf.artifact.confirmed', true)->where('preview.artifact.confirmed', false));
         $this->issue($letter, $pdf);
         $this->assertSame(LetterStatusEnum::PUBLISHED, $letter->fresh()->status);
+        $issuedNotification = $actor->notifications()->get()->sole(fn($entry): bool => $entry->data['kind'] === 'issue');
+        $this->assertSame('succeeded', $issuedNotification->data['status']);
+        $this->assertSame($letter->fresh()->currentVersion->operation->uuid, $issuedNotification->data['operation_id']);
+        $this->assertNull($issuedNotification->read_at);
         $this->assertSame('pdf', $letter->fresh()->currentVersion->inspection['kind']);
         $this->assertSame($pdf->uuid, $letter->fresh()->currentVersion->inspection['artifact']);
         $this->assertDatabaseCount('letter_number_assignments', 1);
@@ -143,6 +170,10 @@ class LetterPdfTest extends TestCase
         }
         $operation = LetterOperation::query()->where('uuid', $uuid)->sole();
         $this->assertSame(Status::FAILED, $operation->status);
+        $failureNotification = auth()->user()->notifications()->sole();
+        $this->assertSame($uuid, $failureNotification->data['operation_id']);
+        $this->assertSame('failed', $failureNotification->data['status']);
+        $this->assertStringNotContainsString('/private', json_encode($failureNotification->data, JSON_THROW_ON_ERROR));
         $this->assertStringNotContainsString('/private', $operation->message);
         $this->assertSame($uuid, $this->requestPdf($letter, $word, $key));
         $retry = $this->requestPdf($letter, $word);
