@@ -9,6 +9,38 @@ use PhpOffice\PhpWord\TemplateProcessor;
 
 class LetterTemplateProcessor extends TemplateProcessor
 {
+    public function markDraftNumber(): void
+    {
+        $mark = static function (string $xml): string {
+            $document = new DOMDocument();
+            $document->loadXML($xml, LIBXML_NONET);
+            $xpath = new DOMXPath($document);
+            $namespace = InspectLetterTemplateDocx::WORD_NAMESPACE;
+            $xpath->registerNamespace('w', $namespace);
+            foreach ($xpath->query('//w:r[w:t[contains(., "${nomor_surat")]]') as $run) {
+                if (!preg_match('/\$\{nomor_surat(?:#\d+)?\}/', $run->textContent)) {
+                    continue;
+                }
+                $properties = $xpath->query('w:rPr', $run)->item(0);
+                if ($properties === null) {
+                    $properties = $document->createElementNS($namespace, 'w:rPr');
+                    $run->insertBefore($properties, $run->firstChild);
+                }
+                foreach ($xpath->query('w:color', $properties) as $color) {
+                    $properties->removeChild($color);
+                }
+                $color = $document->createElementNS($namespace, 'w:color');
+                $color->setAttributeNS($namespace, 'w:val', 'B45309');
+                $properties->appendChild($color);
+            }
+
+            return $document->saveXML();
+        };
+        $this->tempDocumentMainPart = $mark($this->tempDocumentMainPart);
+        $this->tempDocumentHeaders = array_map($mark, $this->tempDocumentHeaders);
+        $this->tempDocumentFooters = array_map($mark, $this->tempDocumentFooters);
+    }
+
     public function cloneRepeatedRow(string $placeholder, int $count): void
     {
         $position = strpos($this->tempDocumentMainPart, '${' . $placeholder . '}');
@@ -66,6 +98,25 @@ class LetterTemplateProcessor extends TemplateProcessor
         if ($total > config('letter-templates.zip.max_xml_total_bytes')) {
             throw ValidationException::withMessages(['test' => 'Total isi hasil uji melewati batas. Kurangi data contoh.']);
         }
+    }
+
+    /** @return array<string, DOMDocument> */
+    public function renderedParts(): array
+    {
+        $parts = ['word/document.xml' => $this->tempDocumentMainPart];
+        foreach ($this->tempDocumentHeaders as $index => $xml) {
+            $parts['word/header' . $index . '.xml'] = $xml;
+        }
+        foreach ($this->tempDocumentFooters as $index => $xml) {
+            $parts['word/footer' . $index . '.xml'] = $xml;
+        }
+
+        return array_map(function (string $xml): DOMDocument {
+            $document = new DOMDocument();
+            $document->loadXML($xml, LIBXML_NONET | LIBXML_COMPACT);
+
+            return $document;
+        }, $parts);
     }
 
     public function __destruct()

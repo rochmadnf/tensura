@@ -2,13 +2,33 @@ import { useState, type SubmitEventHandler } from 'react';
 import { Head, Link, useHttp } from '@inertiajs/react';
 import { FormCard } from '@/components/form-card';
 import { Button } from '@/components/ui/button';
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/reui/alert';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+    AlertCircleIcon,
+    ArrowDown01Icon,
+    ArrowLeft01Icon,
+    BadgeXIcon,
+    Copy02Icon,
+    IdVerifiedIcon,
+    InformationCircleIcon,
+    LoaderIcon,
+    PlusSignIcon,
+    Upload01Icon,
+    WorkflowIcon,
+} from '@hugeicons/core-free-icons';
+import { Frame, FramePanel } from '@/components/reui/frame';
+import { IconTile } from '@/components/reui/icon-tile';
+import { EmployeeExcelUpload } from './components/employee-excel-upload';
+import { EmployeeImportHelp } from './components/employee-import-help';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from '@/components/ui/item';
 import empl from '@/routes/empl';
 import employeeImport from '@/routes/empl/import';
 import jt from '@/routes/jt';
+import type { ExcelImportInstructionSection, ExcelImportSettings } from '@/types/import-excel';
 
 type ImportResult = {
     total: number;
@@ -23,7 +43,15 @@ type ImportResult = {
 const pageName = 'Impor Pegawai';
 const pageSize = 10;
 
-export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean }) {
+export default function EmployeeImport({
+    hasJobTitles,
+    importSettings,
+    instructionSections,
+}: {
+    hasJobTitles: boolean;
+    importSettings: ExcelImportSettings;
+    instructionSections: ExcelImportInstructionSection[];
+}) {
     const http = useHttp<{ file: File | null }, ImportResult>({ file: null });
     const [result, setResult] = useState<ImportResult | null>(null);
     const [requestError, setRequestError] = useState('');
@@ -32,7 +60,7 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
 
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (event) => {
         event.preventDefault();
-        if (http.processing || !hasJobTitles) return;
+        if (http.processing || !hasJobTitles || result) return;
         http.clearErrors();
         setRequestError('');
         setResult(null);
@@ -45,8 +73,8 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
             http.setError('file', 'Gunakan file Excel berformat .xlsx.');
             return;
         }
-        if (http.data.file.size > 2 * 1024 * 1024) {
-            http.setError('file', 'Ukuran file maksimal 2 MB.');
+        if (http.data.file.size > importSettings.maxSizeBytes) {
+            http.setError('file', `Ukuran file maksimal ${importSettings.maxSizeLabel}.`);
             return;
         }
         try {
@@ -69,64 +97,53 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                     cancelUrl={empl.index().url}
                     disabled={http.processing}
                 >
-                    {!hasJobTitles && (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyTitle>Master jabatan belum tersedia</EmptyTitle>
-                                <EmptyDescription>
-                                    Tambahkan minimal satu jabatan sebelum mengunduh template dan mengimpor pegawai.
-                                </EmptyDescription>
-                            </EmptyHeader>
-                            <Button nativeButton={false} render={<Link href={jt.create().url} />}>
-                                Tambah Jabatan
-                            </Button>
-                        </Empty>
-                    )}
                     <form onSubmit={handleSubmit} noValidate aria-busy={http.processing}>
                         <FieldGroup>
-                            <Field>
-                                <FieldLabel>Template pegawai</FieldLabel>
-                                <FieldDescription>
-                                    Pilih jabatan dan status dari dropdown Excel. Simpan NIK/NIP sebagai teks agar digit
-                                    tetap utuh. Unduh ulang template setelah master jabatan berubah.
-                                </FieldDescription>
-                                <div>
-                                    {hasJobTitles ? (
+                            {!hasJobTitles && (
+                                <Alert variant="destructive">
+                                    <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" />
+                                    <AlertTitle>Master jabatan belum tersedia</AlertTitle>
+                                    <AlertDescription>
+                                        Template dan impor belum dapat digunakan. Tambahkan minimal satu jabatan
+                                        terlebih dahulu.
                                         <Button
+                                            type="button"
                                             variant="secondary"
                                             nativeButton={false}
-                                            disabled={http.processing}
-                                            render={<a href={employeeImport.template().url} download />}
+                                            render={<Link href={jt.create().url} />}
                                         >
-                                            Unduh Template Excel
+                                            <HugeiconsIcon
+                                                icon={PlusSignIcon}
+                                                data-icon="inline-start"
+                                                aria-hidden="true"
+                                            />
+                                            Tambah Jabatan
                                         </Button>
-                                    ) : (
-                                        <Button variant="secondary" disabled>
-                                            Unduh Template Excel
-                                        </Button>
-                                    )}
-                                </div>
-                            </Field>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            <EmployeeImportHelp
+                                instructionSections={instructionSections}
+                                hasJobTitles={hasJobTitles}
+                                processing={http.processing}
+                            />
                             <Field data-invalid={!!http.errors.file} data-disabled={!hasJobTitles || http.processing}>
-                                <FieldLabel htmlFor="employee-file">File Excel</FieldLabel>
-                                <Input
-                                    id="employee-file"
-                                    name="file"
-                                    type="file"
-                                    accept=".xlsx"
+                                <FieldLabel id="employee-file-label" htmlFor="employee-file">
+                                    File Excel
+                                </FieldLabel>
+                                <EmployeeExcelUpload
+                                    importSettings={importSettings}
                                     disabled={!hasJobTitles || http.processing}
-                                    aria-invalid={!!http.errors.file}
-                                    aria-describedby="employee-file-help employee-file-error"
-                                    onChange={(event) => {
-                                        http.setData('file', event.target.files?.[0] ?? null);
+                                    invalid={!!http.errors.file}
+                                    onChange={(file) => {
+                                        http.setData('file', file);
                                         http.clearErrors();
                                         setRequestError('');
+                                        setResult(null);
+                                        setIssuePage(1);
                                     }}
+                                    onError={(message) => http.setError('file', message)}
                                 />
-                                <FieldDescription id="employee-file-help">
-                                    Maksimal 2 MB dan 1.000 baris pengisian (baris Excel 2–1001). Baris valid disimpan;
-                                    duplikat dan baris tidak valid dilaporkan untuk diperbaiki.
-                                </FieldDescription>
                                 <div id="employee-file-error" aria-live="polite">
                                     {http.errors.file && <FieldError>{http.errors.file}</FieldError>}
                                 </div>
@@ -136,17 +153,35 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                                     {requestError}
                                 </p>
                             )}
+                            {result && (
+                                <Alert variant="info" role="status">
+                                    <HugeiconsIcon icon={InformationCircleIcon} aria-hidden="true" />
+                                    <AlertDescription>
+                                        File ini sudah diproses. Ganti atau pilih ulang file Excel terlebih dahulu untuk
+                                        mengimpor kembali.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <div className="flex flex-wrap items-center gap-3">
-                                <Button type="submit" disabled={!hasJobTitles || http.processing}>
-                                    {http.processing ? 'Memproses Impor…' : 'Impor Pegawai'}
-                                </Button>
+                                {!result && (
+                                    <Button type="submit" disabled={!hasJobTitles || http.processing}>
+                                        <HugeiconsIcon
+                                            icon={http.processing ? LoaderIcon : Upload01Icon}
+                                            data-icon="inline-start"
+                                            aria-hidden="true"
+                                            className={http.processing ? 'animate-spin' : undefined}
+                                        />
+                                        {http.processing ? 'Memproses Impor…' : 'Impor'}
+                                    </Button>
+                                )}
                                 <Button
                                     variant="secondary"
                                     nativeButton={false}
                                     disabled={http.processing}
                                     render={<Link href={empl.index().url} />}
                                 >
-                                    Kembali ke Pegawai
+                                    <HugeiconsIcon icon={ArrowLeft01Icon} data-icon="inline-start" aria-hidden="true" />
+                                    Kembali
                                 </Button>
                             </div>
                             {http.processing && (
@@ -164,12 +199,54 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                         title="Hasil Impor"
                         description="Laporan tersedia selama halaman ini terbuka. Perbaiki baris yang dilewati lalu unggah ulang."
                     >
-                        <div className="flex min-w-0 flex-col gap-5">
-                            <p role="status">
-                                {result.processed} dari {result.total} baris diproses:{' '}
-                                <strong>{result.imported} berhasil</strong>, {result.duplicate} duplikat,{' '}
-                                {result.invalid} tidak valid.
-                            </p>
+                        <div className="flex min-w-0 flex-col gap-8">
+                            <div className="flex flex-wrap gap-3">
+                                {[
+                                    {
+                                        label: 'Diproses',
+                                        count: `${result.processed} / ${result.total}`,
+                                        icon: WorkflowIcon,
+                                        className: 'text-primary',
+                                    },
+                                    {
+                                        label: 'Berhasil',
+                                        count: result.imported,
+                                        icon: IdVerifiedIcon,
+                                        className: 'text-success',
+                                    },
+                                    {
+                                        label: 'Duplikat',
+                                        count: result.duplicate,
+                                        icon: Copy02Icon,
+                                        className: 'text-warning',
+                                    },
+                                    {
+                                        label: 'Tidak Valid',
+                                        count: result.invalid,
+                                        icon: BadgeXIcon,
+                                        className: 'text-destructive',
+                                    },
+                                ].map((summary) => (
+                                    <Frame variant={'ghost'} key={summary.label} className="w-fit">
+                                        <FramePanel className="flex flex-row items-center justify-center gap-3">
+                                            <IconTile
+                                                variant="soft"
+                                                size="lg"
+                                                className={summary.className}
+                                                aria-hidden="true"
+                                            >
+                                                <HugeiconsIcon icon={summary.icon} strokeWidth={2} />
+                                            </IconTile>
+                                            <div className="flex flex-col gap-x-2">
+                                                <div className="text-xl font-bold tracking-tight text-foreground">
+                                                    {summary.count}
+                                                </div>
+                                                <p className="text-sm">{summary.label}</p>
+                                            </div>
+                                        </FramePanel>
+                                    </Frame>
+                                ))}
+                            </div>
                             {result.interrupted && (
                                 <p role="alert" className="text-sm text-destructive">
                                     Proses terhenti karena gangguan server. Baris yang berhasil sudah tersimpan; baris
@@ -185,45 +262,74 @@ export default function EmployeeImport({ hasJobTitles }: { hasJobTitles: boolean
                                 </p>
                             ) : (
                                 <>
-                                    <Table>
-                                        <TableCaption>Rincian pegawai yang dilewati</TableCaption>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="text-right">Baris Excel</TableHead>
-                                                <TableHead>Nama</TableHead>
-                                                <TableHead>Hasil</TableHead>
-                                                <TableHead>Alasan</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {result.issues
-                                                .slice((issuePage - 1) * pageSize, issuePage * pageSize)
-                                                .map((issue) => (
-                                                    <TableRow key={issue.row}>
-                                                        <TableCell className="text-right align-top tabular-nums">
-                                                            {issue.row}
-                                                        </TableCell>
-                                                        <TableCell className="max-w-56 align-top wrap-break-word whitespace-normal">
-                                                            {issue.name || 'Tanpa nama'}
-                                                        </TableCell>
-                                                        <TableCell className="align-top">
-                                                            {issue.category === 'duplicate'
-                                                                ? 'Duplikat'
-                                                                : 'Tidak valid'}
-                                                        </TableCell>
-                                                        <TableCell className="min-w-64 wrap-break-word whitespace-normal">
-                                                            <ul className="flex list-disc flex-col gap-1 pl-4">
-                                                                {Object.entries(issue.errors).map(
-                                                                    ([field, message]) => (
-                                                                        <li key={field}>{message}</li>
-                                                                    ),
-                                                                )}
-                                                            </ul>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
+                                    <ItemGroup aria-label="Rincian pegawai yang dilewati">
+                                        {result.issues
+                                            .slice((issuePage - 1) * pageSize, issuePage * pageSize)
+                                            .map((issue) => (
+                                                <Collapsible key={issue.row} role="listitem" defaultOpen={false}>
+                                                    <CollapsibleTrigger
+                                                        nativeButton={false}
+                                                        render={
+                                                            <Item
+                                                                variant="outline"
+                                                                size="xs"
+                                                                className="group cursor-pointer text-left hover:bg-muted/50"
+                                                            />
+                                                        }
+                                                    >
+                                                        <ItemMedia variant="icon">
+                                                            <HugeiconsIcon
+                                                                icon={
+                                                                    issue.category === 'duplicate'
+                                                                        ? Copy02Icon
+                                                                        : BadgeXIcon
+                                                                }
+                                                                className={
+                                                                    issue.category === 'duplicate'
+                                                                        ? 'text-yellow-500'
+                                                                        : 'text-destructive'
+                                                                }
+                                                                strokeWidth={2}
+                                                                aria-hidden="true"
+                                                            />
+                                                        </ItemMedia>
+                                                        <ItemContent className="min-w-0">
+                                                            <ItemTitle className="max-w-full wrap-break-word">
+                                                                {issue.name || 'Tanpa nama'}
+                                                            </ItemTitle>
+                                                            <ItemDescription>Baris ke-{issue.row}</ItemDescription>
+                                                        </ItemContent>
+                                                        <ItemActions>
+                                                            <Badge
+                                                                variant={
+                                                                    issue.category === 'duplicate'
+                                                                        ? 'warning'
+                                                                        : 'destructive'
+                                                                }
+                                                                size="sm"
+                                                            >
+                                                                {issue.category === 'duplicate'
+                                                                    ? 'Duplikat'
+                                                                    : 'Tidak Valid'}
+                                                            </Badge>
+                                                            <HugeiconsIcon
+                                                                icon={ArrowDown01Icon}
+                                                                aria-hidden="true"
+                                                                className="size-4 group-data-panel-open:rotate-180"
+                                                            />
+                                                        </ItemActions>
+                                                    </CollapsibleTrigger>
+                                                    <CollapsibleContent className="px-3 py-3 text-sm">
+                                                        <p className="mb-2 font-medium">Alasan</p>
+                                                        <ul className="flex list-disc flex-col gap-1 pl-4 wrap-break-word">
+                                                            {Object.entries(issue.errors).map(([field, message]) => (
+                                                                <li key={field}>{message}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </CollapsibleContent>
+                                                </Collapsible>
+                                            ))}
+                                    </ItemGroup>
                                     {pages > 1 && (
                                         <nav
                                             aria-label="Halaman laporan impor"

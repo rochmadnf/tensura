@@ -1,21 +1,5 @@
 import { defineRequest } from '@/lib/request';
-import {
-    object,
-    pipe,
-    string,
-    trim,
-    nonEmpty,
-    minLength,
-    length,
-    regex,
-    minValue,
-    number,
-    integer,
-    toNumber,
-    InferInput,
-    maxLength,
-    pick,
-} from 'valibot';
+import { object, pipe, string, trim, nonEmpty, minLength, length, regex, InferInput, maxLength, pick } from 'valibot';
 
 export const LetterNumberSchema = defineRequest(
     object({
@@ -27,14 +11,10 @@ export const LetterNumberSchema = defineRequest(
             length(3),
             regex(/^\d{3}$/, ':attribute berupa 3 digit angka'),
         ),
-        page_number: pipe(string(), toNumber(), number(), integer(), minValue(1)),
-        sequence_number: pipe(string(), toNumber(), number(), integer(), minValue(1)),
     }),
     {
         classification_name: 'Nama Klasifikasi Surat',
         classification_code: 'Kode Klasifikasi Surat',
-        page_number: 'Nomor Halaman',
-        sequence_number: 'Nomor Urut',
     },
 );
 

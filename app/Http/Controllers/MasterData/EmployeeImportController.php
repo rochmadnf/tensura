@@ -22,6 +22,8 @@ class EmployeeImportController extends Controller
         return inertia('employee/import', [
             'page' => ['id' => 'a30c21b9-15ef-4dc0-97ef-524ead13be55'],
             'hasJobTitles' => JobTitle::query()->exists(),
+            'importSettings' => EmployeeImportTemplate::settings(),
+            'instructionSections' => EmployeeImportTemplate::instructionSections(),
         ]);
     }
 

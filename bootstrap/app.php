@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('letter-templates:cleanup')->hourly()->withoutOverlapping(60);
+        $schedule->command('letters:cleanup')->hourly()->withoutOverlapping(60);
+        $schedule->command('letters:recover-operations')->everyMinute()->withoutOverlapping(5);
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [

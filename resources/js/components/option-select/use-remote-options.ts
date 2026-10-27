@@ -4,8 +4,17 @@ import options from '@/routes/options';
 export type SelectOption = { value: string; label: string; group?: number | null };
 export type RemoteOptions = {
     source:
-        'classifications' | 'job-titles' | 'reference-groups' | 'employees' | 'variable-options' | 'signer-candidates';
+        | 'classifications'
+        | 'job-titles'
+        | 'reference-groups'
+        | 'employees'
+        | 'variable-options'
+        | 'signer-candidates'
+        | 'letter-templates'
+        | 'letter-templates-all'
+        | 'letter-creators';
     context?: string;
+    preserveSelectedLabels?: boolean;
     groups?: string[];
 };
 
@@ -72,10 +81,12 @@ export function useRemoteOptions(remote: RemoteOptions | undefined, value: strin
         };
     }, [source, context, groupsKey, open, search, selectedKey, revision]);
 
-    const known = new Map([...seed, ...labels, ...result].map((item) => [item.value, item]));
-    const selected = (JSON.parse(selectedKey) as string[])
-        .map((id) => known.get(id))
-        .filter((item): item is SelectOption => !!item);
+    const selected = resolveSelectedOptions(
+        JSON.parse(selectedKey) as string[],
+        seed,
+        [...labels, ...result],
+        remote?.preserveSelectedLabels ?? false,
+    );
     return {
         items: remote ? result : seed,
         selected,
@@ -95,4 +106,16 @@ export function useRemoteOptions(remote: RemoteOptions | undefined, value: strin
               }
             : {},
     };
+}
+
+export function resolveSelectedOptions(
+    ids: string[],
+    seed: SelectOption[],
+    loaded: SelectOption[],
+    preserveSavedLabels = false,
+): SelectOption[] {
+    const known = new Map(
+        (preserveSavedLabels ? [...loaded, ...seed] : [...seed, ...loaded]).map((item) => [item.value, item]),
+    );
+    return ids.map((id) => known.get(id)).filter((item): item is SelectOption => !!item);
 }

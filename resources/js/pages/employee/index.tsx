@@ -4,8 +4,7 @@ import { EmployeeDataTable } from './components/data-table';
 import type { PaginationMeta } from '@/components/data-table';
 import { SectionData } from '@/components/section-data';
 import empl from '@/routes/empl';
-import employeeImport from '@/routes/empl/import';
-import { Button } from '@/components/ui/button';
+import { EmployeeTransferMenu } from './components/employee-transfer-menu';
 import { DataFilterDialog } from '@/components/data-filter-dialog';
 import { OptionSelect } from '@/components/option-select';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -132,13 +131,7 @@ export default function EmployeeIndex({
                     defaultKeyword={filters.keyword}
                     filterAction={
                         <>
-                            <Button
-                                variant="secondary"
-                                nativeButton={false}
-                                render={<Link href={employeeImport.create().url} />}
-                            >
-                                Impor Excel
-                            </Button>
+                            <EmployeeTransferMenu />
                             <DataFilterDialog
                                 title="Filter Pegawai"
                                 value={draft}

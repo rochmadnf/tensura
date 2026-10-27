@@ -1,3 +1,4 @@
+import { SystemFieldsForm } from './components/system-fields-form';
 import { LetterTemplateLifecycleCard } from './components/lifecycle-card';
 import { LetterTemplateVersionTimeline } from './components/version-timeline';
 import type { LetterTemplateLifecycle } from '@/schemas/letter-template-lifecycle';
@@ -73,6 +74,20 @@ export default function LetterTemplateEdit({
                             onClose={() => setActiveCard(null)}
                             options={configurationOptions}
                             disabled={isSaving}
+                            onProcessingChange={setIsSaving}
+                        />
+                    )}
+                    {document && (
+                        <SystemFieldsForm
+                            key={`system-${document.data.id}-${document.data.letter_date_format}-${activeCard === 'system'}`}
+                            templateId={resource.data.id}
+                            versionId={document.data.id}
+                            format={document.data.letter_date_format ?? 'd-m-Y'}
+                            editable={configuration?.data.editable ?? false}
+                            editing={activeCard === 'system'}
+                            disabled={isSaving || (activeCard !== null && activeCard !== 'system')}
+                            onEdit={() => setActiveCard('system')}
+                            onClose={() => setActiveCard(null)}
                             onProcessingChange={setIsSaving}
                         />
                     )}

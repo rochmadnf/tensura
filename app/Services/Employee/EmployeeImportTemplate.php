@@ -7,6 +7,8 @@ use App\Enums\ContractStatusEnum;
 use App\Enums\StrStatusEnum;
 use App\Models\MasterData\Employee;
 use App\Models\MasterData\JobTitle;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Number;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -19,20 +21,31 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class EmployeeImportTemplate implements FromArray, WithEvents
 {
-    public const int MAX_ROWS = 1000;
-
-    public const string JOB_TITLE_REQUIRED = 'Tambahkan minimal satu jabatan sebelum mengunduh template dan mengimpor pegawai.';
+    public const string JOB_TITLE_REQUIRED = 'Tambahkan minimal satu jabatan sebelum mengunduh templat dan mengimpor pegawai.';
 
     /** @return array<string, string> */
     public static function columns(): array
     {
         return [
-            'nik' => 'NIK', 'nip' => 'NIP', 'name' => 'Nama', 'gender' => 'Jenis Kelamin',
-            'front_title' => 'Gelar Depan', 'back_title' => 'Gelar Belakang', 'job_title_id' => 'Jabatan',
-            'rank' => 'Pangkat', 'grade' => 'Golongan', 'join_date' => 'Tanggal Bergabung',
-            'email' => 'Email', 'contract_status' => 'Status Kontrak', 'status' => 'Status Pegawai',
-            'str_number' => 'Nomor STR', 'str_status' => 'Status STR', 'str_published_date' => 'Tanggal Terbit STR',
-            'sip_number' => 'Nomor SIP', 'sip_published_date' => 'Tanggal Terbit SIP', 'sip_expired_date' => 'Tanggal Berakhir SIP',
+            'nik' => 'NIK',
+            'nip' => 'NIP',
+            'name' => 'Nama',
+            'gender' => 'Jenis Kelamin',
+            'front_title' => 'Gelar Depan',
+            'back_title' => 'Gelar Belakang',
+            'job_title_id' => 'Jabatan',
+            'rank' => 'Pangkat',
+            'grade' => 'Golongan',
+            'join_date' => 'Tanggal Bergabung',
+            'email' => 'Email',
+            'contract_status' => 'Status Kontrak',
+            'status' => 'Status Pegawai',
+            'str_number' => 'Nomor STR',
+            'str_status' => 'Status STR',
+            'str_published_date' => 'Tanggal Terbit STR',
+            'sip_number' => 'Nomor SIP',
+            'sip_published_date' => 'Tanggal Terbit SIP',
+            'sip_expired_date' => 'Tanggal Berakhir SIP',
         ];
     }
 
@@ -47,6 +60,73 @@ class EmployeeImportTemplate implements FromArray, WithEvents
         ];
     }
 
+    /** @return array{maxSizeBytes: int, maxSizeLabel: string, maxRows: int} */
+    public static function settings(): array
+    {
+        $maxSizeBytes = Config::integer('import-excel.employee.max_upload_kb') * 1024;
+
+        return [
+            'maxSizeBytes' => $maxSizeBytes,
+            'maxSizeLabel' => Number::fileSize($maxSizeBytes, maxPrecision: 2),
+            'maxRows' => Config::integer('import-excel.employee.max_rows'),
+        ];
+    }
+
+    /** @return list<array{id: string, title: string, items: list<string>}> */
+    public static function instructionSections(): array
+    {
+        $settings = self::settings();
+        $maxRows = number_format($settings['maxRows'], 0, ',', '.');
+        $lastRow = $settings['maxRows'] + 1;
+
+        return [
+            [
+                'id' => 'file-limits',
+                'title' => 'Batas File',
+                'items' => [
+                    "Satu file .xlsx, maksimal {$settings['maxSizeLabel']} dan {$maxRows} baris pengisian (baris Excel 2–{$lastRow}).",
+                    'Isi sheet Pegawai tanpa mengubah nama, urutan, atau jumlah kolom header.',
+                    'Unduh ulang template setelah master jabatan berubah; daftar dalam file tidak diperbarui otomatis.',
+                ],
+            ],
+            [
+                'id' => 'required-columns',
+                'title' => 'Kolom Wajib',
+                'items' => [
+                    'NIK, Nama, Jenis Kelamin, Jabatan, Tanggal Bergabung, Status Kontrak, dan Status Pegawai wajib diisi.',
+                    'Kolom lainnya boleh kosong, kecuali kelengkapan STR/SIP jika salah satu kolomnya diisi.',
+                ],
+            ],
+            [
+                'id' => 'data-format',
+                'title' => 'Format Pengisian',
+                'items' => [
+                    'Pilih Jabatan, Jenis Kelamin, Status Kontrak, Status Pegawai, dan Status STR melalui dropdown. Jabatan harus tersedia di aplikasi saat impor.',
+                    'NIK (16 digit), NIP (18 digit), Nomor STR, dan Nomor SIP harus berupa teks. Salin dari sumber asli agar digit tidak hilang.',
+                    'Gunakan tanggal Excel atau teks YYYY-MM-DD. Tanggal bergabung dan tanggal terbit maksimal hari ini.',
+                    'Isi nilai langsung tanpa formula. Baris kosong diabaikan.',
+                ],
+            ],
+            [
+                'id' => 'str-sip',
+                'title' => 'Ketentuan STR/SIP',
+                'items' => [
+                    'Isi Nomor STR (16 karakter), Status STR, dan Tanggal Terbit STR bersama-sama atau kosongkan semuanya.',
+                    'Isi Nomor SIP, Tanggal Terbit SIP, dan Tanggal Berakhir SIP bersama-sama atau kosongkan semuanya.',
+                    'Tanggal Berakhir SIP harus setelah Tanggal Terbit SIP.',
+                ],
+            ],
+            [
+                'id' => 'import-behavior',
+                'title' => 'Cara Impor Bekerja',
+                'items' => [
+                    'Baris valid disimpan. Duplikat NIK/NIP/email/STR/SIP dan baris tidak valid dilewati dengan laporan.',
+                    'Data lama tidak diperbarui. Periksa alasan pada hasil impor, perbaiki baris yang dilewati, lalu unggah ulang; data yang sudah tersimpan akan dilewati.',
+                ],
+            ],
+        ];
+    }
+
     /** @return list<list<string>> */
     public function array(): array
     {
@@ -56,79 +136,105 @@ class EmployeeImportTemplate implements FromArray, WithEvents
     /** @return array<class-string, callable> */
     public function registerEvents(): array
     {
-        return [AfterSheet::class => function (AfterSheet $event): void {
-            $sheet = $event->sheet->getDelegate();
-            $sheet->setTitle('Pegawai');
-            $sheet->freezePane('D2');
-            $sheet->getStyle('A1:S1')->getFont()->setBold(true);
-            $sheet->setAutoFilter('A1:S1001');
+        return [
+            AfterSheet::class => function (AfterSheet $event): void {
+                $sheet = $event->sheet->getDelegate();
+                $sheet->setTitle('Pegawai');
+                $sheet->freezePane('D2');
+                $sheet->getStyle('A1:S1')->getFont()->setBold(true);
+                $lastRow = max(Config::integer('import-excel.employee.max_rows') + 1, $sheet->getHighestDataRow());
+                $sheet->setAutoFilter('A1:S' . $lastRow);
 
-            $workbook = $sheet->getParent();
-            $instructions = $workbook->createSheet()->setTitle('Petunjuk');
-            $reference = $workbook->createSheet()->setTitle('Referensi');
-            $reference->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
-            $lists = ['job_title_id' => JobTitle::query()->orderBy('name')->pluck('name')->all()];
-            foreach (self::options() as $field => $options) {
-                $lists[$field] = array_column($options, 'label');
-            }
-
-            foreach (array_keys(self::columns()) as $index => $field) {
-                $column = Coordinate::stringFromColumnIndex($index + 1);
-                $sheet->getColumnDimension($column)->setWidth(25);
-                $format = str_ends_with($field, '_date') ? NumberFormat::FORMAT_DATE_YYYYMMDD : NumberFormat::FORMAT_TEXT;
-                $sheet->getStyle($column . '2:' . $column . '1001')->getNumberFormat()->setFormatCode($format);
-            }
-
-            foreach ($lists as $field => $labels) {
-                $referenceColumn = Coordinate::stringFromColumnIndex(array_search($field, array_keys($lists), true) + 1);
-                foreach ($labels as $index => $label) {
-                    $reference->setCellValueExplicit($referenceColumn . ($index + 1), $label, DataType::TYPE_STRING);
+                $workbook = $sheet->getParent();
+                $instructions = $workbook->createSheet()->setTitle('Petunjuk');
+                $reference = $workbook->createSheet()->setTitle('Referensi');
+                $reference->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+                $lists = ['job_title_id' => JobTitle::query()->orderBy('name')->pluck('name')->all()];
+                foreach (self::options() as $field => $options) {
+                    $lists[$field] = array_column($options, 'label');
                 }
-                $range = 'pilihan_' . $field;
-                $workbook->addNamedRange(new NamedRange($range, $reference, '$' . $referenceColumn . '$1:$' . $referenceColumn . '$' . count($labels)));
-                $column = Coordinate::stringFromColumnIndex(array_search($field, array_keys(self::columns()), true) + 1);
-                $validation = (new DataValidation())
-                    ->setType(DataValidation::TYPE_LIST)
-                    ->setErrorStyle(DataValidation::STYLE_STOP)
-                    ->setAllowBlank($field === 'str_status')
-                    ->setShowDropDown(true)
-                    ->setShowInputMessage(true)
-                    ->setShowErrorMessage(true)
-                    ->setPromptTitle(self::columns()[$field])
-                    ->setPrompt('Pilih salah satu nilai dari dropdown.')
-                    ->setErrorTitle('Pilihan tidak valid')
-                    ->setError('Pilih nilai yang tersedia pada dropdown.')
-                    ->setFormula1($range);
-                $sheet->setDataValidation($column . '2:' . $column . '1001', $validation);
-            }
 
-            $instructions->fromArray([
-                ['Petunjuk Impor Pegawai'],
-                ['Gunakan sheet Pegawai, jangan mengubah header. Maksimal 1.000 baris pengisian (baris 2–1001), ukuran file 2 MB.'],
-                ['Wajib: NIK, Nama, Jenis Kelamin, Jabatan, Tanggal Bergabung, Status Kontrak, Status Pegawai. Kolom lain boleh kosong.'],
-                ['Pilih Jabatan, Jenis Kelamin, dan Status menggunakan dropdown. Jabatan harus tersedia di aplikasi saat impor.'],
-                ['Unduh ulang template setelah master jabatan berubah; daftar dalam file tidak diperbarui otomatis.'],
-                ['NIK 16 digit dan NIP 18 digit harus berupa teks. Salin dari sumber asli agar digit tidak hilang.'],
-                ['NIK, NIP, Nomor STR, dan Nomor SIP menggunakan format teks, bukan angka.'],
-                ['Tanggal: gunakan tanggal Excel atau teks YYYY-MM-DD. Tanggal bergabung/terbit maksimal hari ini.'],
-                ['STR: isi Nomor STR (16 karakter), Status STR, dan Tanggal Terbit STR bersama-sama atau kosongkan semuanya.'],
-                ['SIP: isi Nomor SIP, Tanggal Terbit SIP, dan Tanggal Berakhir SIP bersama-sama atau kosongkan semuanya.'],
-                ['Tanggal Berakhir SIP harus setelah Tanggal Terbit SIP.'],
-                ['Baris valid disimpan. Duplikat NIK/NIP/email/STR/SIP dan baris tidak valid dilewati dengan laporan.'],
-                ['Data lama tidak diperbarui. Unggah ulang aman; baris yang sudah tersimpan akan dilewati.'],
-                ['Baris kosong diabaikan. Formula pada data pegawai tidak diperbolehkan.'],
-            ]);
-            $instructionRow = 16;
-            foreach ($lists as $field => $labels) {
-                $instructions->setCellValueExplicit('A' . $instructionRow++, self::columns()[$field], DataType::TYPE_STRING);
-                foreach ($labels as $label) {
-                    $instructions->setCellValueExplicit('A' . $instructionRow++, $label, DataType::TYPE_STRING);
+                foreach (array_keys(self::columns()) as $index => $field) {
+                    $column = Coordinate::stringFromColumnIndex($index + 1);
+                    $sheet->getColumnDimension($column)->setWidth(25);
+                    $format = str_ends_with($field, '_date')
+                        ? NumberFormat::FORMAT_DATE_YYYYMMDD
+                        : NumberFormat::FORMAT_TEXT;
+                    $sheet
+                        ->getStyle($column . '2:' . $column . $lastRow)
+                        ->getNumberFormat()
+                        ->setFormatCode($format);
                 }
-                $instructionRow++;
-            }
-            $instructions->getColumnDimension('A')->setWidth(110);
-            $instructions->getStyle('A1:A' . $instructionRow)->getAlignment()->setWrapText(true);
-            $workbook->setActiveSheetIndex(0);
-        }];
+
+                foreach ($lists as $field => $labels) {
+                    if ($labels === []) {
+                        continue;
+                    }
+                    $referenceColumn = Coordinate::stringFromColumnIndex(
+                        array_search($field, array_keys($lists), true) + 1,
+                    );
+                    foreach ($labels as $index => $label) {
+                        $reference->setCellValueExplicit(
+                            $referenceColumn . ($index + 1),
+                            $label,
+                            DataType::TYPE_STRING,
+                        );
+                    }
+                    $range = 'pilihan_' . $field;
+                    $workbook->addNamedRange(
+                        new NamedRange(
+                            $range,
+                            $reference,
+                            '$' . $referenceColumn . '$1:$' . $referenceColumn . '$' . count($labels),
+                        ),
+                    );
+                    $column = Coordinate::stringFromColumnIndex(
+                        array_search($field, array_keys(self::columns()), true) + 1,
+                    );
+                    $validation = new DataValidation()
+                        ->setType(DataValidation::TYPE_LIST)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank($field === 'str_status')
+                        ->setShowDropDown(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setPromptTitle(self::columns()[$field])
+                        ->setPrompt('Pilih salah satu nilai dari dropdown.')
+                        ->setErrorTitle('Pilihan tidak valid')
+                        ->setError('Pilih nilai yang tersedia pada dropdown.')
+                        ->setFormula1($range);
+                    $sheet->setDataValidation($column . '2:' . $column . $lastRow, $validation);
+                }
+
+                $instructions->setCellValueExplicit('A1', 'Petunjuk Impor Pegawai', DataType::TYPE_STRING);
+                $instructions->getStyle('A1')->getFont()->setBold(true);
+                $instructionRow = 3;
+                foreach (self::instructionSections() as $section) {
+                    $instructions->setCellValueExplicit('A' . $instructionRow, $section['title'], DataType::TYPE_STRING);
+                    $instructions->getStyle('A' . $instructionRow++)->getFont()->setBold(true);
+                    foreach ($section['items'] as $instruction) {
+                        $instructions->setCellValueExplicit('A' . $instructionRow++, $instruction, DataType::TYPE_STRING);
+                    }
+                    $instructionRow++;
+                }
+                foreach ($lists as $field => $labels) {
+                    $instructions->setCellValueExplicit(
+                        'A' . $instructionRow++,
+                        self::columns()[$field],
+                        DataType::TYPE_STRING,
+                    );
+                    foreach ($labels as $label) {
+                        $instructions->setCellValueExplicit('A' . $instructionRow++, $label, DataType::TYPE_STRING);
+                    }
+                    $instructionRow++;
+                }
+                $instructions->getColumnDimension('A')->setWidth(110);
+                $instructions
+                    ->getStyle('A1:A' . $instructionRow)
+                    ->getAlignment()
+                    ->setWrapText(true);
+                $workbook->setActiveSheetIndex(0);
+            },
+        ];
     }
 }

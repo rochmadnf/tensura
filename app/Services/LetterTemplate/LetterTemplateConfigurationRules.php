@@ -4,6 +4,7 @@ namespace App\Services\LetterTemplate;
 
 use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Enums\LetterTemplateVariableTypeEnum;
+use App\Services\Letter\LetterSystemFields;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -104,7 +105,7 @@ class LetterTemplateConfigurationRules
                     return;
                 }
 
-                $placeholders = [];
+                $placeholders = array_fill_keys(LetterSystemFields::NAMES, 'system');
                 foreach ($data['variables'] as $index => $variable) {
                     $path = "variables.{$index}";
                     $this->claimPlaceholder($validator, $placeholders, $variable['name'], "{$path}.name");
@@ -295,6 +296,11 @@ class LetterTemplateConfigurationRules
     {
         if (strlen($name) > config('letter-templates.placeholders.max_length')) {
             $validator->errors()->add($path, "Nama variabel otomatis {$name} melebihi batas panjang nama variabel.");
+        }
+        if (($placeholders[$name] ?? null) === 'system') {
+            $validator->errors()->add($path, "Nama {$name} dicadangkan untuk variabel sistem. Gunakan nama lain.");
+
+            return;
         }
         if (isset($placeholders[$name])) {
             $validator->errors()->add($path, "Nama variabel {$name} sudah digunakan dalam versi ini.");

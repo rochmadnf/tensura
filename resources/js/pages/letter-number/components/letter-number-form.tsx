@@ -19,8 +19,6 @@ export function LetterNumberForm({ letterNumber }: { letterNumber?: LetterNumber
         {
             classification_name: letterNumber?.name ?? '',
             classification_code: letterNumber?.code ?? '',
-            page_number: String(letterNumber?.page_number ?? 1),
-            sequence_number: String(letterNumber?.sequence_number ?? 1),
         },
     );
     const showError = () => gooeyToast.error('Galat', { description: 'Terdapat data yang tidak valid.' });
@@ -71,6 +69,7 @@ export function LetterNumberForm({ letterNumber }: { letterNumber?: LetterNumber
                         <FieldLabel htmlFor="classification_code">Kode Klasifikasi Surat</FieldLabel>
                         <Input
                             type="text"
+                            readOnly={letterNumber?.code_locked}
                             inputMode="numeric"
                             placeholder="445"
                             minLength={3}
@@ -78,27 +77,16 @@ export function LetterNumberForm({ letterNumber }: { letterNumber?: LetterNumber
                             disabled={form.processing}
                             {...bind('classification_code')}
                         />
+                        {letterNumber?.code_locked && (
+                            <FieldDescription>
+                                Kode telah digunakan surat dan dilindungi untuk menjaga riwayat penomoran.
+                            </FieldDescription>
+                        )}
                         {form.errors.classification_code && <FieldError>{form.errors.classification_code}</FieldError>}
                     </Field>
-                    {(['page_number', 'sequence_number'] as const).map((name) => (
-                        <Field
-                            key={name}
-                            data-invalid={!!form.errors[name]}
-                            data-disabled={!!letterNumber || form.processing}
-                        >
-                            <FieldLabel htmlFor={name}>
-                                {name === 'page_number' ? 'Nomor Halaman' : 'Nomor Urut'}
-                            </FieldLabel>
-                            <Input
-                                type="number"
-                                min={1}
-                                max={letterNumber ? undefined : 99}
-                                disabled={!!letterNumber || form.processing}
-                                {...bind(name)}
-                            />
-                            {form.errors[name] && <FieldError>{form.errors[name]}</FieldError>}
-                        </Field>
-                    ))}
+                    <FieldDescription>
+                        Angka awal dikelola per bulan dan tahun melalui detail Penomoran Surat.
+                    </FieldDescription>
                     <FormActions cancelUrl={ln.index().url} processing={form.processing} />
                 </FieldGroup>
             </form>

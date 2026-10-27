@@ -1,4 +1,12 @@
 <laravel-boost-guidelines>
+=== .ai/database rules ===
+
+## Database
+
+- PostgreSQL 18 lokal via mise (data di `.pgdata`, port 5433)
+- Gunakan migration Laravel, hindari raw SQL kecuali perlu dengan persetujuan
+- Pakai fitur khusus Postgres hanya jika ada alasan jelas
+
 === foundation rules ===
 
 # Laravel Boost Guidelines
@@ -193,6 +201,7 @@ Use Wayfinder to generate TypeScript functions for Laravel routes. Import from `
 </laravel-boost-guidelines>
 
 <!-- CODEGRAPH_START -->
+
 ## CodeGraph
 
 In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:

@@ -20,6 +20,7 @@ class CopyLetterTemplateVersion
     {
         $source->loadMissing(['variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $draft = $template->versions()->create([
+            'letter_date_format' => $source->letter_date_format,
             'version_number' => $template->versions()->max('version_number') + 1,
             'letter_number_id' => $source->letter_number_id, 'status' => LetterTemplateVersionStatusEnum::DRAFT,
         ]);

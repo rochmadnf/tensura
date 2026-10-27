@@ -2,7 +2,7 @@
 
 Status: proses bisnis utama telah selesai disepakati berdasarkan diskusi sampai 26 Oktober 2026. Dokumen ini menjadi acuan rancangan teknis dan belum menyatakan fitur Surat sudah diimplementasikan.
 
-Acuan fondasi: [proses bisnis Templat Surat](../letter-template-management-probis.md). Ketentuan berikut melengkapi fitur templat untuk pembuatan surat sebenarnya. Rincian teknis yang masih perlu dirancang dicantumkan pada bagian akhir.
+Acuan fondasi: [proses bisnis Templat Surat](../letter-template-management-probis.md). Ketentuan berikut melengkapi fitur templat untuk pembuatan surat sebenarnya. Rencana teknis bertahap ada di [teknis.md](teknis.md); perubahan keputusan selama pembahasan teknis yang memengaruhi perilaku pengguna diselaraskan di dokumen ini.
 
 ## 1. Tujuan, cakupan, dan pelaku
 
@@ -33,15 +33,30 @@ Perubahan isi setelah pemeriksaan mewajibkan preview dan konfirmasi ulang. Alur 
 
 | Aksi | Perilaku |
 | --- | --- |
-| Preview | Menampilkan PDF hasil konversi dokumen di aplikasi tanpa harus mengunduh Word terlebih dahulu |
-| Download | Mengunduh hasil generate dalam format Word; tersedia setelah surat terbit |
+| Preview | Diutamakan DOCX langsung di browser, hanya-baca, jika hasil uji kelayakannya diterima pengguna |
+| Cetak | Mencetak dari viewer; draft tetap ditandai DRAFT dan belum bernomor resmi |
+| Lihat/Cetak PDF | Konversi LibreOffice atas permintaan sebagai alternatif pemeriksaan/cetak |
+| Unduh | Setelah terbit, satu dropdown Unduh menyediakan Word (.docx) dan PDF (.pdf), bersyarat kelayakan preview DOCX |
 
 - Preview draft menampilkan nomor seperti `445/XX.XX/PKM-KMJ/X/2026`, dengan warna teks warning/kuning. Bagian halaman dan urutan belum merupakan nomor resmi; bulan dan tahun mengikuti periode surat.
 - Preview surat terbit menggunakan nomor resminya.
 - Word draft tidak tersedia untuk diunduh.
-- Surat baru, revisi, dan pemulihan wajib melalui preview draft terbaru dan konfirmasi pemeriksaan sebelum diterbitkan.
-- Jika PDF resmi gagal dibuat setelah Word resmi berhasil dibuat, surat tetap Terbit dan Word dapat diunduh. Preview menampilkan status gagal dan aksi Coba Lagi tanpa mengambil nomor baru; hal ini tidak menghapus kewajiban pemeriksaan preview draft sebelum penerbitan.
-- Usulan teknis pengguna adalah LibreOffice headless pada Linux dan otomasi Word/headless pada Windows. Kelayakan, dukungan platform, dan mekanisme konversinya belum diverifikasi atau diputuskan sebagai kontrak implementasi.
+- Surat baru, revisi, dan pemulihan wajib melalui preview draft terbaru dan konfirmasi pemeriksaan sebelum diterbitkan. Bukti pemeriksaan mengikuti jenis preview yang benar-benar dibuka dan versi draft yang diperiksa.
+- Preview DOCX belum dianggap layak hanya berdasarkan build atau test otomatis. Pengguna menilai tampilan dan cetaknya secara mandiri; bila belum layak, jalur PDF dipertahankan dan desain yang bersyarat DOCX belum dinyatakan final tersedia.
+- Pada jalur DOCX, PDF tidak dibuat otomatis setiap review atau penerbitan. PDF dibuat ketika diminta dan hasil tersimpan digunakan kembali untuk versi yang sama.
+- Jika PDF resmi gagal dibuat, surat tetap Terbit dan Word dapat diunduh. Konversi menampilkan status gagal dan aksi Coba Lagi tanpa mengambil nomor baru. PDF opsional yang gagal tidak membatalkan pemeriksaan DOCX yang sah; bila pemeriksaan dipilih melalui PDF, hasil PDF tersebut harus tersedia.
+- Word unduhan mempertahankan pengaturan font asli DOCX; substitusi hanya untuk rendering/konversi PDF. Tidak ada dua tombol unduh Word/PDF terpisah pada desain dropdown.
+- Tahap pertama mendukung Linux dengan LibreOffice headless dan queue worker. SSE memberitahukan status pekerjaan di layout utama sehingga perpindahan halaman tidak menghentikan proses; hasil tetap tersimpan setelah refresh/tab ditutup. Windows belum termasuk target verifikasi awal.
+
+### Pemeriksaan dan pengelolaan font
+
+- Validasi DOCX pada Templat Surat juga memeriksa font yang digunakan dan membandingkannya dengan font tersedia bagi proses konversi.
+- Semua font tersedia tidak menjamin tata letak sama persis dengan Word; pemeriksaan visual tetap dilakukan pengguna.
+- Font yang kurang hanya menghasilkan peringatan, bukan galat struktur, dan tidak menghalangi generate, publikasi, penerbitan Surat, atau unduhan.
+- Hasil pemeriksaan menampilkan Font Dokumen pada kartu DOCX Sumber dan aksi Unggah font untuk yang kurang. Tombol Font tersedia pada header kartu membuka daftar/pencarian keluarga serta varian dan aksi unggah.
+- Admin dapat mengunggah `.ttf`/`.otf`; font dinyatakan siap setelah validasi dan proses rendering benar-benar dapat membacanya. Font yang belum dilengkapi memakai pengganti tersedia pada PDF, dengan peringatan nama font asal/penggantinya.
+- Font server tidak otomatis tersedia di browser; viewer perlu memuat font yang disediakan aplikasi atau memberitahukan fallback yang dipakai.
+- Setelah font relevan dilengkapi, preview draft terkait dibuat ulang dan diperiksa kembali. Dokumen resmi/historis yang sudah tersedia tidak berubah diam-diam.
 
 ## 4. Format dan alokasi nomor
 
@@ -71,6 +86,8 @@ Contoh nomor resmi: **`445/23.44/PKM-KMJ/X/2026`**.
 - Nomor halaman dan urut menggunakan minimal dua digit. Setelah `01.99`, nomor berikutnya adalah `02.01`.
 - Setiap pergantian bulan, urutan periode baru kembali ke `01.01`. Periode dibedakan berdasarkan bulan dan tahun.
 - Angka pada master berarti **nomor terakhir terpakai**. Jika tercatat `23.44`, alokasi otomatis berikutnya adalah `23.45`.
+- Angka existing dipindahkan ke periode pilihan admin melalui detail Penomoran Surat → Urutan per Periode. Increment operasional berada pada periode klasifikasi/bulan/tahun, bukan lagi pada baris master klasifikasi.
+- Setelah pemindahan lengkap, kolom counter lama pada master dihapus melalui transisi teknis yang menjaga angka existing; master tetap memiliki identitas klasifikasi. Periode baru yang belum disiapkan mulai dari `01.01`.
 - Alokasi otomatis melewati nomor yang telah digunakan surat yang belum dibatalkan.
 - Nomor yang dilepas karena pembatalan digunakan kembali melalui pilihan manual; pembatalan tidak memundurkan urutan otomatis atau membuat alokasi otomatis mengisi celah nomor batal.
 
@@ -160,7 +177,8 @@ Penyesuaian versi tidak otomatis mengambil ulang nilai pegawai/referensi yang ma
 | Kejadian | Perlakuan |
 | --- | --- |
 | Generate Word gagal | Isian draft tetap tersimpan; tampilkan penyebab yang dapat ditindaklanjuti dan aksi Coba Lagi |
-| Konversi PDF untuk preview draft gagal | Draft tetap tersimpan; pemeriksaan dan penerbitan tertahan sampai preview berhasil |
+| Render preview draft utama gagal | Draft tetap tersimpan; pemeriksaan dan penerbitan tertahan sampai hasil yang diperiksa tersedia |
+| Konversi PDF alternatif gagal | Dapat dicoba ulang; tidak menghalangi pemeriksaan DOCX yang sah. Jika memilih pemeriksaan melalui PDF, tunggu PDF tersedia |
 | Penerbitan gagal sebelum berhasil | Surat baru tetap draft; nomor tidak dianggap terpakai dan operator dapat mencoba kembali |
 | Word resmi berhasil dibuat dan penerbitan berhasil, tetapi PDF resmi gagal | Surat tetap Terbit, Word dapat diunduh, dan konversi PDF dapat dicoba ulang tanpa nomor baru |
 | Penerbitan berhasil tetapi respons ke operator terputus | Saat dibuka atau dicoba kembali, aplikasi mengembalikan surat yang sudah terbit tanpa penerbitan ganda atau nomor kedua |
@@ -168,7 +186,7 @@ Penyesuaian versi tidak otomatis mengambil ulang nilai pegawai/referensi yang ma
 - Pada kegagalan revisi, versi resmi sebelumnya tetap tersedia sampai penerbitan revisi berhasil.
 - Pada kegagalan pemulihan sebelum berhasil terbit, surat tetap Batal dan draft pemulihan tetap dapat dilanjutkan.
 - Percobaan ulang konversi PDF resmi menggunakan versi Word resmi yang bersangkutan, sehingga tidak mengubah isi historis karena pembaruan data master atau templat.
-- Kegagalan PDF resmi tidak membatalkan konfirmasi pemeriksaan preview draft yang telah dilakukan sebelum penerbitan.
+- Kegagalan PDF resmi tidak membatalkan konfirmasi pemeriksaan preview draft yang sah sebelum penerbitan. Pada jalur DOCX, konversi resmi hanya dijalankan atas permintaan.
 
 ## 10. Daftar dan timeline Surat
 
@@ -190,9 +208,9 @@ Timeline mencatat:
 
 Setiap kejadian menyertakan waktu dan pelaku; proses otomatis diidentifikasi sebagai proses sistem. Alasan wajib ditampilkan untuk revisi, pembatalan, dan pemulihan. Membuka detail atau mengunduh dokumen tidak menambah entri timeline.
 
-## 11. Rancangan teknis berikutnya
+## 11. Acuan implementasi dan pengujian
 
-Proses bisnis di atas sudah disepakati. Rancangan teknis selanjutnya perlu menjabarkan:
+Proses bisnis di atas sudah disepakati. [Rencana teknis](teknis.md) membagi implementasi menjadi 10 tahap, dengan hasil web, pemeriksaan otomatis, pesan commit bahasa Inggris, dan checklist mandiri per tahap. Rencana tersebut menjabarkan:
 
 - Struktur data surat, draft, versi resmi, snapshot nilai/dokumen historis, alasan, timeline, dan hubungan penggunaan ulang nomor.
 - Integrasi placeholder sistem serta konfigurasi format tanggal dengan validasi, pengujian, dan siklus versi Templat Surat yang sudah ada.
@@ -200,3 +218,5 @@ Proses bisnis di atas sudah disepakati. Rancangan teknis selanjutnya perlu menja
 - Penyimpanan dan pemrosesan Word/PDF, kelayakan konversi pada platform server, serta batas keberhasilan penerbitan agar kegagalan PDF resmi tetap dapat dicoba ulang setelah surat terbit.
 - Pengamanan percobaan ulang agar tidak menerbitkan dua kali, deteksi perubahan draft oleh operator lain, dan penyimpanan isian saat penyesuaian versi.
 - Rancangan halaman, integrasi route, skenario pengujian penerimaan dan konkurensi, serta tahapan implementasi mengikuti konvensi repository.
+
+Agent tidak menjalankan pengujian visual/browser manual maupun inspeksi visual hasil dokumen. Pengguna menjalankannya secara mandiri melalui [checklist tahap 1–10](../../tests/letter/tahap-1.md) dan file tahap berikutnya. Pemeriksaan otomatis nonvisual tetap dilakukan; hasil manual tidak ditandai lulus sebelum laporan pengguna.

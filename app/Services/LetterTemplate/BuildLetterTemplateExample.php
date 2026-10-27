@@ -57,6 +57,9 @@ class BuildLetterTemplateExample
                     'Draft ini belum memiliki variabel. Lengkapi konfigurasi pada halaman kelola, lalu unduh kembali contoh terbaru.',
                 );
             }
+            $section->addText('Variabel Sistem', ['bold' => true]);
+            $section->addText('Nomor surat: ${nomor_surat} — nomor contoh memakai XX.XX saat uji; tidak mengambil nomor surat.');
+            $section->addText('Tanggal surat: ${tanggal_surat} — format ' . $this->plain($version->letter_date_format ?? 'd-m-Y'));
             foreach ($version->variables as $variable) {
                 $section->addText($this->plain($variable->label . ' (' . $variable->name . ')'), ['bold' => true]);
                 $section->addText(

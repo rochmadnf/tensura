@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AccountAvatarController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
@@ -9,10 +10,22 @@ use App\Http\Controllers\ArchivePreviewController;
 use App\Http\Controllers\ArchiveReferenceGroupController;
 use App\Http\Controllers\ArchiveRestoreController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentFontController;
+use App\Http\Controllers\LetterController;
+use App\Http\Controllers\LetterDocumentController;
+use App\Http\Controllers\LetterDraftChangeController;
+use App\Http\Controllers\LetterIssuanceController;
+use App\Http\Controllers\LetterLifecycleController;
+use App\Http\Controllers\LetterOperationController;
+use App\Http\Controllers\LetterPdfController;
+use App\Http\Controllers\LetterPreviewController;
 use App\Http\Controllers\MasterData\EmployeeController;
+use App\Http\Controllers\MasterData\EmployeeExportController;
 use App\Http\Controllers\MasterData\EmployeeImportController;
 use App\Http\Controllers\MasterData\JobTitleController;
 use App\Http\Controllers\MasterData\LetterNumberController;
+use App\Http\Controllers\MasterData\LetterNumberPeriodController;
+use App\Http\Controllers\MasterData\LetterNumberUsageController;
 use App\Http\Controllers\MasterData\LetterTemplateAuditController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationController;
 use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
@@ -20,6 +33,7 @@ use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
+use App\Http\Controllers\MasterData\LetterTemplateSystemFieldsController;
 use App\Http\Controllers\MasterData\LetterTemplateTestController;
 use App\Http\Controllers\MasterData\LetterTemplateValidationController;
 use App\Http\Controllers\MasterData\LetterTemplateVersionController;
@@ -29,6 +43,33 @@ use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('about', [AboutController::class, 'index'])->name('about');
+    Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
+    Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
+        Route::post('artifacts/{artifact:uuid}/pdf', [LetterPdfController::class, 'store'])->whereUuid('artifact')->middleware('throttle:20,1')->name('ltr.pdfs.store');
+        Route::get('pdfs/{artifact:uuid}/file', [LetterPdfController::class, 'file'])->whereUuid('artifact')->name('ltr.pdfs.file');
+        Route::get('pdfs/{artifact:uuid}/download', [LetterPdfController::class, 'file'])->whereUuid('artifact')->name('ltr.pdfs.download');
+        Route::post('revise', [LetterLifecycleController::class, 'store'])->name('ltr.revise');
+        Route::post('recover', [LetterLifecycleController::class, 'store'])->name('ltr.recover');
+        Route::post('cancel', [LetterLifecycleController::class, 'store'])->name('ltr.cancel');
+        Route::post('discard-draft', [LetterLifecycleController::class, 'store'])->name('ltr.discardDraft');
+        Route::post('issue', [LetterIssuanceController::class, 'store'])->middleware('throttle:20,1')->name('ltr.issue');
+        Route::get('versions/{version:uuid}/word', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.file');
+        Route::get('versions/{version:uuid}/download', [LetterDocumentController::class, 'show'])->whereUuid('version')->name('ltr.versions.download');
+        Route::post('previews', [LetterPreviewController::class, 'store'])->middleware('throttle:20,1')->name('ltr.previews.store');
+        Route::get('previews/{artifact:uuid}/file', [LetterPreviewController::class, 'file'])->whereUuid('artifact')->name('ltr.previews.file');
+        Route::post('previews/{artifact:uuid}/rendered', [LetterPreviewController::class, 'rendered'])->whereUuid('artifact')->name('ltr.previews.rendered');
+        Route::post('previews/{artifact:uuid}/confirm', [LetterPreviewController::class, 'confirm'])->whereUuid('artifact')->name('ltr.previews.confirm');
+        Route::get('operations/{operation:uuid}', [LetterOperationController::class, 'show'])->whereUuid('operation')->name('ltr.operations.show');
+        Route::get('master-refresh', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'masters')->name('ltr.masters.preview');
+        Route::post('master-refresh', [LetterDraftChangeController::class, 'apply'])->defaults('kind', 'masters')->name('ltr.masters.apply');
+        Route::get('template-adjustment', [LetterDraftChangeController::class, 'preview'])->defaults('kind', 'template')->name('ltr.adjustment.preview');
+        Route::post('template-adjustment', [LetterDraftChangeController::class, 'apply'])->defaults('kind', 'template')->name('ltr.adjustment.apply');
+    });
+    Route::resource('letters', LetterController::class)->scoped(['letter' => 'uuid'])->whereUuid('letter')->names('ltr');
+    Route::get('document-fonts', [DocumentFontController::class, 'index'])->name('document-fonts.index');
+    Route::post('document-fonts', [DocumentFontController::class, 'store'])->middleware('throttle:20,1')->name('document-fonts.store');
+    Route::get('document-fonts/{documentFont:uuid}/file', [DocumentFontController::class, 'file'])->whereUuid('documentFont')->name('document-fonts.file');
     Route::get('options', OptionController::class)->name('options.index');
     Route::get('letter-templates/{letterTemplate:uuid}/audits', LetterTemplateAuditController::class)->whereUuid('letterTemplate')->name('lt.audits.index');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -47,6 +88,7 @@ Route::middleware('auth')->group(function () {
     Route::post('account/avatar', [AccountAvatarController::class, 'store'])->name('account.avatar.store');
     Route::delete('account/avatar', [AccountAvatarController::class, 'destroy'])->name('account.avatar.destroy');
 
+    Route::get('employees/export', EmployeeExportController::class)->name('empl.export');
     Route::get('employees/import', [EmployeeImportController::class, 'create'])->name('empl.import.create');
     Route::get('employees/import/template', [EmployeeImportController::class, 'template'])->name('empl.import.template');
     Route::post('employees/import', [EmployeeImportController::class, 'store'])->name('empl.import.store');
@@ -78,6 +120,7 @@ Route::middleware('auth')->group(function () {
         Route::post('draft', [LetterTemplateVersionController::class, 'draft'])->name('lt.versions.draft');
         Route::post('archive', [LetterTemplateVersionController::class, 'archive'])->name('lt.versions.archive');
         Route::patch('activation', [LetterTemplateVersionController::class, 'activation'])->name('lt.activation.update');
+        Route::patch('system-fields', LetterTemplateSystemFieldsController::class)->name('lt.system-fields.update');
         Route::post('test', [LetterTemplateTestController::class, 'store'])->name('lt.test.store');
         Route::get('test', [LetterTemplateTestController::class, 'show'])->name('lt.test.download');
         Route::post('test/confirm', [LetterTemplateTestController::class, 'confirm'])->name('lt.test.confirm');
@@ -119,6 +162,9 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('ln.index');
             Route::get('/create', 'create')->name('ln.create');
             Route::post('/store', 'store')->name('ln.store');
+            Route::get('/{letterNumber:uuid}', 'show')->name('ln.show');
+            Route::get('/{letterNumber:uuid}/periods/{period:uuid}/usage', LetterNumberUsageController::class)->whereUuid(['letterNumber', 'period'])->name('ln.periods.usage');
+            Route::post('/{letterNumber:uuid}/periods', [LetterNumberPeriodController::class, 'store'])->name('ln.periods.store');
             Route::get('/{letterNumber:uuid}/edit', 'edit')->name('ln.edit');
             Route::patch('/{letterNumber:uuid}', 'update')->name('ln.update');
             Route::delete('/{letterNumber:uuid}', 'destroy')->name('ln.destroy');

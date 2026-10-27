@@ -42,7 +42,7 @@ Isi keputusan berikut dari permintaan pengguna, sesi sebelumnya, dan kode yang a
 ### C. Perilaku
 
 7. **Operasi apa saja?** Default: index, create, store, edit, update, destroy (tanpa show).
-8. **Kolom mana yang tidak boleh diubah saat edit?** (contoh LetterNumber: `page_number`, `sequence_number`). Kolom itu tampil read-only dan tidak diterima oleh `Update{Nama}Request`.
+8. **Kolom mana yang tidak boleh diubah saat edit?** Kolom tersebut tidak diterima oleh `Update{Nama}Request`. LetterNumber kini menyimpan identitas melalui form create/edit; counter lama hanya ditampilkan selama transisi dan angka awal dikelola pada detail per periode, bukan pada form identitas.
 9. **Perilaku penghapusan**: permanen, arsip snapshot yang dapat dipulihkan, atau kebutuhan soft delete tersendiri. CRUD sederhana mengikuti penghapusan permanen JobTitle/LetterNumber jika tidak ada kebutuhan pemulihan. Reference memakai arsip snapshot, bukan `SoftDeletes`. Jika perlu arsip, tentukan entitas/induk-anak, pemulihan, konflik, dan hapus permanen arsip; ikuti bagian arsip di LARAVEL_PATTERNS.md. Perubahan skema/perilaku di luar lingkup yang disepakati memerlukan persetujuan.
 10. **Validasi khusus**: unik, format, rentang, pesan galat bila berbeda dari pesan bawaan.
 11. **Otorisasi**: cukup login (default) atau perlu role/policy per record?
@@ -143,6 +143,7 @@ Semua teks yang tampil ke pengguna (label, pesan, toast, placeholder) berbahasa 
 - Kartu/item tersimpan mulai dalam mode baca. Satu editor atau dialog operasi yang saling memengaruhi aktif pada satu waktu; pemilik halaman mengoordinasikan editor aktif dan request berjalan. Detail field serta draft input tetap dimiliki komponen fitur.
 - Simpan/Batal hanya muncul saat edit. Batal/Escape memulihkan nilai tersimpan, galat, dan pilihan file tanpa navigasi; gunakan `FormActions.onCancel`. Jangan membungkus form di dalam form.
 - Tambah item membuka draft lokal; record server baru dibuat setelah Simpan berhasil. Hapus record tersimpan merupakan operasi terpisah dengan konfirmasi dampak domain. Reorder mengikuti pola Reference/Templat Surat dan tetap mempertahankan identitas item.
+- Editor formulir dinamis mempertahankan definisi field yang dibuka sampai ditutup atau operator memuat ulang secara eksplisit. Respons konflik dengan versi templat baru tidak boleh menghilangkan field lama yang masih perlu disalin.
 - Galat mempertahankan editor dan input; sukses memperbarui data tersimpan lalu menutup editor. Gunakan key stabil berdasarkan identitas record/versi, bukan indeks atau nilai input yang menyebabkan remount saat mengetik.
 - Blokir aksi yang bertentangan selama edit/request, pertahankan fokus dan scroll, dan selalu lepaskan status sibuk saat request selesai atau gagal. Penguncian UI membantu interaksi; backend tetap memeriksa state dan konflik.
 - Tampilkan kesiapan, alasan aksi tertahan, hasil validasi, dan riwayat dari props backend. Pesan validasi rinci berada di bagian terkait, toast menjadi umpan balik singkat. Jangan menyalin formula kelayakan publikasi atau parsing DOCX ke frontend.
@@ -201,6 +202,16 @@ pnpm run build
 - Untuk editor bertahap, periksa mode baca/edit, satu editor aktif, Batal/Escape, kegagalan simpan, penambahan lokal, reorder, aksi saat request lambat, dan dialog yang dibuka ulang. Pemeriksaan browser dan pembukaan/render hasil DOCX/PDF merupakan bukti terpisah dari test backend/build; laporkan masing-masing sesuai yang benar-benar dijalankan.
 - Laporan akhir singkat: apa yang dibuat, apa yang diuji, dan apa yang tidak dapat dijalankan beserta alasannya.
 
+### Versi aplikasi dan catatan rilis
+
+- Gunakan Semantic Versioning `MAJOR.MINOR.PATCH`. Sumber versi berjalan adalah `config('app.version')`; nilai disimpan tanpa awalan `v`, sedangkan tampilan memakai awalan tersebut. Major tetap `0` selama pengembangan MVP; kenaikan major memerlukan keputusan eksplisit pengguna.
+- Setelah satu **tahap implementasi yang disepakati** selesai dan verifikasi terkait lulus, naikkan **patch** satu angka, misalnya `0.1.0 → 0.1.1`. Tahap berarti unit implementasi dalam rencana fitur, bukan setiap langkah kerja atau commit sementara.
+- Setelah seluruh **fitur** selesai dan verifikasinya lulus, termasuk fitur tanpa tahapan, naikkan **minor** satu angka dan reset patch ke `0`, misalnya `0.1.4 → 0.2.0`.
+- Jika tahap terakhir sekaligus menyelesaikan fitur, lakukan **satu kenaikan minor**; jangan membuat kenaikan patch terpisah untuk penyelesaian yang sama. Pembahasan, pekerjaan belum selesai, dan commit sementara tidak menaikkan versi.
+- Dalam commit penyelesaian yang sama, perbarui default versi pada `config/app.php` dan tambahkan catatan rilis berbahasa Indonesia di `config/releases.php`. Letakkan entri terbaru paling atas, gunakan nomor versi sebagai key, isi `summary`, `features` (daftar `title`/`description`), serta `notes` (daftar teks, boleh kosong). Pertahankan entri versi sebelumnya; ringkas kemampuan yang sudah tersedia, bukan detail internal implementasi.
+- Periksa override `APP_VERSION` pada lingkungan yang digunakan agar tidak menutupi default baru; perbarui override yang memang ditetapkan secara eksplisit dan muat ulang konfigurasi sesuai cara deployment. Jangan menambahkan sumber versi frontend tersendiri. Halaman **Tentang Aplikasi** dan tautan versi sidebar mengikuti shared prop `app.version`.
+- Pembuatan halaman versi ini menetapkan baseline **`0.1.0`**, tanpa kenaikan tambahan atau perhitungan mundur untuk fitur/tahapan yang sudah dikerjakan sebelumnya.
+
 ## 8. Perbedaan pola yang perlu dipertahankan
 
 | Hal                 | Kontrak saat ini                                                                                                        | Pedoman fitur baru                                                                                                                                          |
@@ -210,7 +221,7 @@ pnpm run build
 | Pencarian dan tabel | Keempat CRUD dan list arsip memakai `Searchable`, `SectionData`, dan `ResourceDataTable`                                | Gunakan abstraksi bersama; tidak ada lagi alasan meniru query/pagination manual lama LetterNumber                                                           |
 | Identitas Resource  | CRUD memakai `id` berisi UUID; arsip memakai `uuid`                                                                     | Selaraskan tipe frontend dan `getRowId` dengan kontrak yang dipilih                                                                                         |
 | UUID database       | JobTitle/Employee/LetterNumber memakai indeks biasa; Reference dan tabel arsip sudah memakai constraint unik            | Periksa skema aktual; tentukan constraint berdasarkan invariannya, termasuk kebutuhan restore/konkurensi; jangan mengubah indeks fitur lama tanpa kebutuhan |
-| Form update         | LetterNumber melindungi counter; fitur lain memiliki field dan aturan sendiri                                           | Satu form fitur untuk create/edit dengan payload dan validasi sesuai operasi                                                                                |
+| Form update         | LetterNumber create/update hanya nama/kode; periode memakai operasi persiapan tersendiri; counter lama dipertahankan sementara | Satu form fitur untuk create/edit dengan payload dan validasi sesuai operasi                                                                                |
 | Hapus               | JobTitle/Employee/LetterNumber permanen; Reference memakai arsip snapshot                                               | Tentukan kebutuhan pemulihan; gunakan alur backend dan dialog yang sesuai                                                                                   |
 
 - `Employee` sudah memiliki factory/`HasFactory`, `casts()` protected, serta test filter relasi/tanggal. Gunakan sebagai referensi untuk kebutuhan tersebut.

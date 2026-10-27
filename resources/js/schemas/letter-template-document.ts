@@ -21,6 +21,8 @@ export function createLetterTemplateDocxSchema(maxKb: number) {
 }
 export type LetterTemplateDocument = {
     id: string;
+    letter_date_format?: string;
+    fonts?: import('./document-font').DocumentFontReport | null;
     source: { name: string; size: number } | null;
     state: 'pending' | 'valid' | 'invalid' | 'stale';
     validated_at: string | null;

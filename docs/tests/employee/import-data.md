@@ -1,6 +1,6 @@
 # Rencana Impor Pegawai melalui Excel
 
-Status: implementasi selesai. Pengujian nonvisual sudah dijalankan; checklist visual manual di bawah belum dijalankan.
+Status: implementasi impor awal selesai dan seluruh checklist visual awal telah diperiksa pengguna secara mandiri. Revisi UI/UX dan ekspor telah diimplementasikan; checklist tambahan untuk revisi ini masih menunggu pemeriksaan manual pengguna.
 
 ## Tujuan
 
@@ -57,7 +57,7 @@ Referensi:
 ## Batas implementasi
 
 - Tidak mengubah skema database.
-- Tidak menyediakan pembuatan jabatan otomatis, pembaruan pegawai lama, riwayat impor permanen, ekspor seluruh pegawai, atau perintah Artisan.
+- Tidak menyediakan pembuatan jabatan otomatis, pembaruan pegawai lama, riwayat impor permanen, atau perintah Artisan. Ekspor ditambahkan pada revisi UI/UX di bawah.
 - Laporan tersedia selama halaman tetap terbuka. File unggahan tidak disimpan permanen.
 - Gunakan komponen dan konvensi aplikasi yang sudah tersedia.
 
@@ -77,53 +77,53 @@ Gunakan database pengujian dengan data sintetis. Untuk setiap skenario, catat ha
 ### Akses dan prasyarat jabatan
 
 - [x] Buka Halaman Pegawai dan pilih Impor Excel. **Harapan:** halaman impor terbuka; navigasi kembali menuju daftar pegawai berfungsi.
-- [] Buka impor saat master jabatan kosong. **Harapan:** pesan prasyarat tampil jelas; unduh dan unggah nonaktif; tombol tambah jabatan tersedia.
-- [ ] Pilih tombol tambah jabatan, tambahkan satu jabatan, lalu buka ulang halaman impor. **Harapan:** unduh dan unggah aktif.
+- [x] Buka impor saat master jabatan kosong. **Harapan:** pesan prasyarat tampil jelas; unduh dan unggah nonaktif; tombol tambah jabatan tersedia.
+- [x] Pilih tombol tambah jabatan, tambahkan satu jabatan, lalu buka ulang halaman impor. **Harapan:** unduh dan unggah aktif.
 
 ### Template dan dropdown Excel
 
-- [ ] Unduh template dengan satu jabatan. **Harapan:** file `.xlsx` terbuka tanpa peringatan perbaikan; sheet Pegawai dan Petunjuk tersedia, Referensi tersembunyi.
-- [ ] Pilih sel Jabatan pada baris pertama pengisian. **Harapan:** dropdown berisi satu jabatan yang tersedia dan pilihan dapat dipilih.
-- [ ] Unduh template dengan beberapa jabatan. **Harapan:** dropdown memuat daftar sesuai master, terurut alfabetis, tanpa ID/UUID.
-- [ ] Pilih Jabatan pada baris pengisian ke-1.000. **Harapan:** dropdown tetap tersedia dan berfungsi.
-- [ ] Ketik nama jabatan di luar pilihan. **Harapan:** Excel menampilkan pesan penolakan dan petunjuk memilih daftar.
-- [ ] Periksa template di Microsoft Excel dan LibreOffice bila tersedia. **Harapan:** dropdown, label, petunjuk, dan format sel dapat digunakan.
-- [ ] Periksa kolom dan sheet Petunjuk. **Harapan:** kolom wajib, pilihan status/jenis kelamin, format tanggal, serta aturan STR/SIP mudah dipahami.
-- [ ] Isi NIK/NIP dengan nol di depan dan simpan/buka ulang file. **Harapan:** seluruh digit tetap utuh, tidak menjadi notasi ilmiah.
-- [ ] Tambahkan jabatan setelah template diunduh. **Harapan:** template lama tetap berisi snapshot lama; template yang diunduh ulang memuat jabatan baru.
+- [x] Unduh template dengan satu jabatan. **Harapan:** file `.xlsx` terbuka tanpa peringatan perbaikan; sheet Pegawai dan Petunjuk tersedia, Referensi tersembunyi.
+- [x] Pilih sel Jabatan pada baris pertama pengisian. **Harapan:** dropdown berisi satu jabatan yang tersedia dan pilihan dapat dipilih.
+- [x] Unduh template dengan beberapa jabatan. **Harapan:** dropdown memuat daftar sesuai master, terurut alfabetis, tanpa ID/UUID.
+- [x] Pilih Jabatan pada baris pengisian ke-1.000. **Harapan:** dropdown tetap tersedia dan berfungsi.
+- [x] Ketik nama jabatan di luar pilihan. **Harapan:** Excel menampilkan pesan penolakan dan petunjuk memilih daftar.
+- [x] Periksa template di Microsoft Excel dan LibreOffice bila tersedia. **Harapan:** dropdown, label, petunjuk, dan format sel dapat digunakan.
+- [x] Periksa kolom dan sheet Petunjuk. **Harapan:** kolom wajib, pilihan status/jenis kelamin, format tanggal, serta aturan STR/SIP mudah dipahami.
+- [x] Isi NIK/NIP dengan nol di depan dan simpan/buka ulang file. **Harapan:** seluruh digit tetap utuh, tidak menjadi notasi ilmiah.
+- [x] Tambahkan jabatan setelah template diunduh. **Harapan:** template lama tetap berisi snapshot lama; template yang diunduh ulang memuat jabatan baru.
 
 ### Unggah dan status proses
 
-- [ ] Kirim tanpa file, lalu coba tipe file selain `.xlsx` dan file melebihi 2 MB. **Harapan:** pesan kesalahan mudah dipahami dan tidak ada data tersimpan.
-- [ ] Pilih file lalu ganti dengan file lain sebelum mengirim. **Harapan:** nama file yang akan diproses sesuai pilihan terbaru.
-- [ ] Kirim file valid. **Harapan:** status proses terlihat dan tombol kirim mencegah pengiriman berulang selama request berjalan.
-- [ ] Unggah file rusak, header salah, sheet wajib hilang, atau lebih dari 1.000 baris data. **Harapan:** pesan menjelaskan penyebab dan tidak ada data tersimpan.
+- [x] Kirim tanpa file, lalu coba tipe file selain `.xlsx` dan file melebihi 2 MB. **Harapan:** pesan kesalahan mudah dipahami dan tidak ada data tersimpan.
+- [x] Pilih file lalu ganti dengan file lain sebelum mengirim. **Harapan:** nama file yang akan diproses sesuai pilihan terbaru.
+- [x] Kirim file valid. **Harapan:** status proses terlihat dan tombol kirim mencegah pengiriman berulang selama request berjalan.
+- [x] Unggah file rusak, header salah, sheet wajib hilang, atau lebih dari 1.000 baris data. **Harapan:** pesan menjelaskan penyebab dan tidak ada data tersimpan.
 
 ### Hasil dan pesan per baris
 
-- [ ] Impor file yang seluruhnya valid. **Harapan:** jumlah berhasil sesuai baris tidak kosong dan tidak ada masalah palsu.
-- [ ] Impor file yang seluruhnya tidak valid. **Harapan:** jumlah berhasil nol dan alasan setiap baris tersedia.
-- [ ] Impor file yang seluruhnya duplikat. **Harapan:** semua dilewati dengan alasan, tanpa perubahan data lama.
-- [ ] Impor campuran baris valid, duplikat, tidak valid, dan kosong. **Harapan:** baris valid tersimpan; baris kosong diabaikan; ringkasan sesuai hasil.
-- [ ] Periksa duplikat NIK, NIP, email, STR, dan SIP, termasuk duplikat dalam file. **Harapan:** pesan menyebut kolom penyebab dengan bahasa yang jelas.
-- [ ] Ubah master sehingga jabatan dalam template lama tidak tersedia, lalu unggah. **Harapan:** baris dilewati dengan petunjuk memperbaiki master/pilihan jabatan.
-- [ ] Salin-tempel nama jabatan tidak valid untuk melewati dropdown. **Harapan:** server tetap menolak baris dengan pesan jabatan tidak tersedia.
-- [ ] Isi identitas tidak valid, tanggal tidak valid, atau STR/SIP tidak lengkap. **Harapan:** pesan menyebut kolom dan tindakan perbaikan yang relevan.
-- [ ] Cocokkan nomor baris laporan dengan file, termasuk setelah baris kosong. **Harapan:** nomor menunjukkan baris Excel yang benar.
-- [ ] Buat cukup banyak masalah untuk beberapa halaman laporan. **Harapan:** pagination bekerja dan rincian tetap terbaca.
+- [x] Impor file yang seluruhnya valid. **Harapan:** jumlah berhasil sesuai baris tidak kosong dan tidak ada masalah palsu.
+- [x] Impor file yang seluruhnya tidak valid. **Harapan:** jumlah berhasil nol dan alasan setiap baris tersedia.
+- [x] Impor file yang seluruhnya duplikat. **Harapan:** semua dilewati dengan alasan, tanpa perubahan data lama.
+- [x] Impor campuran baris valid, duplikat, tidak valid, dan kosong. **Harapan:** baris valid tersimpan; baris kosong diabaikan; ringkasan sesuai hasil.
+- [x] Periksa duplikat NIK, NIP, email, STR, dan SIP, termasuk duplikat dalam file. **Harapan:** pesan menyebut kolom penyebab dengan bahasa yang jelas.
+- [x] Ubah master sehingga jabatan dalam template lama tidak tersedia, lalu unggah. **Harapan:** baris dilewati dengan petunjuk memperbaiki master/pilihan jabatan.
+- [x] Salin-tempel nama jabatan tidak valid untuk melewati dropdown. **Harapan:** server tetap menolak baris dengan pesan jabatan tidak tersedia.
+- [x] Isi identitas tidak valid, tanggal tidak valid, atau STR/SIP tidak lengkap. **Harapan:** pesan menyebut kolom dan tindakan perbaikan yang relevan.
+- [x] Cocokkan nomor baris laporan dengan file, termasuk setelah baris kosong. **Harapan:** nomor menunjukkan baris Excel yang benar.
+- [x] Buat cukup banyak masalah untuk beberapa halaman laporan. **Harapan:** pagination bekerja dan rincian tetap terbaca.
 
 ### Data tersimpan dan pemulihan
 
-- [ ] Kembali ke daftar/detail pegawai setelah impor. **Harapan:** pegawai berhasil muncul dengan identitas, jabatan, status, dan tanggal sesuai file; baris gagal tidak muncul.
-- [ ] Unggah ulang file yang sama. **Harapan:** pegawai yang sudah tersimpan dilewati, tidak ada duplikat tambahan atau pembaruan data lama.
-- [ ] Simulasikan kegagalan jaringan saat unggah. **Harapan:** pesan kegagalan dan status tombol kembali jelas; pengguna dapat memeriksa hasil atau mencoba ulang.
-- [ ] Jika terjadi gangguan server setelah sebagian penyimpanan, periksa pesan dan coba ulang. **Harapan:** kemungkinan hasil parsial dijelaskan; unggah ulang tidak menduplikasi data yang sudah masuk.
+- [x] Kembali ke daftar/detail pegawai setelah impor. **Harapan:** pegawai berhasil muncul dengan identitas, jabatan, status, dan tanggal sesuai file; baris gagal tidak muncul.
+- [x] Unggah ulang file yang sama. **Harapan:** pegawai yang sudah tersimpan dilewati, tidak ada duplikat tambahan atau pembaruan data lama.
+- [x] Simulasikan kegagalan jaringan saat unggah. **Harapan:** pesan kegagalan dan status tombol kembali jelas; pengguna dapat memeriksa hasil atau mencoba ulang.
+- [x] Jika terjadi gangguan server setelah sebagian penyimpanan, periksa pesan dan coba ulang. **Harapan:** kemungkinan hasil parsial dijelaskan; unggah ulang tidak menduplikasi data yang sudah masuk.
 
 ### Tata letak dan aksesibilitas
 
-- [ ] Periksa halaman pada desktop dan layar seluler. **Harapan:** label, tombol, petunjuk, ringkasan, dan pesan panjang terbaca; tabel dapat diakses tanpa merusak tata letak.
-- [ ] Gunakan keyboard untuk navigasi halaman, pemilihan file, kirim, dan pagination. **Harapan:** fokus terlihat dan urutan navigasi masuk akal.
-- [ ] Periksa tampilan sebelum impor dan setelah hasil tanpa masalah. **Harapan:** keadaan kosong informatif dan tidak menampilkan tabel atau pesan kegagalan yang membingungkan.
+- [x] Periksa halaman pada desktop dan layar seluler. **Harapan:** label, tombol, petunjuk, ringkasan, dan pesan panjang terbaca; tabel dapat diakses tanpa merusak tata letak.
+- [x] Gunakan keyboard untuk navigasi halaman, pemilihan file, kirim, dan pagination. **Harapan:** fokus terlihat dan urutan navigasi masuk akal.
+- [x] Periksa tampilan sebelum impor dan setelah hasil tanpa masalah. **Harapan:** keadaan kosong informatif dan tidak menampilkan tabel atau pesan kegagalan yang membingungkan.
 
 ## Hasil verifikasi implementasi
 
@@ -136,6 +136,54 @@ Gunakan database pengujian dengan data sintetis. Untuk setiap skenario, catat ha
 | `vendor/bin/pint --dirty --format agent` | Lulus. |
 | Prettier untuk kedua halaman pegawai yang diubah | Lulus. |
 | Pengujian visual otomatis | Tidak dijalankan sesuai permintaan. |
-| Checklist visual manual | Menunggu pengujian oleh pengguna. |
+| Checklist visual manual versi awal | Selesai diperiksa pengguna secara mandiri. |
 
 Versi terpasang: Laravel Excel 4.0.6 dan PhpSpreadsheet 5.10.0. Tidak ada perubahan versi paket lama atau migrasi database.
+
+## Revisi UI/UX dan ekspor pegawai
+
+- Petunjuk tersedia langsung di halaman impor melalui dialog, menggunakan sumber panduan backend yang sama dengan worksheet. Tombol unduh pada halaman membuka dialog dahulu; unduhan hanya dimulai melalui aksi Unduh Template di dalam dialog.
+- Keterangan template memakai alert info biru, sedangkan master jabatan kosong memakai alert danger/destructive. Petunjuk tetap tersedia saat master kosong; template dan impor tetap diblokir.
+- Upload mengadaptasi contoh `c-file-upload-3.tsx` dan hook yang tersedia: satu `.xlsx`, maksimal 2 MB, pilih atau drag-and-drop, nama/ukuran file, ganti/hapus, dan penolakan banyak file sekaligus. File lama dipertahankan jika pengganti tidak valid.
+- Tombol utama memakai HugeIcons. Daftar pegawai menyediakan satu dropdown Impor/Ekspor dengan dua pilihan aksi.
+- Ekspor menyediakan pilihan seluruh pegawai atau hasil pencarian/filter aktif di seluruh halaman. Hasil berupa satu `.xlsx` yang mengikuti kolom impor, label jabatan/status, format teks identitas, petunjuk, dan dropdown referensi.
+- Ekspor lebih dari 1.000 baris tetap lengkap. Bagi file menjadi maksimal 1.000 baris dan 2 MB sebelum impor ulang. Pegawai tanpa jabatan tetap diekspor dengan jabatan kosong dan perlu dilengkapi sebelum impor.
+- Tidak menambah dependensi atau mengubah skema database. Validasi dan proses penyimpanan impor tetap menggunakan mekanisme sebelumnya.
+
+### Checklist visual manual revisi
+
+Checklist lama di atas tetap menjadi catatan pengujian yang telah diselesaikan pengguna. Daftar berikut khusus perubahan terbaru dan belum dijalankan secara visual otomatis.
+
+- [ ] Buka Petunjuk pada halaman impor, tutup, lalu buka kembali. **Harapan:** panduan dapat dibaca kapan saja tanpa memulai unduhan.
+- [ ] Pilih Unduh Template pada halaman. **Harapan:** dialog terbuka terlebih dahulu dan file belum diunduh; hanya aksi Unduh Template di dalam dialog memulai unduhan.
+- [ ] Tutup dialog melalui tombol Tutup, Escape, dan tombol silang. **Harapan:** tidak ada unduhan dan fokus kembali ke kontrol yang relevan.
+- [ ] Baca panduan di dialog dan worksheet. **Harapan:** aturan kolom wajib, teks identitas, tanggal, STR/SIP, dropdown, batas unggahan, dan duplikat konsisten.
+- [ ] Periksa dialog pada layar kecil atau tinggi layar terbatas. **Harapan:** isi panduan dapat digulir dan aksi unduh/tutup tetap dapat dijangkau.
+- [ ] Periksa informasi Template Pegawai pada mode terang dan gelap. **Harapan:** alert berwarna biru lembut, ikon informasi jelas, dan isi mudah dibaca.
+- [ ] Buka impor dengan master jabatan kosong. **Harapan:** alert merah lembut menjelaskan tindakan Tambah Jabatan, bukan kesan kerusakan aplikasi; unggah/unduh nonaktif tetapi Petunjuk tetap aktif.
+- [ ] Pilih atau seret satu file `.xlsx`. **Harapan:** nama dan ukuran tampil jelas, termasuk nama yang panjang; file dapat dikirim melalui proses impor biasa.
+- [ ] Pilih Ganti File, Hapus File, dan pilih kembali file yang sama. **Harapan:** pilihan dan payload sinkron, aksi hapus mengosongkan pilihan, dan pemilihan ulang berfungsi.
+- [ ] Ganti file dengan tipe selain `.xlsx`, file di atas 2 MB, atau seret beberapa file sekaligus. **Harapan:** pesan bahasa Indonesia jelas dan file lama tetap dipertahankan.
+- [ ] Mulai impor lalu coba memilih, mengganti, menghapus, atau menyeret file. **Harapan:** seluruh perubahan file diblokir selama pemrosesan dan laporan hasil tetap berfungsi.
+- [ ] Periksa tombol utama dan dropdown Impor/Ekspor. **Harapan:** ikon konsisten, teks tetap terlihat, menu hanya berisi Impor Data Pegawai dan Ekspor Data Pegawai, tanpa tombol impor/ekspor terpisah yang berulang.
+- [ ] Pilih ekspor seluruh pegawai saat pencarian/filter aktif. **Harapan:** satu file berisi seluruh data, melampaui pagination dan mengabaikan filter.
+- [ ] Pilih ekspor sesuai pencarian/filter aktif. **Harapan:** file memuat semua hasil yang cocok pada seluruh halaman, dengan urutan sesuai daftar pegawai.
+- [ ] Ekspor tanpa hasil atau tanpa data sama sekali. **Harapan:** workbook tetap dapat dibuka dengan header dan petunjuk, tanpa pegawai tambahan atau pesan perbaikan file.
+- [ ] Periksa file ekspor di Excel/LibreOffice. **Harapan:** identitas dan nol di depan tetap utuh; nama jabatan/status, tanggal, petunjuk, dan dropdown terbaca. Teks yang menyerupai formula tetap tampil sebagai teks.
+- [ ] Ekspor lebih dari 1.000 pegawai. **Harapan:** satu file berisi seluruh hasil tanpa pemotongan dan halaman menjelaskan batas impor ulang.
+- [ ] Impor ulang hasil ekspor dalam batas ukuran/baris pada database pengujian setelah pegawai dihapus dan master jabatan tetap tersedia. **Harapan:** data tersimpan sesuai file; unggah ulang berikutnya melewati duplikat.
+- [ ] Gunakan keyboard pada dropdown, dialog, upload, dan tombol. **Harapan:** fokus terlihat, urutan navigasi masuk akal, dan setelah dialog ekspor ditutup fokus kembali ke tombol Impor/Ekspor.
+- [ ] Periksa daftar, halaman impor, dialog, dan laporan pada desktop/mobile serta mode terang/gelap. **Harapan:** tidak ada kontrol terpotong, pesan tidak terbaca, atau regresi pada alur impor sebelumnya.
+
+### Verifikasi nonvisual revisi
+
+| Pemeriksaan | Hasil |
+| --- | --- |
+| PHPUnit: `EmployeeIndexTest`, `EmployeeImportTest`, `EmployeeExportTest` | Lulus: 110 tes, 1.132 assertion. |
+| Tes interaksi `employee-transfer.test.jsx` melalui `vp test run` | Lulus: 9 tes. Tidak menggunakan browser atau screenshot. |
+| TypeScript | Lulus. |
+| Lint file frontend yang terdampak | Lulus. |
+| Build frontend | Lulus; peringatan ukuran chunk aplikasi di atas 500 kB masih ada. |
+| Pint | Lulus. |
+| Pengujian visual otomatis | Tidak dijalankan sesuai permintaan. |
+| Checklist visual revisi | Menunggu pemeriksaan manual pengguna. |

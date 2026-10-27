@@ -3,6 +3,7 @@
 namespace App\Services\Employee;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\Import;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -29,8 +30,11 @@ class ReadEmployeeImport implements Import, WithEvents, WithMultipleSheets
             if ($info === null) {
                 throw ValidationException::withMessages(['file' => 'Sheet Pegawai tidak ditemukan. Gunakan template aplikasi.']);
             }
-            if ($info['totalRows'] > EmployeeImportTemplate::MAX_ROWS + 1) {
-                throw ValidationException::withMessages(['file' => 'Maksimal 1.000 baris pengisian pada sheet Pegawai (baris 2–1001).']);
+            $maxRows = Config::integer('import-excel.employee.max_rows');
+            if ($info['totalRows'] > $maxRows + 1) {
+                $formattedMaxRows = number_format($maxRows, 0, ',', '.');
+                $lastRow = $maxRows + 1;
+                throw ValidationException::withMessages(['file' => "Maksimal {$formattedMaxRows} baris pengisian pada sheet Pegawai (baris 2–{$lastRow})."]);
             }
             if ($info['totalColumns'] > count(EmployeeImportTemplate::columns())) {
                 throw ValidationException::withMessages(['file' => 'Kolom file tidak sesuai. Gunakan template aplikasi tanpa menambahkan kolom.']);

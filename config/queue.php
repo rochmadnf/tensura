@@ -29,6 +29,15 @@ return [
     */
 
     'connections' => [
+        'letters' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION'),
+            'table' => 'jobs',
+            'queue' => 'letters',
+            'retry_after' => 120,
+            'after_commit' => true,
+        ],
+
         'sync' => [
             'driver' => 'sync',
         ],
