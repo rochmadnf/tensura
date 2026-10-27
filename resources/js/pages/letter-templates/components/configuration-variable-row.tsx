@@ -179,6 +179,7 @@ export function ConfigurationVariableRow({
                     >
                         <FormActions
                             cancelUrl=""
+                            compact
                             onCancel={onClose}
                             processing={form.processing}
                             disabled={disabled}

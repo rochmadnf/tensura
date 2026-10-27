@@ -22,6 +22,7 @@ import {
     AlertDialogFooter,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { TableActionButton } from '@/components/table-action-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -56,6 +57,7 @@ function SortableItem({
                 ref={handleRef}
                 type="button"
                 variant="ghost"
+                // ui-allow: icon-button-tooltip (handle drag dnd-kit)
                 size="icon-sm"
                 disabled={disabled}
                 className="cursor-grab touch-none"
@@ -395,6 +397,7 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                                                     <div className="flex gap-2">
                                                         <FormActions
                                                             cancelUrl=""
+                                                            compact
                                                             processing={busy}
                                                             onCancel={cancelEdit}
                                                         />
@@ -406,65 +409,61 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
                                         <>
                                             <span className="min-w-0 flex-1 wrap-anywhere">{item.content}</span>
                                             <div className="flex flex-wrap gap-1">
-                                                <Button
+                                                <TableActionButton
                                                     type="button"
                                                     variant="outline"
-                                                    size="icon-sm"
                                                     disabled={sortingDisabled || dragging || index === 0}
                                                     data-focus={`up-${item.id}`}
-                                                    aria-label={`Pindah ke atas ${item.content}`}
+                                                    label={`Pindah ke atas ${item.content}`}
+                                                    tooltip="Naikkan"
                                                     onClick={() => {
                                                         focusTarget.current = `up-${item.id}`;
                                                         reorder(index, index - 1);
                                                     }}
-                                                >
-                                                    <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
-                                                </Button>
-                                                <Button
+                                                    icon={ArrowUp01Icon}
+                                                />
+                                                <TableActionButton
                                                     type="button"
                                                     variant="outline"
-                                                    size="icon-sm"
                                                     disabled={
                                                         sortingDisabled || dragging || index === group.items.length - 1
                                                     }
                                                     data-focus={`down-${item.id}`}
-                                                    aria-label={`Pindah ke bawah ${item.content}`}
+                                                    label={`Pindah ke bawah ${item.content}`}
+                                                    tooltip="Turunkan"
                                                     onClick={() => {
                                                         focusTarget.current = `down-${item.id}`;
                                                         reorder(index, index + 1);
                                                     }}
-                                                >
-                                                    <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
-                                                </Button>
-                                                <Button
+                                                    icon={ArrowDown01Icon}
+                                                />
+                                                <TableActionButton
                                                     type="button"
                                                     variant="warning"
-                                                    size="icon-sm"
                                                     disabled={busy || editingId !== null || dragging}
                                                     data-focus={`edit-${item.id}`}
-                                                    aria-label={`Ubah ${item.content}`}
+                                                    label={`Ubah ${item.content}`}
+                                                    tooltip="Ubah"
                                                     onClick={() => {
                                                         edit.form.setData('content', item.content);
                                                         edit.form.clearErrors();
                                                         setEditingId(item.id);
                                                     }}
-                                                >
-                                                    <HugeiconsIcon icon={Edit04Icon} aria-hidden="true" />
-                                                </Button>
-                                                <Button
+                                                    icon={Edit04Icon}
+                                                />
+                                                <TableActionButton
                                                     type="button"
                                                     variant="destructive"
-                                                    size="icon-sm"
                                                     disabled={busy || editingId !== null || dragging}
                                                     data-focus={`delete-${item.id}`}
-                                                    aria-label={`Hapus ${item.content}`}
+                                                    label={`Hapus ${item.content}`}
+                                                    tooltip="Hapus"
                                                     onClick={() => {
                                                         focusTarget.current = `delete-${item.id}`;
                                                         setDeleting(item);
                                                     }}
-                                                >
-                                                    <HugeiconsIcon icon={Delete02Icon} aria-hidden="true" />
-                                                </Button>
+                                                    icon={Delete02Icon}
+                                                />
                                             </div>
                                         </>
                                     )}

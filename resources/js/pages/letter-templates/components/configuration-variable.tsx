@@ -2,6 +2,7 @@ import { ArrowUp01Icon, ArrowDown01Icon, Delete02Icon, Add01Icon } from '@hugeic
 import { HugeiconsIcon } from '@hugeicons/react';
 import { EmployeeDateFormat } from './employee-attribute-fields';
 import { OptionSelect } from '@/components/option-select';
+import { TableActionButton } from '@/components/table-action-button';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -161,10 +162,9 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                                                     />
                                                 )}
                                             <div className="flex flex-wrap gap-2">
-                                                <Button
+                                                <TableActionButton
                                                     type="button"
                                                     variant="outline"
-                                                    size="icon-sm"
                                                     disabled={disabled || columnIndex === 0}
                                                     onClick={() => {
                                                         const columns = [...variable.columns];
@@ -174,14 +174,13 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                                                         ];
                                                         patch({ columns });
                                                     }}
-                                                    aria-label={`Naikkan kolom ${columnIndex + 1}`}
-                                                >
-                                                    <HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" />
-                                                </Button>
-                                                <Button
+                                                    label={`Naikkan kolom ${columnIndex + 1}`}
+                                                    tooltip="Naikkan"
+                                                    icon={ArrowUp01Icon}
+                                                />
+                                                <TableActionButton
                                                     type="button"
                                                     variant="outline"
-                                                    size="icon-sm"
                                                     disabled={disabled || columnIndex === variable.columns.length - 1}
                                                     onClick={() => {
                                                         const columns = [...variable.columns];
@@ -191,10 +190,10 @@ export function ConfigurationVariableDetails({ variable, options, disabled, erro
                                                         ];
                                                         patch({ columns });
                                                     }}
-                                                    aria-label={`Turunkan kolom ${columnIndex + 1}`}
-                                                >
-                                                    <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" />
-                                                </Button>
+                                                    label={`Turunkan kolom ${columnIndex + 1}`}
+                                                    tooltip="Turunkan"
+                                                    icon={ArrowDown01Icon}
+                                                />
                                                 <Button
                                                     type="button"
                                                     variant="destructive"

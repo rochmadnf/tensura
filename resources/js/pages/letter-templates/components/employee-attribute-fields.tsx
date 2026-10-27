@@ -60,6 +60,7 @@ export function EmployeeDateFormat({
                             <Button
                                 type="button"
                                 variant="outline"
+                                // ui-allow: icon-button-tooltip (pemicu popover)
                                 size="icon-sm"
                                 aria-label="Informasi format tanggal"
                             />
