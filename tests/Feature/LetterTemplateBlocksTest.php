@@ -201,15 +201,11 @@ class LetterTemplateBlocksTest extends TestCase
 
     public function test_prepared_user_template_renders_one_to_three_people_and_converts_to_pdf(): void
     {
-        $sample = base_path('masalah/template.docx');
-        if (!is_file($sample)) {
-            $this->markTestSkipped('Template pengguna lokal tidak disertakan dalam repository.');
-        }
         $source = tempnam(sys_get_temp_dir(), 'prepared-block-');
         $directory = 'letters/staging/prepared-block-' . Str::uuid();
         $disk = Storage::fake('local');
-        copy($sample, $source);
         try {
+            $this->restoreTemplateFixture($source);
             $processor = new LetterTemplateProcessor($source);
             $processor->saveAs($source);
             unset($processor);
@@ -293,6 +289,26 @@ class LetterTemplateBlocksTest extends TestCase
         } finally {
             unlink($source);
             $disk->deleteDirectory($directory);
+        }
+    }
+
+    private function restoreTemplateFixture(string $destination): void
+    {
+        $fixture = new \DOMDocument();
+        $this->assertTrue($fixture->load(base_path('tests/Fixtures/Letters/template.xml'), LIBXML_NONET));
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($destination, ZipArchive::CREATE | ZipArchive::OVERWRITE));
+        try {
+            foreach ($fixture->getElementsByTagName('part') as $part) {
+                $name = $part->getAttribute('name');
+                $encoding = $part->getAttribute('encoding');
+                $contents = $encoding === 'base64' ? base64_decode($part->textContent, true) : $part->textContent;
+                $this->assertNotFalse($contents, $name);
+                $this->assertSame($part->getAttribute('sha256'), hash('sha256', $contents), $name);
+                $this->assertTrue($encoding === 'directory' ? $zip->addEmptyDir($name) : $zip->addFromString($name, $contents));
+            }
+        } finally {
+            $zip->close();
         }
     }
 
