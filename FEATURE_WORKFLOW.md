@@ -202,6 +202,16 @@ pnpm run build
 - Untuk editor bertahap, periksa mode baca/edit, satu editor aktif, Batal/Escape, kegagalan simpan, penambahan lokal, reorder, aksi saat request lambat, dan dialog yang dibuka ulang. Pemeriksaan browser dan pembukaan/render hasil DOCX/PDF merupakan bukti terpisah dari test backend/build; laporkan masing-masing sesuai yang benar-benar dijalankan.
 - Laporan akhir singkat: apa yang dibuat, apa yang diuji, dan apa yang tidak dapat dijalankan beserta alasannya.
 
+### Versi aplikasi dan catatan rilis
+
+- Gunakan Semantic Versioning `MAJOR.MINOR.PATCH`. Sumber versi berjalan adalah `config('app.version')`; nilai disimpan tanpa awalan `v`, sedangkan tampilan memakai awalan tersebut. Major tetap `0` selama pengembangan MVP; kenaikan major memerlukan keputusan eksplisit pengguna.
+- Setelah satu **tahap implementasi yang disepakati** selesai dan verifikasi terkait lulus, naikkan **patch** satu angka, misalnya `0.1.0 → 0.1.1`. Tahap berarti unit implementasi dalam rencana fitur, bukan setiap langkah kerja atau commit sementara.
+- Setelah seluruh **fitur** selesai dan verifikasinya lulus, termasuk fitur tanpa tahapan, naikkan **minor** satu angka dan reset patch ke `0`, misalnya `0.1.4 → 0.2.0`.
+- Jika tahap terakhir sekaligus menyelesaikan fitur, lakukan **satu kenaikan minor**; jangan membuat kenaikan patch terpisah untuk penyelesaian yang sama. Pembahasan, pekerjaan belum selesai, dan commit sementara tidak menaikkan versi.
+- Dalam commit penyelesaian yang sama, perbarui default versi pada `config/app.php` dan tambahkan catatan rilis berbahasa Indonesia di `config/releases.php`. Letakkan entri terbaru paling atas, gunakan nomor versi sebagai key, isi `summary`, `features` (daftar `title`/`description`), serta `notes` (daftar teks, boleh kosong). Pertahankan entri versi sebelumnya; ringkas kemampuan yang sudah tersedia, bukan detail internal implementasi.
+- Periksa override `APP_VERSION` pada lingkungan yang digunakan agar tidak menutupi default baru; perbarui override yang memang ditetapkan secara eksplisit dan muat ulang konfigurasi sesuai cara deployment. Jangan menambahkan sumber versi frontend tersendiri. Halaman **Tentang Aplikasi** dan tautan versi sidebar mengikuti shared prop `app.version`.
+- Pembuatan halaman versi ini menetapkan baseline **`0.1.0`**, tanpa kenaikan tambahan atau perhitungan mundur untuk fitur/tahapan yang sudah dikerjakan sebelumnya.
+
 ## 8. Perbedaan pola yang perlu dipertahankan
 
 | Hal                 | Kontrak saat ini                                                                                                        | Pedoman fitur baru                                                                                                                                          |

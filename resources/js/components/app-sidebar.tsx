@@ -23,10 +23,10 @@ import {
     UserDollarIcon,
     Archive01Icon,
 } from '@hugeicons/core-free-icons';
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
-import { dashboard } from '@/routes';
+import { about, dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
 import lt from '@/routes/lt';
@@ -121,6 +121,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavSecondary items={navigations.navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            render={<Link href={about().url} />}
+                            className="text-xs text-muted-foreground"
+                            aria-label={`Tentang aplikasi, versi ${app.version}`}
+                        >
+                            v{app.version}
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser user={auth.user} />
             </SidebarFooter>
         </Sidebar>

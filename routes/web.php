@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AccountAvatarController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountPasswordController;
@@ -42,6 +43,7 @@ use App\Http\Controllers\OptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('about', [AboutController::class, 'index'])->name('about');
     Route::get('letter-operations/events', [LetterOperationController::class, 'stream'])->name('ltr.events');
     Route::prefix('letters/{letter:uuid}')->whereUuid('letter')->group(function (): void {
         Route::post('artifacts/{artifact:uuid}/pdf', [LetterPdfController::class, 'store'])->whereUuid('artifact')->middleware('throttle:20,1')->name('ltr.pdfs.store');
