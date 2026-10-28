@@ -27,6 +27,14 @@ function renderSelect(props = {}) {
 }
 
 describe('OptionSelect', () => {
+    it('exposes required validation on single and multiple searchable inputs', () => {
+        for (const props of [{ required: true }, { required: true, multiple: true, value: [] }]) {
+            const markup = renderSelect(props);
+            const input = markup.match(/<input\b[^>]*role="combobox"[^>]*>/)?.[0];
+            expect(input).toContain('required=""');
+        }
+    });
+
     it('keeps a regular select for five options', () => {
         const markup = renderSelect({ items: items.slice(0, 5) });
 

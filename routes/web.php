@@ -32,6 +32,7 @@ use App\Http\Controllers\MasterData\LetterTemplateConfigurationItemController;
 use App\Http\Controllers\MasterData\LetterTemplateController;
 use App\Http\Controllers\MasterData\LetterTemplateDateFormatController;
 use App\Http\Controllers\MasterData\LetterTemplateExampleController;
+use App\Http\Controllers\MasterData\LetterTemplateExchangeController;
 use App\Http\Controllers\MasterData\LetterTemplateSourceController;
 use App\Http\Controllers\MasterData\LetterTemplateSystemFieldsController;
 use App\Http\Controllers\MasterData\LetterTemplateTestController;
@@ -109,6 +110,13 @@ Route::middleware('auth')->group(function () {
         ->scoped(['jobTitle' => 'uuid'])
         ->names('jt');
 
+    Route::get('letter-templates/import', [LetterTemplateExchangeController::class, 'create'])->name('lt.exchange.create');
+    Route::post('letter-templates/import', [LetterTemplateExchangeController::class, 'inspect'])->middleware('throttle:10,1')->name('lt.exchange.inspect');
+    Route::get('letter-templates/exchanges/{token}', [LetterTemplateExchangeController::class, 'review'])->where('token', '[a-f0-9]{64}')->name('lt.exchange.review');
+    Route::post('letter-templates/exchanges/{token}', [LetterTemplateExchangeController::class, 'store'])->where('token', '[a-f0-9]{64}')->middleware('throttle:10,1')->name('lt.exchange.store');
+    Route::delete('letter-templates/exchanges/{token}', [LetterTemplateExchangeController::class, 'destroy'])->where('token', '[a-f0-9]{64}')->name('lt.exchange.destroy');
+    Route::get('letter-templates/exports/{token}', [LetterTemplateExchangeController::class, 'download'])->where('token', '[a-f0-9]{64}')->name('lt.exchange.download');
+
     Route::get('letter-templates/date-format', LetterTemplateDateFormatController::class)->name('lt.date-format');
 
     Route::prefix('letter-templates/{letterTemplate:uuid}/versions/{version:uuid}')->scopeBindings()->whereUuid(['letterTemplate', 'version'])->group(function (): void {
@@ -121,6 +129,9 @@ Route::middleware('auth')->group(function () {
         Route::put('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'save')->whereUuid('item')->name('lt.configuration.slots.update');
         Route::delete('configuration/slots/{item}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'delete')->whereUuid('item')->name('lt.configuration.slots.destroy');
         Route::patch('configuration/slots/{item}/attributes/{attribute}', LetterTemplateConfigurationItemController::class)->defaults('kind', 'slot')->defaults('operation', 'attribute')->whereUuid('item')->name('lt.configuration.slots.attribute');
+        Route::get('export', [LetterTemplateExchangeController::class, 'exportPage'])->name('lt.exchange.export-page');
+        Route::post('export/estimate', [LetterTemplateExchangeController::class, 'estimate'])->middleware('throttle:20,1')->name('lt.exchange.estimate');
+        Route::post('export', [LetterTemplateExchangeController::class, 'export'])->middleware('throttle:10,1')->name('lt.exchange.export');
         Route::post('publish', [LetterTemplateVersionController::class, 'publish'])->name('lt.versions.publish');
         Route::post('draft', [LetterTemplateVersionController::class, 'draft'])->name('lt.versions.draft');
         Route::post('archive', [LetterTemplateVersionController::class, 'archive'])->name('lt.versions.archive');

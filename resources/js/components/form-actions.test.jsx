@@ -37,3 +37,16 @@ describe('Compact form actions', () => {
         expect(buttons.every((button) => button.includes('disabled=""'))).toBe(true);
     });
 });
+
+describe('Blocked form submission', () => {
+    it('keeps cancellation available for incomplete reviews in regular and compact editors', () => {
+        for (const compact of [false, true]) {
+            const html = renderToStaticMarkup(
+                <FormActions compact={compact} cancelUrl="" onCancel={() => {}} processing={false} submitDisabled />,
+            );
+            const buttons = html.match(/<button\b[^>]*>/g);
+            expect(buttons[0]).toContain('disabled=""');
+            expect(buttons[1]).not.toContain('disabled=""');
+        }
+    });
+});

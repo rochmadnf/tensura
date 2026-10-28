@@ -15,12 +15,14 @@ export function FormActions({
     cancelUrl,
     processing,
     disabled = false,
+    submitDisabled = false,
     compact = false,
     onCancel,
 }: {
     cancelUrl: string;
     processing: boolean;
     disabled?: boolean;
+    submitDisabled?: boolean;
     compact?: boolean;
     fullWidth?: boolean;
     onCancel?: () => void;
@@ -36,7 +38,7 @@ export function FormActions({
                     icon={processing ? LoaderIcon : SaveIcon}
                     label={processing ? 'Menyimpan' : 'Simpan'}
                     tooltip={processing ? 'Menyimpan…' : 'Simpan'}
-                    disabled={busy}
+                    disabled={busy || submitDisabled}
                     loading={processing}
                 />
                 <TableActionButton
@@ -55,7 +57,7 @@ export function FormActions({
 
     return (
         <div className="flex items-center gap-2">
-            <Button type="submit" disabled={busy} aria-busy={processing || undefined}>
+            <Button type="submit" disabled={busy || submitDisabled} aria-busy={processing || undefined}>
                 <HugeiconsIcon
                     icon={processing ? LoaderIcon : SaveIcon}
                     strokeWidth={2}

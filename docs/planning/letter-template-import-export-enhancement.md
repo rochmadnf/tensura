@@ -1,6 +1,6 @@
 # Enhancement: Import dan ekspor templat Tensura
 
-Status: rencana disepakati, belum diimplementasikan.
+Status: diimplementasikan pada versi 0.5.0.
 
 ## Isi dan pilihan ekspor
 

@@ -15,6 +15,7 @@ return [
         'max_xml_total_bytes' => 8 * 1024 * 1024,
         'max_compression_ratio' => 200,
     ],
+    'exchange' => ['directory' => 'letter-templates/exchanges', 'max_bytes' => 64 * 1024 * 1024, 'max_entries' => 66],
     'test' => [
         'short_text_max' => 255,
         'long_text_max' => 10000,

@@ -38,18 +38,22 @@ class AboutPageTest extends TestCase
             ->assertOk()->assertInertia(fn(Assert $page) => $page
             ->component('about/index')
             ->where('page.id', 'about')
-            ->where('app.version', '0.4.0')
-            ->has('releases', 5)
-            ->where('releases.0.version', '0.4.0')
-            ->where('releases.0.content_html', fn(string $html): bool => str_contains($html, 'Paket font bawaan') && str_contains($html, '49 berkas'))
-            ->where('releases.1.version', '0.3.1')
-            ->where('releases.1.content_html', fn(string $html): bool => str_contains($html, 'Pengujian template lebih konsisten'))
-            ->where('releases.2.version', '0.3.0')
-            ->where('releases.2.content_html', fn(string $html): bool => str_contains($html, 'Blok berulang vertikal') && str_contains($html, 'Pemeriksaan melalui PDF'))
-            ->where('releases.3.version', '0.2.0')
-            ->where('releases.3.content_html', fn(string $html): bool => str_contains($html, 'Pusat notifikasi') && str_contains($html, 'Animasi dan suara'))
-            ->where('releases.4.version', '0.1.0')
-            ->where('releases.4.content_html', fn(string $html): bool => str_contains($html, 'Pengelolaan surat') && str_contains($html, 'Aplikasi masih dalam pengembangan awal.')));
+            ->where('app.version', '0.5.0')
+            ->has('releases', 7)
+            ->where('releases.0.version', '0.5.0')
+            ->where('releases.0.content_html', fn(string $html): bool => str_contains($html, '.tnex') && str_contains($html, 'Impor sebagai draft'))
+            ->where('releases.1.version', '0.4.1')
+            ->where('releases.1.content_html', fn(string $html): bool => str_contains($html, 'Komponen UI lebih konsisten'))
+            ->where('releases.2.version', '0.4.0')
+            ->where('releases.2.content_html', fn(string $html): bool => str_contains($html, 'Paket font bawaan') && str_contains($html, '49 berkas'))
+            ->where('releases.3.version', '0.3.1')
+            ->where('releases.3.content_html', fn(string $html): bool => str_contains($html, 'Pengujian template lebih konsisten'))
+            ->where('releases.4.version', '0.3.0')
+            ->where('releases.4.content_html', fn(string $html): bool => str_contains($html, 'Blok berulang vertikal') && str_contains($html, 'Pemeriksaan melalui PDF'))
+            ->where('releases.5.version', '0.2.0')
+            ->where('releases.5.content_html', fn(string $html): bool => str_contains($html, 'Pusat notifikasi') && str_contains($html, 'Animasi dan suara'))
+            ->where('releases.6.version', '0.1.0')
+            ->where('releases.6.content_html', fn(string $html): bool => str_contains($html, 'Pengelolaan surat') && str_contains($html, 'Aplikasi masih dalam pengembangan awal.')));
     }
 
     public function test_releases_are_sorted_numerically_and_keep_their_identity_independent_of_the_current_version(): void

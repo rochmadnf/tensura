@@ -4,6 +4,7 @@ namespace App\Services\Letter;
 
 use App\Models\DocumentFont;
 use App\Models\MasterData\User;
+use Closure;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -20,31 +21,91 @@ class InstallDocumentFont
         return $this->installFile($upload->getRealPath(), $upload->getClientOriginalName(), $actor);
     }
 
+    /** @param list<array{path: string, filename: string}> $files */
+    public function atomic(array $files, User $actor, Closure $save): mixed
+    {
+        $disk = Storage::disk(config('document-fonts.disk'));
+        $disk->makeDirectory(config('document-fonts.runtime_directory'));
+        $lock = fopen($disk->path(config('document-fonts.runtime_directory') . '/install.lock'), 'c');
+        if ($lock === false || !flock($lock, LOCK_EX)) {
+            $this->reject('Instalasi font sedang digunakan. Coba lagi.');
+        }
+        $created = [];
+        try {
+            return DB::transaction(function () use ($files, $actor, $save, &$created): mixed {
+                foreach ($files as $file) {
+                    $hash = hash_file('sha256', $file['path']);
+                    $existing = DocumentFont::query()->where('sha256', $hash)->first();
+                    if ($existing !== null && ($existing->status !== 'ready' || $existing->disk !== config('document-fonts.disk') || !Storage::disk($existing->disk)->exists($existing->path) || hash_file('sha256', Storage::disk($existing->disk)->path($existing->path)) !== $hash)) {
+                        $this->reject('Font identik yang terdaftar perlu diperbaiki sebelum impor.');
+                    }
+                    $font = $this->installUnlocked($file['path'], $file['filename'], $actor);
+                    if ($existing === null) {
+                        $created[] = ['disk' => $font->disk, 'path' => $font->path];
+                    }
+                }
+
+                return $save();
+            });
+        } catch (Throwable $exception) {
+            foreach ($created as $file) {
+                Storage::disk($file['disk'])->delete($file['path']);
+            }
+            $this->registry->inventory(true);
+            throw $exception;
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    /** @return array{family: string, style: string, aliases: list<string>, bold: bool, italic: bool, path: string, index: int} */
+    public function inspectFile(string $source, string $filename): array
+    {
+        if (!is_file($source) || filesize($source) > config('document-fonts.max_upload_kb') * 1024) {
+            $this->reject('Ukuran font melewati batas unggahan.');
+        }
+        $signature = file_get_contents($source, false, null, 0, 4);
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (!in_array($signature, ["\x00\x01\x00\x00", 'OTTO', 'true'], true) || !in_array($extension, ['ttf', 'otf'], true) || ($signature === 'OTTO') !== ($extension === 'otf')) {
+            $this->reject('Isi atau ekstensi berkas font TTF/OTF tidak valid.');
+        }
+        try {
+            return $this->registry->scan($source);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->reject('Font tidak dapat dibaca. Gunakan satu varian TTF/OTF statis yang valid.');
+        }
+    }
+
     public function installFile(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont
+    {
+        $disk = Storage::disk(config('document-fonts.disk'));
+        $disk->makeDirectory(config('document-fonts.runtime_directory'));
+        $lock = fopen($disk->path(config('document-fonts.runtime_directory') . '/install.lock'), 'c');
+        if ($lock === false || !flock($lock, LOCK_EX)) {
+            $this->reject('Instalasi font sedang digunakan. Coba lagi.');
+        }
+        try {
+            return $this->installUnlocked($source, $filename, $actor, $bundled);
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
+    }
+
+    private function installUnlocked(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont
     {
         $diskName = config('document-fonts.disk');
         $disk = Storage::disk($diskName);
         $directory = config($bundled ? 'document-fonts.bundled_directory' : 'document-fonts.directory');
         $disk->makeDirectory($directory);
         $disk->makeDirectory(config('document-fonts.runtime_directory'));
-        $lock = fopen($disk->path(config('document-fonts.runtime_directory') . '/install.lock'), 'c');
-        if ($lock === false) {
-            throw ValidationException::withMessages(['font' => 'Penyimpanan font belum dapat ditulis.']);
-        }
         $staging = null;
         $installed = null;
         try {
-            if (!flock($lock, LOCK_EX)) {
-                $this->reject('Instalasi font sedang digunakan. Coba lagi.');
-            }
-            $signature = file_get_contents($source, false, null, 0, 4);
-            if (!in_array($signature, ["\x00\x01\x00\x00", 'OTTO', 'true'], true)) {
-                $this->reject('Isi berkas bukan font TTF/OTF yang valid.');
-            }
+            $face = $this->inspectFile($source, $filename);
             $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-            if (!in_array($extension, ['ttf', 'otf'], true) || ($signature === 'OTTO') !== ($extension === 'otf')) {
-                $this->reject('Ekstensi berkas tidak cocok dengan format font.');
-            }
             $hash = hash_file('sha256', $source);
             $existing = DocumentFont::query()->where('sha256', $hash)->first();
             if ($existing !== null && $existing->status === 'ready' && $existing->disk === $diskName && (!$bundled || str_starts_with($existing->path, $directory . '/')) && $disk->exists($existing->path) && hash_file('sha256', $disk->path($existing->path)) === $hash) {
@@ -53,12 +114,6 @@ class InstallDocumentFont
             $staging = config('document-fonts.runtime_directory') . '/' . Str::uuid() . '.' . $extension;
             if (!$disk->put($staging, file_get_contents($source))) {
                 $this->reject('Font gagal disimpan.');
-            }
-            try {
-                $face = $this->registry->scan($disk->path($staging));
-            } catch (Throwable $exception) {
-                report($exception);
-                $this->reject('Font tidak dapat dibaca. Gunakan satu varian TTF/OTF statis yang valid.');
             }
             $key = $this->registry->faceKey($face['family'], $face['style']);
             $inventory = $this->registry->inventory(true);
@@ -101,8 +156,6 @@ class InstallDocumentFont
             if ($installed !== null) {
                 $this->registry->inventory(true);
             }
-            flock($lock, LOCK_UN);
-            fclose($lock);
         }
     }
 

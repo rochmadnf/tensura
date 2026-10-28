@@ -26,6 +26,7 @@ type OptionSelectCommonProps = Pick<AriaAttributes, 'aria-invalid' | 'aria-descr
     placeholder: string;
     resetLabel?: string;
     disabled?: boolean;
+    required?: boolean;
     forceCombobox?: boolean;
     remote?: RemoteOptions;
 };
@@ -53,6 +54,7 @@ function SingleOptionSelect({
     placeholder,
     resetLabel = 'Reset pilihan',
     disabled = false,
+    required = false,
     forceCombobox = false,
     remote,
     'aria-invalid': ariaInvalid,
@@ -64,6 +66,7 @@ function SingleOptionSelect({
         return (
             <Select
                 name={name}
+                required={required}
                 items={items}
                 value={value || null}
                 disabled={disabled}
@@ -99,6 +102,7 @@ function SingleOptionSelect({
         >
             <ComboboxInput
                 id={id}
+                required={required}
                 placeholder={placeholder}
                 disabled={disabled}
                 showClear
@@ -146,6 +150,7 @@ function MultipleOptionSelect({
     placeholder,
     resetLabel = 'Reset pilihan',
     disabled = false,
+    required = false,
     forceCombobox = false,
     remote,
     'aria-invalid': ariaInvalid,
@@ -161,6 +166,7 @@ function MultipleOptionSelect({
                 id={id}
                 role="group"
                 aria-label={placeholder}
+                aria-required={required || undefined}
                 aria-invalid={ariaInvalid}
                 aria-describedby={ariaDescribedBy}
                 className="flex flex-col gap-3"
@@ -220,6 +226,7 @@ function MultipleOptionSelect({
                 </ComboboxValue>
                 <ComboboxChipsInput
                     id={id}
+                    required={required}
                     placeholder={placeholder}
                     disabled={disabled}
                     aria-invalid={ariaInvalid}

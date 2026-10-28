@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('letter-templates:cleanup-exchanges')->everyMinute()->withoutOverlapping(5);
         $schedule->command('letter-templates:cleanup')->hourly()->withoutOverlapping(60);
         $schedule->command('letters:cleanup')->hourly()->withoutOverlapping(60);
         $schedule->command('letters:recover-operations')->everyMinute()->withoutOverlapping(5);
