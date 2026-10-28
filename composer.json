@@ -45,8 +45,14 @@
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
+            "@php artisan document-fonts:sync --no-interaction",
             "npm install --ignore-scripts",
             "npm run build"
+        ],
+        "deploy": [
+            "@php artisan migrate --force --no-interaction",
+            "@php artisan document-fonts:sync --no-interaction",
+            "@php artisan queue:restart --no-interaction"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

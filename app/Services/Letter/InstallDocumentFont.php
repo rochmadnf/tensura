@@ -17,9 +17,14 @@ class InstallDocumentFont
 
     public function install(UploadedFile $upload, User $actor): DocumentFont
     {
+        return $this->installFile($upload->getRealPath(), $upload->getClientOriginalName(), $actor);
+    }
+
+    public function installFile(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont
+    {
         $diskName = config('document-fonts.disk');
         $disk = Storage::disk($diskName);
-        $directory = config('document-fonts.directory');
+        $directory = config($bundled ? 'document-fonts.bundled_directory' : 'document-fonts.directory');
         $disk->makeDirectory($directory);
         $disk->makeDirectory(config('document-fonts.runtime_directory'));
         $lock = fopen($disk->path(config('document-fonts.runtime_directory') . '/install.lock'), 'c');
@@ -32,21 +37,21 @@ class InstallDocumentFont
             if (!flock($lock, LOCK_EX)) {
                 $this->reject('Instalasi font sedang digunakan. Coba lagi.');
             }
-            $signature = file_get_contents($upload->getRealPath(), false, null, 0, 4);
+            $signature = file_get_contents($source, false, null, 0, 4);
             if (!in_array($signature, ["\x00\x01\x00\x00", 'OTTO', 'true'], true)) {
                 $this->reject('Isi berkas bukan font TTF/OTF yang valid.');
             }
-            $extension = strtolower($upload->getClientOriginalExtension());
-            if (($signature === 'OTTO') !== ($extension === 'otf')) {
+            $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            if (!in_array($extension, ['ttf', 'otf'], true) || ($signature === 'OTTO') !== ($extension === 'otf')) {
                 $this->reject('Ekstensi berkas tidak cocok dengan format font.');
             }
-            $hash = hash_file('sha256', $upload->getRealPath());
+            $hash = hash_file('sha256', $source);
             $existing = DocumentFont::query()->where('sha256', $hash)->first();
-            if ($existing !== null && $disk->exists($existing->path) && hash_file('sha256', $disk->path($existing->path)) === $hash) {
+            if ($existing !== null && $existing->status === 'ready' && $existing->disk === $diskName && (!$bundled || str_starts_with($existing->path, $directory . '/')) && $disk->exists($existing->path) && hash_file('sha256', $disk->path($existing->path)) === $hash) {
                 return $existing;
             }
             $staging = config('document-fonts.runtime_directory') . '/' . Str::uuid() . '.' . $extension;
-            if (!$disk->put($staging, file_get_contents($upload->getRealPath()))) {
+            if (!$disk->put($staging, file_get_contents($source))) {
                 $this->reject('Font gagal disimpan.');
             }
             try {
@@ -63,11 +68,6 @@ class InstallDocumentFont
             if (DocumentFont::query()->where('face_key', $key)->where('sha256', '!=', $hash)->exists()) {
                 $this->reject('Keluarga dan varian font ini sudah memiliki berkas berbeda. Font lama tidak diganti.');
             }
-            foreach ($inventory['faces'] as $installedFace) {
-                if ($this->registry->faceKey($installedFace['family'], $installedFace['style']) === $key && hash_file('sha256', $installedFace['path']) !== $hash) {
-                    $this->reject('Keluarga dan varian ini sudah tersedia dengan berkas berbeda di server. Font lama tidak diganti.');
-                }
-            }
             $installed = $directory . '/' . $hash . '.' . $extension;
             if (!$disk->move($staging, $installed)) {
                 $this->reject('Font gagal dipasang.');
@@ -81,7 +81,7 @@ class InstallDocumentFont
             $font = DB::transaction(fn(): DocumentFont => DocumentFont::query()->updateOrCreate(['sha256' => $hash], [
                 'family' => $face['family'], 'style' => $face['style'], 'face_key' => $key,
                 'is_bold' => $face['bold'], 'is_italic' => $face['italic'], 'status' => 'ready',
-                'disk' => $diskName, 'path' => $installed, 'extension' => $extension, 'size' => $disk->size($installed), 'uploaded_by' => $actor->id,
+                'disk' => $diskName, 'path' => $installed, 'extension' => $extension, 'size' => $disk->size($installed), 'uploaded_by' => $actor?->id,
             ]), 5);
             $installed = null;
 

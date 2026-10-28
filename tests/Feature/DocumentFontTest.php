@@ -136,8 +136,8 @@ class DocumentFontTest extends TestCase
         $profile = $registry->conversionProfile([['family' => 'Missing Family', 'bold' => false, 'italic' => false]]);
         $this->assertSame(['Missing Family' => 'Arial'], $profile['substitutions']);
         $this->assertSame('LibreOffice test-version', $profile['converter']);
-        $this->assertStringContainsString('<family>Missing Family</family>', file_get_contents($profile['environment']['FONTCONFIG_FILE']));
-        $this->assertStringContainsString('<family>Arial</family>', file_get_contents($profile['environment']['FONTCONFIG_FILE']));
+        $this->assertStringContainsString('<string>Missing Family</string>', file_get_contents($profile['environment']['FONTCONFIG_FILE']));
+        $this->assertStringContainsString('<string>Arial</string>', file_get_contents($profile['environment']['FONTCONFIG_FILE']));
     }
 
     public function test_pdf_profile_tracks_the_used_bold_fallback_without_invalidating_available_fonts(): void

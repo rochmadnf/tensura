@@ -23,6 +23,8 @@ class DocumentFontRegistry
 
     private ?string $previewRenderer = null;
 
+    public function __construct(private DocumentFontPackage $package) {}
+
     public function freeze(): self
     {
         $copy = clone $this;
@@ -39,16 +41,49 @@ class DocumentFontRegistry
      *
      * @return array<string, string>
      */
-    public function environment(array $substitutions = []): array
+    public function environment(array $substitutions = [], ?array $faces = null, array $requirements = []): array
     {
         $disk = Storage::disk(config('document-fonts.disk'));
         $runtime = config('document-fonts.runtime_directory');
         $disk->makeDirectory($runtime . '/cache');
         $disk->makeDirectory(config('document-fonts.directory'));
+        $disk->makeDirectory(config('document-fonts.bundled_directory'));
         $escape = fn(string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_XML1, 'UTF-8');
         $xml = '<?xml version="1.0"?><fontconfig><include ignore_missing="no">' . $escape(config('document-fonts.system_config')) . '</include><dir>' . $escape($disk->path(config('document-fonts.directory'))) . '</dir><cachedir>' . $escape($disk->path($runtime . '/cache')) . '</cachedir>';
+        $xml .= '<dir>' . $escape($disk->path(config('document-fonts.bundled_directory'))) . '</dir>';
+        if ($faces !== null) {
+            $rejected = [];
+            $selected = [];
+            foreach ($requirements as $requirement) {
+                $winner = $this->match($requirement, $faces);
+                if ($winner === null) {
+                    continue;
+                }
+                $selected[$winner['path'] . '|' . $winner['index']] = true;
+                foreach ($faces as $face) {
+                    if ($this->matches($requirement, $face)) {
+                        $rejected[$face['path'] . '|' . $face['index']] = $face;
+                    }
+                }
+            }
+            ksort($rejected);
+            $xml .= '<selectfont><rejectfont>';
+            foreach (array_diff_key($rejected, $selected) as $face) {
+                $xml .= '<pattern><patelt name="file"><string>' . $escape($face['path']) . '</string></patelt><patelt name="index"><int>' . $face['index'] . '</int></patelt></pattern>';
+            }
+            $xml .= '</rejectfont></selectfont>';
+        }
         foreach ($substitutions as $original => $replacement) {
-            $xml .= '<alias binding="strong"><family>' . $escape($original) . '</family><prefer><family>' . $escape($replacement) . '</family></prefer></alias>';
+            $missing = array_values(array_filter($requirements, fn(array $requirement): bool => $requirement['family'] === $original && $this->match($requirement, $faces ?? []) === null));
+            if ($missing === []) {
+                $xml .= '<alias binding="strong"><family>' . $escape($original) . '</family><prefer><family>' . $escape($replacement) . '</family></prefer></alias>';
+            }
+            foreach ($missing as $requirement) {
+                $xml .= '<match target="pattern"><test name="family" compare="eq"><string>' . $escape($original) . '</string></test>';
+                $xml .= '<test name="weight" compare="' . ($requirement['bold'] ? 'more_eq' : 'less') . '"><double>180</double></test>';
+                $xml .= '<test name="slant" compare="' . ($requirement['italic'] ? 'more' : 'eq') . '"><int>0</int></test>';
+                $xml .= '<edit name="family" mode="assign" binding="strong"><string>' . $escape($replacement) . '</string></edit></match>';
+            }
         }
         $xml .= '</fontconfig>';
         $path = $runtime . '/' . hash('sha256', $xml) . '.conf';
@@ -102,7 +137,7 @@ class DocumentFontRegistry
 
     public function rebuild(): void
     {
-        $result = Process::env($this->environment())->timeout(config('document-fonts.timeout_seconds'))->run([config('document-fonts.executables.cache'), '-f', Storage::disk(config('document-fonts.disk'))->path(config('document-fonts.directory'))]);
+        $result = Process::env($this->environment())->timeout(config('document-fonts.timeout_seconds'))->run([config('document-fonts.executables.cache'), '-f', Storage::disk(config('document-fonts.disk'))->path(config('document-fonts.directory')), Storage::disk(config('document-fonts.disk'))->path(config('document-fonts.bundled_directory'))]);
         if ($result->failed()) {
             throw new RuntimeException('Cache font gagal diperbarui.');
         }
@@ -138,9 +173,9 @@ class DocumentFontRegistry
     /** @param array{family: string, bold: bool, italic: bool} $requirement */
     private function match(array $requirement, array $faces): ?array
     {
-        $candidates = array_filter($faces, fn(array $face): bool => $face['bold'] === $requirement['bold'] && $face['italic'] === $requirement['italic'] && in_array(mb_strtolower($requirement['family']), array_map(mb_strtolower(...), $face['aliases']), true));
+        $candidates = array_filter($faces, fn(array $face): bool => $this->matches($requirement, $face));
         $weight = $requirement['bold'] ? 200 : 80;
-        usort($candidates, fn(array $a, array $b): int => abs(($a['weight'] ?? $weight) - $weight) <=> abs(($b['weight'] ?? $weight) - $weight));
+        usort($candidates, fn(array $a, array $b): int => [$this->priority($a), abs(($a['weight'] ?? $weight) - $weight), $a['path'], $a['index']] <=> [$this->priority($b), abs(($b['weight'] ?? $weight) - $weight), $b['path'], $b['index']]);
 
         return $candidates[0] ?? null;
     }
@@ -163,7 +198,7 @@ class DocumentFontRegistry
             $hash = $face === null ? null : $this->fileHash($face['path']);
             $font = $hash === null ? null : $managed->get($hash);
             $entries[] = [...$requirement, 'style' => ($requirement['bold'] ? 'Bold' : 'Regular') . ($requirement['italic'] ? ' Italic' : ''), 'available' => $hash !== null,
-                'browser_url' => $font === null ? null : route('document-fonts.file', $font->uuid, false), 'hash' => $hash,
+                'browser_url' => $font === null || !$this->package->browserAllowed($font) ? null : route('document-fonts.file', $font->uuid, false), 'hash' => $hash,
                 'fallback' => $hash === null ? $fallback : null];
         }
 
@@ -173,12 +208,12 @@ class DocumentFontRegistry
     public function fingerprint(array $requirements): string
     {
         $report = $this->report($requirements);
-        $entries = array_map(fn(array $entry): array => ['family' => $entry['family'], 'bold' => $entry['bold'], 'italic' => $entry['italic'], 'hash' => $entry['hash'], 'fallback' => $entry['fallback'], 'web' => $entry['browser_url'] !== null], $report['entries']);
+        $entries = array_map(fn(array $entry): array => ['family' => $entry['family'], 'bold' => $entry['bold'], 'italic' => $entry['italic'], 'hash' => $entry['hash'], 'fallback' => $entry['fallback'], 'web' => $entry['browser_url'] !== null, 'source' => $this->sourceFor($entry)], $report['entries']);
         usort($entries, fn(array $a, array $b): int => json_encode($a) <=> json_encode($b));
         $needsFallback = $entries === [] || collect($report['entries'])->contains(fn(array $entry): bool => $entry['hash'] === null);
         $fallbackFace = !$needsFallback || $report['fallback'] === null ? null : $this->match(['family' => $report['fallback'], 'bold' => false, 'italic' => false], $this->inventory()['faces']);
 
-        return hash('sha256', json_encode(['schema' => 1, 'renderer' => $this->previewRenderer ?? config('document-fonts.preview_renderer'), 'available' => $report['available'], 'entries' => $entries, 'fallback_hash' => $fallbackFace === null ? null : $this->fileHash($fallbackFace['path'])], JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode(['schema' => 1, 'renderer' => $this->previewRenderer ?? config('document-fonts.preview_renderer'), 'available' => $report['available'], 'entries' => $entries, 'fallback_hash' => $fallbackFace === null ? null : $this->fileHash($fallbackFace['path']), 'fallback_source' => $fallbackFace === null ? null : $this->priority($fallbackFace)], JSON_THROW_ON_ERROR));
     }
 
     public function conversionProfile(array $requirements): array
@@ -199,15 +234,45 @@ class DocumentFontRegistry
         }
         $converter = trim($version->output());
         $fallbackHashes = [];
+        $selectedRequirements = $requirements;
         foreach ($report['entries'] as $entry) {
             if (!$entry['available']) {
-                $face = $this->match(['family' => $report['fallback'], 'bold' => $entry['bold'], 'italic' => $entry['italic']], $this->inventory()['faces']);
-                $fallbackHashes[($entry['bold'] ? 'bold' : 'regular') . ($entry['italic'] ? '-italic' : '')] = $face === null ? null : $this->fileHash($face['path']);
+                $fallbackRequirement = ['family' => $report['fallback'], 'bold' => $entry['bold'], 'italic' => $entry['italic']];
+                $selectedRequirements[] = $fallbackRequirement;
+                $face = $this->match($fallbackRequirement, $this->inventory()['faces']);
+                $fallbackHashes[($entry['bold'] ? 'bold' : 'regular') . ($entry['italic'] ? '-italic' : '')] = $face === null ? null : ['hash' => $this->fileHash($face['path']), 'source' => $this->priority($face)];
             }
+        }
+        if ($requirements === []) {
+            $selectedRequirements[] = ['family' => $report['fallback'], 'bold' => false, 'italic' => false];
         }
         ksort($fallbackHashes);
 
-        return ['environment' => $this->environment($substitutions), 'substitutions' => $substitutions, 'converter' => $converter, 'fingerprint' => hash('sha256', $this->fingerprint($requirements) . '|' . $converter . '|' . json_encode($fallbackHashes, JSON_THROW_ON_ERROR))];
+        return ['environment' => $this->environment($substitutions, $this->inventory()['faces'], $selectedRequirements), 'substitutions' => $substitutions, 'converter' => $converter, 'fingerprint' => hash('sha256', $this->fingerprint($requirements) . '|' . $converter . '|' . json_encode($fallbackHashes, JSON_THROW_ON_ERROR))];
+    }
+
+    private function matches(array $requirement, array $face): bool
+    {
+        return $face['bold'] === $requirement['bold'] && $face['italic'] === $requirement['italic'] && in_array(mb_strtolower($requirement['family']), array_map(mb_strtolower(...), $face['aliases']), true);
+    }
+
+    private function priority(array $face): int
+    {
+        $disk = Storage::disk(config('document-fonts.disk'));
+        foreach (['bundled_directory', 'directory'] as $priority => $key) {
+            if (str_starts_with($face['path'], $disk->path(config('document-fonts.' . $key)) . '/')) {
+                return $priority;
+            }
+        }
+
+        return 2;
+    }
+
+    private function sourceFor(array $entry): ?int
+    {
+        $face = $this->match($entry, $this->inventory()['faces']);
+
+        return $face === null ? null : $this->priority($face);
     }
 
     private function fileHash(string $path): ?string

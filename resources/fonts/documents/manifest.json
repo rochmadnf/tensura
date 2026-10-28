@@ -1,0 +1,399 @@
+{
+    "schema_version": 1,
+    "license_confirmation": "Pemilik proyek mengonfirmasi izin distribusi repository, server, dan browser pada 2026-10-28.",
+    "missing": ["Cambria \u00b7 Regular", "Tahoma \u00b7 Italic", "Tahoma \u00b7 Bold Italic"],
+    "fonts": [
+        {
+            "file": "arialbd.ttf",
+            "family": "Arial",
+            "style": "Bold",
+            "sha256": "766f06ac8761f82f25d032a220e89438f6064591af9915061f20b949efdedf69",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "arialbi.ttf",
+            "family": "Arial",
+            "style": "Bold Italic",
+            "sha256": "e432c1b3568bd207e30e3d52d41e6431ea53a679eb52dd79b1a36aa6a4f3b994",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "ariali.ttf",
+            "family": "Arial",
+            "style": "Italic",
+            "sha256": "79a5742b865cf06891d4ae43e42cac0e5169c7b7b06b5b3c24ef8e0966d27b62",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "arial.ttf",
+            "family": "Arial",
+            "style": "Regular",
+            "sha256": "c9b76220a5be42ead4733611e417cd65c5fd8aeaa33eb56576ac378a37d130a1",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "calibrib.ttf",
+            "family": "Calibri",
+            "style": "Bold",
+            "sha256": "4d5c56c07c41315022cd5a24966ade3983ceebce8bc81524e56e4632dd3f242f",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "calibriz.ttf",
+            "family": "Calibri",
+            "style": "Bold Italic",
+            "sha256": "95b49ebc8244b88ef49372833e8964dad6a3d7fa53e948609c5c73d5a1439912",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "calibrii.ttf",
+            "family": "Calibri",
+            "style": "Italic",
+            "sha256": "5c85b9adedde710e754b3163005291eca16cd0ccccc7c8d7ff526070e8980202",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "calibri.ttf",
+            "family": "Calibri",
+            "style": "Regular",
+            "sha256": "198e8dac512206f27c9bdbfeb3d5b3e55a33de9dcf58d801823ef8c5ef5a76dc",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "cambriab.ttf",
+            "family": "Cambria",
+            "style": "Bold",
+            "sha256": "6685c657a7e292083e28f19bbf1a1e90509ce3e1130dbc4ed1c62ba3f9140543",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "cambriaz.ttf",
+            "family": "Cambria",
+            "style": "Bold Italic",
+            "sha256": "fa90f376ad37f308a819b341c8185f788d30a1012829278592eab45a41818d1a",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "cambriai.ttf",
+            "family": "Cambria",
+            "style": "Italic",
+            "sha256": "6905f0ac846d1ec4326cd14a46cb7379204940aa293b098ee4c1a69723bbd165",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "Candarab.ttf",
+            "family": "Candara",
+            "style": "Bold",
+            "sha256": "5346840fa85a1969699dc97635e838cd2c42dad7f8a4999d7368eb888fceb04b",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "Candaraz.ttf",
+            "family": "Candara",
+            "style": "Bold Italic",
+            "sha256": "1614c0d3a6751eb46b2c52f09ae23dd61f769beda83058269cb0653c049eae43",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "Candarai.ttf",
+            "family": "Candara",
+            "style": "Italic",
+            "sha256": "fc68cb42582e1207bcc397df7b60870a74ae068b17d7bd79f2e9f63af89796b4",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "Candara.ttf",
+            "family": "Candara",
+            "style": "Regular",
+            "sha256": "9f02f6bf076197ed2a1335fe59a3bdf88e7ad4a849bf68037a528f37cce36791",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "consolab.ttf",
+            "family": "Consolas",
+            "style": "Bold",
+            "sha256": "8fa803e5abc7fff0c78c62cd22d07c705f3273c53312380c36ff484246ed3c1b",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "consolaz.ttf",
+            "family": "Consolas",
+            "style": "Bold Italic",
+            "sha256": "1df27cbcc8a9fb7f843bc24e257b78e8ff93de70e8c1ad2caab8379e7d6a1eab",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "consolai.ttf",
+            "family": "Consolas",
+            "style": "Italic",
+            "sha256": "81e2a95d3c49468029c07e58f71a5f0ca4cfcb617eaf6bd77576fb03aa430bb2",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "consola.ttf",
+            "family": "Consolas",
+            "style": "Regular",
+            "sha256": "c6e6ce8119fdd47ec6a5449a08e2d2ad7f41ea03143aae193068ed9fa58eaebc",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "constanb.ttf",
+            "family": "Constantia",
+            "style": "Bold",
+            "sha256": "b6c66a1858370fe575629e19d53c05350738bf5105e18ceac07fe9efc9cd008d",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "constanz.ttf",
+            "family": "Constantia",
+            "style": "Bold Italic",
+            "sha256": "9311aadcbd919746f50d222fa0215fb44266d6993221c14a196f0725fdae464f",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "constani.ttf",
+            "family": "Constantia",
+            "style": "Italic",
+            "sha256": "2314a03c53506fa79525bc479ea4be9c036d1ebd86a1ffb5837ca5b43ff51f07",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "constan.ttf",
+            "family": "Constantia",
+            "style": "Regular",
+            "sha256": "495577bf8ef74deab6ecc2e7acf63cd966184148f9bc2044a1068cd58501577e",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "corbelb.ttf",
+            "family": "Corbel",
+            "style": "Bold",
+            "sha256": "fa008372f8a94945d0daef9daf0bfb9e3fba3a25fd17f2607d47ac6861bd0303",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "corbelz.ttf",
+            "family": "Corbel",
+            "style": "Bold Italic",
+            "sha256": "588f090ae3a6d31370457312683d14ee3a5bfbdaaa0a070b7c80225b55b23e78",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "corbeli.ttf",
+            "family": "Corbel",
+            "style": "Italic",
+            "sha256": "9be778c9ed418770f6b5a02064d9c0b47a8fdea1137618f0bec9ac4072430a45",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "corbel.ttf",
+            "family": "Corbel",
+            "style": "Regular",
+            "sha256": "a183b77b655df66793639af7874828fb50f748dc4af57ae40f758156f7f34634",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "courbd.ttf",
+            "family": "Courier New",
+            "style": "Bold",
+            "sha256": "716c08d704f154870bd9fb78b185d0b644912301dfa9c9e6daf45bdb4832a299",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "courbi.ttf",
+            "family": "Courier New",
+            "style": "Bold Italic",
+            "sha256": "8fdb188252a2db0f020c89831bddb61cadfe290c3616fe534479b4d3b10d09c1",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "couri.ttf",
+            "family": "Courier New",
+            "style": "Italic",
+            "sha256": "5861588608d3a3775d921a7e4acb8362b21630c6b63718bc68adb7137ce53beb",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "cour.ttf",
+            "family": "Courier New",
+            "style": "Regular",
+            "sha256": "93c3ff526c19d03496c01c6a1bfd1031f97af021a13e859a89dfc717a0b6b6ec",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "georgiab.ttf",
+            "family": "Georgia",
+            "style": "Bold",
+            "sha256": "72a6cd94fab6c179392075d3fb361e269cdddfad41bb7ab385fa22a37e49a900",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "georgiaz.ttf",
+            "family": "Georgia",
+            "style": "Bold Italic",
+            "sha256": "3f9e512f82eaf6f1b7869b82013fb79f6eaf1a41e75a0e7b96f31f35b1022ae4",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "georgiai.ttf",
+            "family": "Georgia",
+            "style": "Italic",
+            "sha256": "d3e4bad27651d120ac8f2cea42cf4b4f077264fb243f66b3caffcfd35465f49b",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "georgia.ttf",
+            "family": "Georgia",
+            "style": "Regular",
+            "sha256": "38dffcaf1fac89492f7c56c600a14daf36ae42f7c21985cd4134ae113124a58f",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "tahomabd.ttf",
+            "family": "Tahoma",
+            "style": "Bold",
+            "sha256": "68f92341975acc275c7d4a2ec52a1569b70e992b521c42b30f29149806421674",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "tahoma.ttf",
+            "family": "Tahoma",
+            "style": "Regular",
+            "sha256": "b890858df485549d20fcb0a2c519dffe9c5c155d16b55e0b9252d6e66db555e5",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "timesbd.ttf",
+            "family": "Times New Roman",
+            "style": "Bold",
+            "sha256": "621b4a765fef5d255d19530f4bf936104c6519f2e232a0eef1923474e5b9cf22",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "timesbi.ttf",
+            "family": "Times New Roman",
+            "style": "Bold Italic",
+            "sha256": "2852329a38acf9252504669d9c23d5e88366cf77e8209d508f5e7198639648ea",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "timesi.ttf",
+            "family": "Times New Roman",
+            "style": "Italic",
+            "sha256": "3a1c2bc8528bfa432e0414d4ec69bf5813563c474e16a9ad0f57ca262f8d24a2",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "times.ttf",
+            "family": "Times New Roman",
+            "style": "Regular",
+            "sha256": "2cff2a03d8034801979dd6d16f09b9a825c3d710fcf068f2ebfbf0e1425c87cf",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "trebucbd.ttf",
+            "family": "Trebuchet MS",
+            "style": "Bold",
+            "sha256": "dfcc306777a594d2815368547dd897e2ac82aff8073e55d9e682569939e49b81",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "trebucbi.ttf",
+            "family": "Trebuchet MS",
+            "style": "Bold Italic",
+            "sha256": "87942234ab0cc4400088648bef8d1f7afc4c44e676c7ed6b32ca31462c18307d",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "trebucit.ttf",
+            "family": "Trebuchet MS",
+            "style": "Italic",
+            "sha256": "9c9dc0cd0fd6b1a06e8f406d04bb15a88aaf20328d3e166c12d6bc7994b781d2",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "trebuc.ttf",
+            "family": "Trebuchet MS",
+            "style": "Regular",
+            "sha256": "fe3e8bdd64c1c9f3b9cf5189d06510c80d72cec28e03d04bffc560f77eec58d1",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "verdanab.ttf",
+            "family": "Verdana",
+            "style": "Bold",
+            "sha256": "f3245f5f38f61bd1ceefb0f1338a5b88a21e6220832c2f43a38bbc7e1547c36f",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "verdanaz.ttf",
+            "family": "Verdana",
+            "style": "Bold Italic",
+            "sha256": "d71f81c83ec63eaa32d36d5df7be1d9e71d3ea9150f47cebda2924923cbbf18a",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "verdanai.ttf",
+            "family": "Verdana",
+            "style": "Italic",
+            "sha256": "14f2ebcdaa1b77e5993a8533662e4bd3ebfe2c5771b6daafd8ccb39b2ad588b9",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "verdana.ttf",
+            "family": "Verdana",
+            "style": "Regular",
+            "sha256": "6a8481fe107ee547893c018b13dba291c2020bec3de5da6525d9ac09f6bc2105",
+            "server": true,
+            "webfont": true
+        }
+    ]
+}

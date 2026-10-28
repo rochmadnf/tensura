@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreDocumentFontRequest;
 use App\Models\DocumentFont;
+use App\Services\Letter\DocumentFontPackage;
 use App\Services\Letter\DocumentFontRegistry;
 use App\Services\Letter\InstallDocumentFont;
 use Illuminate\Http\JsonResponse;
@@ -32,9 +33,9 @@ class DocumentFontController extends Controller
         return back(303);
     }
 
-    public function file(DocumentFont $documentFont): BinaryFileResponse
+    public function file(DocumentFont $documentFont, DocumentFontPackage $package): BinaryFileResponse
     {
-        abort_unless($documentFont->status === 'ready', 404);
+        abort_unless($documentFont->status === 'ready' && $package->browserAllowed($documentFont), 404);
         $disk = Storage::disk($documentFont->disk);
         abort_unless($disk->exists($documentFont->path) && hash_file('sha256', $disk->path($documentFont->path)) === $documentFont->sha256, 404);
 
