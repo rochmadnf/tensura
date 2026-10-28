@@ -226,6 +226,13 @@ pnpm run build
 - Documentation/rule-only changes do not bump the version or create release notes unless requested.
 - Creating this version page establishes the baseline **`0.1.0`**, with no extra bump or backward calculation for features/stages already done before.
 
+### GitHub release and pull request workflow
+
+- When a version changes, publish a GitHub release only when the matching Indonesian release notes file exists at `resources/markdown/releases/MAJOR.MINOR.PATCH.md`. Push the version commit and matching `vMAJOR.MINOR.PATCH` tag before creating the release from that notes file.
+- Before release or pull request work, verify that GitHub CLI is installed and authenticated with `gh --version` and `gh auth status`, then verify the repository and default branch with `gh repo view`.
+- Compare the current branch with the GitHub repository's detected default branch. If they differ, stop before creating a pull request and present a proposed title and body based on the actual changes. Request explicit user approval; create the pull request only after approval and target the detected default branch rather than assuming `main`.
+- Do not add Copilot, GitHub CLI, or other assistant attribution to commits, pull requests, release notes, tags, or releases.
+
 ## 8. Pattern differences to preserve
 
 | Topic             | Current contract                                                                                                                  | Guidance for new features                                                                                                                              |
