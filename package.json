@@ -11,9 +11,11 @@
         "lint": "vp lint",
         "types:check": "tsc --noEmit",
         "check:ui": "node scripts/check-ui.mjs",
-        "p:format": "prettier --write .",
-        "p:check": "prettier --check .",
-        "shadcn": "shadcn"
+        "p:format": "prettier --write --ignore-path .prettierignore-blade \"resources/**/*.blade.php\"",
+        "p:check": "prettier --check --ignore-path .prettierignore-blade \"resources/**/*.blade.php\"",
+        "shadcn": "shadcn",
+        "format": "vp fmt",
+        "format:check": "vp fmt --check"
     },
     "dependencies": {
         "@base-ui/react": "^1.9.0",

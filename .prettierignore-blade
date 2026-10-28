@@ -1,0 +1,9 @@
+# Prettier owns Blade only; Oxfmt must not consume this ignore file.
+**/*
+!**/
+!**/*.blade.php
+**/vendor/**
+**/node_modules/**
+**/public/**
+**/bootstrap/**
+**/storage/**
