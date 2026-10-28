@@ -11,9 +11,9 @@ class DocumentFontPackage
     private ?array $manifest = null;
 
     /** @return array{schema_version: int, missing: list<string>, fonts: list<array{file: string, family: string, style: string, sha256: string, server: bool, webfont: bool}>} */
-    public function manifest(): array
+    public function manifest(bool $refresh = false): array
     {
-        if ($this->manifest !== null) {
+        if (!$refresh && $this->manifest !== null) {
             return $this->manifest;
         }
         $path = config('document-fonts.package_directory') . '/manifest.json';

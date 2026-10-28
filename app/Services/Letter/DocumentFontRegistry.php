@@ -126,9 +126,9 @@ class DocumentFontRegistry
     /** @return array{family: string, style: string, aliases: list<string>, bold: bool, italic: bool, path: string, index: int} */
     public function scan(string $path): array
     {
-        $result = Process::env($this->environment())->timeout(config('document-fonts.timeout_seconds'))->run([config('document-fonts.executables.scan'), '--format', self::FORMAT, '--', $path]);
+        $result = Process::env($this->environment())->timeout(config('document-fonts.timeout_seconds'))->run([config('document-fonts.executables.scan'), '--format', self::FORMAT . "%{variable}\n", '--', $path]);
         $faces = $this->parse($result->output());
-        if ($result->failed() || count($faces) !== 1 || $faces[0]['index'] !== 0) {
+        if ($result->failed() || count($faces) !== 1 || $faces[0]['index'] !== 0 || in_array('true', array_map(strtolower(...), explode("\n", trim($result->output()))), true)) {
             throw new RuntimeException('Font tidak terbaca sebagai satu varian TTF/OTF. Gunakan berkas font statis yang valid.');
         }
 

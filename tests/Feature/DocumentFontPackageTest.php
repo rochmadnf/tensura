@@ -26,16 +26,67 @@ class DocumentFontPackageTest extends TestCase
         $manifest = app(DocumentFontPackage::class)->manifest();
         $registry = app(DocumentFontRegistry::class);
 
-        $this->assertCount(49, $manifest['fonts']);
-        $this->assertCount(13, array_unique(array_column($manifest['fonts'], 'family')));
-        $this->assertSame(['Cambria · Regular', 'Tahoma · Italic', 'Tahoma · Bold Italic'], $manifest['missing']);
+        $this->assertNotEmpty($manifest['fonts']);
+        $keys = [];
+        foreach ($manifest['missing'] as $missing) {
+            $this->assertNotContains($missing, array_map(fn(array $entry): string => $entry['family'] . ' · ' . $entry['style'], $manifest['fonts']));
+        }
         foreach ($manifest['fonts'] as $entry) {
+            $key = $registry->faceKey($entry['family'], $entry['style']);
+            $this->assertNotContains($key, $keys);
+            $keys[] = $key;
             $path = resource_path('fonts/documents/' . $entry['file']);
             $this->assertSame($entry['sha256'], hash_file('sha256', $path));
             $face = $registry->scan($path);
             $this->assertSame($entry['family'], $face['family']);
             $this->assertSame($entry['style'], $face['style']);
         }
+    }
+
+    public function test_office_bundle_only_reports_missing_variants_in_its_documented_scope(): void
+    {
+        $manifest = json_decode(file_get_contents(resource_path('fonts/documents/manifest.json')), true, 512, JSON_THROW_ON_ERROR);
+        $core = ['Regular', 'Bold', 'Italic', 'Bold Italic'];
+        $families = array_fill_keys(['Arial', 'Calibri', 'Cambria', 'Candara', 'Consolas', 'Constantia', 'Corbel', 'Courier New', 'Georgia', 'Times New Roman', 'Trebuchet MS', 'Verdana'], $core);
+        $families['Tahoma'] = ['Regular', 'Bold'];
+        $expectedMissing = [];
+        foreach ($families as $family => $styles) {
+            $entries = array_values(array_filter($manifest['fonts'], fn(array $entry): bool => $entry['family'] === $family));
+            $this->assertNotEmpty($entries, $family);
+            foreach ($entries as $entry) {
+                $this->assertContains($entry['style'], $styles, $family);
+            }
+            foreach ($styles as $style) {
+                if (!in_array($style, array_column($entries, 'style'), true)) {
+                    $expectedMissing[] = $family . ' · ' . $style;
+                }
+            }
+        }
+        $reportedMissing = array_values(array_filter($manifest['missing'], fn(string $missing): bool => isset($families[explode(' · ', $missing, 2)[0]])));
+        sort($expectedMissing);
+        sort($reportedMissing);
+
+        $this->assertSame($expectedMissing, $reportedMissing);
+    }
+
+    public function test_sync_does_not_warn_for_tahoma_variants_that_do_not_exist(): void
+    {
+        $this->isolateFonts();
+        $manifest = json_decode(file_get_contents(resource_path('fonts/documents/manifest.json')), true, 512, JSON_THROW_ON_ERROR);
+        $manifest['fonts'] = array_values(array_filter($manifest['fonts'], fn(array $entry): bool => $entry['family'] === 'Tahoma'));
+        foreach ($manifest['fonts'] as $entry) {
+            Storage::disk('local')->put('package/' . $entry['file'], file_get_contents(resource_path('fonts/documents/' . $entry['file'])));
+        }
+        Storage::disk('local')->put('package/manifest.json', json_encode($manifest, JSON_THROW_ON_ERROR));
+
+        $this->artisan('document-fonts:sync')
+            ->doesntExpectOutputToContain('Tahoma · Italic')
+            ->doesntExpectOutputToContain('Tahoma · Bold Italic')
+            ->assertSuccessful();
+
+        $this->assertSame(['Bold', 'Regular'], DocumentFont::query()->orderBy('style')->pluck('style')->all());
+        $report = app(DocumentFontRegistry::class)->report([['family' => 'Tahoma', 'bold' => false, 'italic' => true]]);
+        $this->assertFalse($report['entries'][0]['available']);
     }
 
     public function test_sync_is_repeatable_repairs_missing_storage_and_serves_private_fonts(): void

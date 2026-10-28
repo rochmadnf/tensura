@@ -1,7 +1,7 @@
 {
     "schema_version": 1,
     "license_confirmation": "Pemilik proyek mengonfirmasi izin distribusi repository, server, dan browser pada 2026-10-28.",
-    "missing": ["Cambria \u00b7 Regular", "Tahoma \u00b7 Italic", "Tahoma \u00b7 Bold Italic"],
+    "missing": ["Cambria · Regular"],
     "fonts": [
         {
             "file": "arialbd.ttf",
@@ -280,6 +280,14 @@
             "family": "Georgia",
             "style": "Regular",
             "sha256": "38dffcaf1fac89492f7c56c600a14daf36ae42f7c21985cd4134ae113124a58f",
+            "server": true,
+            "webfont": true
+        },
+        {
+            "file": "plus-jakarta-sans-regular.ttf",
+            "family": "Plus Jakarta Sans",
+            "style": "Regular",
+            "sha256": "ca6ef907028d1d1808870967d7b7ddcf68c0f33552d15d7f0c6c7d6ae97e7571",
             "server": true,
             "webfont": true
         },
