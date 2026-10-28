@@ -5,6 +5,7 @@ import { Edit04Icon, InfoIcon } from '@hugeicons/core-free-icons';
 import empl from '@/routes/empl';
 import type { EmployeeResource } from '@/schemas/employee';
 import { DeleteAction } from './delete-action';
+import { Badge } from '@/components/ui/badge';
 
 const columnHelper = createDataTableColumnHelper<EmployeeResource>();
 export const columns = columnHelper.columns([
@@ -35,11 +36,7 @@ export const columns = columnHelper.columns([
     }),
     columnHelper.accessor('status', {
         header: 'Status Pegawai',
-        cell: ({ cell }) => (
-            <span className="inline-flex rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground ring-1 ring-border ring-inset">
-                {cell.getValue().label || '—'}
-            </span>
-        ),
+        cell: ({ cell }) => <Badge variant="secondary">{cell.getValue().label || '—'}</Badge>,
     }),
     columnHelper.display({
         id: 'actions',

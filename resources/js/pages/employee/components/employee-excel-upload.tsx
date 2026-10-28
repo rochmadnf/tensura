@@ -77,7 +77,7 @@ export function EmployeeExcelUpload({
             aria-disabled={disabled}
             data-dragging={!disabled && isDragging}
             className={cn(
-                'flex min-w-0 flex-col gap-4 rounded-lg border border-dashed border-gray-500/60 p-5 sm:p-6',
+                'flex min-w-0 flex-col gap-4 rounded-lg border border-dashed border-muted-foreground/50 p-5 sm:p-6',
                 !disabled && isDragging && 'border-primary bg-muted',
                 disabled && 'opacity-60',
             )}
@@ -88,6 +88,7 @@ export function EmployeeExcelUpload({
             onDragOver={actions.handleDragOver}
             onDrop={handleDrop}
         >
+            {/* ui-allow: raw-element (dropzone berkas lewat getInputProps) */}
             <input
                 {...actions.getInputProps({
                     id: 'employee-file',

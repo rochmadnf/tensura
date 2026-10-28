@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { ArchivePreview } from '@/types/archive';
 import { canDeleteArchive } from './delete-state';
 import type { ArchiveDeleteFlow } from './use-archive-delete';
+import { Alert, AlertDescription } from '@/components/reui/alert';
 
 export function DeleteSummary({ preview }: { preview: ArchivePreview }) {
     const items = preview.candidates.filter((candidate) => candidate.entity === 'reference_item').length;
@@ -59,9 +60,9 @@ export function DeleteArchiveDialog({ flow }: { flow: ArchiveDeleteFlow }) {
                           : 'Item arsip terpilih lintas halaman'}
                 </p>
                 {state.notice && (
-                    <p role="alert" className="text-sm text-destructive">
-                        {state.notice}
-                    </p>
+                    <Alert variant="destructive">
+                        <AlertDescription>{state.notice}</AlertDescription>
+                    </Alert>
                 )}
                 {state.phase === 'preview' ? (
                     <div aria-busy="true" className="flex flex-col gap-2">

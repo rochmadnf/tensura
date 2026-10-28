@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { buildListingQuery } from '@/lib/listing-query';
 import { show } from '@/routes/archives';
 import type { ArchivePage, ArchiveTarget, ArchiveTargetGroup } from '@/types/archive';
+import { Alert, AlertDescription } from '@/components/reui/alert';
 
 export function TargetGroupPicker({
     archiveUuid,
@@ -87,9 +88,9 @@ export function TargetGroupPicker({
                         </FieldGroup>
                     </form>
                     {error && (
-                        <p role="alert" className="text-sm text-destructive">
-                            {error}
-                        </p>
+                        <Alert variant="destructive">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
                     )}
                     <div className="flex flex-col gap-3" aria-busy={loading}>
                         {loading ? (

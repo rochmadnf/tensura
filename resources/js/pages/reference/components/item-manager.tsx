@@ -32,6 +32,7 @@ import { useValibotForm } from '@/hooks/use-valibot-form';
 import ref from '@/routes/ref';
 import { referenceItemSchema, type ReferenceGroupDetail, type ReferenceItemResource } from '@/schemas/reference';
 import { moveItem } from './move-item';
+import { Badge } from '@/components/ui/badge';
 
 interface ItemManagerProps {
     group: ReferenceGroupDetail;
@@ -272,9 +273,9 @@ export function ItemManager({ group, disabled, onProcessingChange }: ItemManager
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     Item Referensi{' '}
-                    <span className="rounded-md bg-secondary px-2 py-0.5 text-sm text-secondary-foreground tabular-nums">
+                    <Badge variant="secondary" className="tabular-nums">
                         {group.items_count}
-                    </span>
+                    </Badge>
                 </CardTitle>
                 <CardDescription>Gunakan tombol panah atau geser handle untuk mengatur urutan item.</CardDescription>
             </CardHeader>

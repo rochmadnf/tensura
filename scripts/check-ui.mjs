@@ -5,6 +5,7 @@
  * Pemakaian:
  *   pnpm check:ui            -> hanya berkas yang berubah menurut git (default, dipakai agent)
  *   pnpm check:ui --all      -> audit seluruh resources/js
+ *   pnpm check:ui --base=main -> berkas yang berbeda dari cabang `main` (termasuk yang sudah di-commit)
  *   pnpm check:ui --strict   -> peringatan (warn) ikut menggagalkan
  *
  * Mengecualikan: components/ui/, components/reui/, components/examples/, berkas test.
@@ -22,6 +23,12 @@ const EXCLUDE = ['resources/js/components/ui/', 'resources/js/components/reui/',
 const args = new Set(process.argv.slice(2));
 const ALL = args.has('--all');
 const STRICT = args.has('--strict');
+const baseArg = process.argv.slice(2).find((x) => x.startsWith('--base='));
+const BASE = baseArg ? baseArg.slice('--base='.length) : 'HEAD';
+if (!/^[\w./~^@{}-]+$/.test(BASE)) {
+    console.error(`Nilai --base tidak valid: ${BASE}`);
+    process.exit(2);
+}
 
 const PALETTE =
     'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
@@ -150,7 +157,8 @@ function inScope(rel) {
 function changedFiles() {
     try {
         const run = (cmd) => execSync(cmd, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString();
-        const tracked = run('git diff --name-only --diff-filter=ACMR HEAD');
+        // --relative: path relatif terhadap folder saat ini, bukan root git (penting bila repo berada di folder induk)
+        const tracked = run(`git diff --name-only --relative --diff-filter=ACMR ${BASE}`);
         const untracked = run('git ls-files --others --exclude-standard');
         return [...new Set((tracked + '\n' + untracked).split('\n').filter(Boolean))];
     } catch {
@@ -171,6 +179,18 @@ if (ALL) {
             .map((f) => relative(ROOT, f));
     } else {
         files = changed;
+        const inScopeCount = files.filter(inScope).length;
+        if (changed.length === 0) {
+            console.log(
+                `Tidak ada perubahan terhadap ${BASE}. Jika sudah di-commit, bandingkan dengan cabang utama: ` +
+                    '`pnpm check:ui --base=main` (atau origin/main); untuk audit penuh: `pnpm check:ui --all`.',
+            );
+        } else if (inScopeCount === 0) {
+            console.log(
+                `${changed.length} berkas berubah terhadap ${BASE}, tetapi tidak ada .tsx di resources/js/{pages,components,layouts} ` +
+                    '(components/ui, reui, examples, dan berkas test dikecualikan).',
+            );
+        }
     }
 }
 files = files.filter(inScope);
@@ -228,7 +248,7 @@ const errors = findings.filter((f) => f.rule.level === 'error').length;
 const warns = findings.length - errors;
 console.log(
     `\ncheck:ui — ${files.length} berkas diperiksa, ${errors} galat, ${warns} peringatan` +
-        (ALL ? ' (mode --all)' : ' (hanya berkas yang berubah)'),
+        (ALL ? ' (mode --all)' : ` (berkas yang berubah terhadap ${BASE})`),
 );
 
 process.exit(errors > 0 || (STRICT && warns > 0) ? 1 : 0);

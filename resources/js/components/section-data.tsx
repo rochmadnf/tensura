@@ -41,7 +41,7 @@ export function SectionData({
     const hasKeyword = search.keyword !== '';
 
     return (
-        <section className="container mx-auto space-y-6">
+        <section className="container mx-auto flex flex-col gap-6">
             <div className="flex flex-wrap items-start gap-4">
                 <div className="flex min-w-0 flex-1 basis-full items-start gap-4 sm:basis-0">
                     {archiveUrl && (
@@ -79,23 +79,40 @@ export function SectionData({
                                     />
 
                                     {hasKeyword && (
-                                        <button
-                                            type="button"
-                                            onClick={search.reset}
-                                            aria-label="Hapus pencarian"
-                                            className="absolute right-10 inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                        >
-                                            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} size={14} />
-                                        </button>
+                                        <Tooltip>
+                                            <TooltipTrigger
+                                                render={
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        onClick={search.reset}
+                                                        aria-label="Hapus pencarian"
+                                                        className="absolute right-10"
+                                                    />
+                                                }
+                                            >
+                                                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                                            </TooltipTrigger>
+                                            <TooltipContent>Hapus pencarian</TooltipContent>
+                                        </Tooltip>
                                     )}
 
-                                    <button
-                                        type="submit"
-                                        aria-label="Cari"
-                                        className="absolute right-1 inline-flex h-6.5 items-center gap-x-2 rounded-sm bg-primary px-2 py-1 text-white transition-all duration-200 hover:bg-primary/90"
-                                    >
-                                        <HugeiconsIcon icon={SearchIcon} strokeWidth={2} size={16} />
-                                    </button>
+                                    <Tooltip>
+                                        <TooltipTrigger
+                                            render={
+                                                <Button
+                                                    type="submit"
+                                                    size="xs"
+                                                    aria-label="Cari"
+                                                    className="absolute right-1"
+                                                />
+                                            }
+                                        >
+                                            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
+                                        </TooltipTrigger>
+                                        <TooltipContent>Cari</TooltipContent>
+                                    </Tooltip>
                                 </div>
                                 {search.error && (
                                     <FieldError id="keyword-error" className="text-xs">

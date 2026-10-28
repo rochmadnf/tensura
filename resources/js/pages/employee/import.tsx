@@ -149,9 +149,9 @@ export default function EmployeeImport({
                                 </div>
                             </Field>
                             {requestError && (
-                                <p role="alert" className="text-sm text-destructive">
-                                    {requestError}
-                                </p>
+                                <Alert variant="destructive">
+                                    <AlertDescription>{requestError}</AlertDescription>
+                                </Alert>
                             )}
                             {result && (
                                 <Alert variant="info" role="status">
@@ -248,11 +248,13 @@ export default function EmployeeImport({
                                 ))}
                             </div>
                             {result.interrupted && (
-                                <p role="alert" className="text-sm text-destructive">
-                                    Proses terhenti karena gangguan server. Baris yang berhasil sudah tersimpan; baris
-                                    setelahnya belum diproses. Silakan unggah ulang, data yang sudah masuk akan
-                                    dilewati.
-                                </p>
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        Proses terhenti karena gangguan server. Baris yang berhasil sudah tersimpan;
+                                        baris setelahnya belum diproses. Silakan unggah ulang, data yang sudah masuk
+                                        akan dilewati.
+                                    </AlertDescription>
+                                </Alert>
                             )}
                             {result.issues.length === 0 ? (
                                 <p>
