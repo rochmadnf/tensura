@@ -6,15 +6,15 @@ Dokumen ini menjadi acuan proses bisnis fitur Templat Surat. Rancangan fondasi d
 
 ## 0. Kondisi fitur saat ini
 
-| Bagian | Sudah tersedia | Masih perlu dikerjakan untuk Templat Surat |
-| --- | --- | --- |
-| Menu | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia | Verifikasi akhir browser/visual |
-| Domain templat | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, publikasi, perubahan versi, arsip draft, aktif/nonaktif, timeline, cleanup terjadwal, serta test tahap 1–7/4A/5A | Sisa checklist verifikasi akhir manual |
-| Master pendukung | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat serta pemeriksaan kandidat saat publikasi | Sisa verifikasi akhir manual |
-| Arsip | Arsip pusat, arsip/pemulihan Reference, penolakan arsip grup yang dirujuk templat, dan status arsip draft templat | Tidak ada integrasi Arsip pusat untuk templat dalam lingkup ini |
-| Komponen bersama | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi | Verifikasi akhir interaksi dan responsivitas |
-| DOCX | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin | Variasi tata letak DOCX dalam verifikasi akhir manual |
-| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi | Sisa verifikasi akhir manual |
+| Bagian            | Sudah tersedia                                                                                                                                                                                                                                                                                                                                                                          | Masih perlu dikerjakan untuk Templat Surat                      |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Menu              | Templat Surat di Data Master terhubung ke `lt.index`; halaman daftar/tambah/kelola dasar tersedia                                                                                                                                                                                                                                                                                       | Verifikasi akhir browser/visual                                 |
+| Domain templat    | Sembilan tabel relasional, katalog 25 atribut Pegawai, fallback dan format tanggal per atribut, model, factory, enum, audit, identitas draft, daftar, konfigurasi variabel/penandatangan, DOCX sumber/contoh, validasi, generate uji/unduhan hasil, konfirmasi visual, publikasi, perubahan versi, arsip draft, aktif/nonaktif, timeline, cleanup terjadwal, serta test tahap 1–7/4A/5A | Sisa checklist verifikasi akhir manual                          |
+| Master pendukung  | Penomoran Surat, Pegawai/Jabatan, Daftar Referensi, opsi konfigurasi, validasi relasi, dan perlindungan hapus master terikat serta pemeriksaan kandidat saat publikasi                                                                                                                                                                                                                  | Sisa verifikasi akhir manual                                    |
+| Arsip             | Arsip pusat, arsip/pemulihan Reference, penolakan arsip grup yang dirujuk templat, dan status arsip draft templat                                                                                                                                                                                                                                                                       | Tidak ada integrasi Arsip pusat untuk templat dalam lingkup ini |
+| Komponen bersama  | Pencarian, tabel berhalaman, filter, formulir, pemilih opsi/tanggal, dan tombol aksi                                                                                                                                                                                                                                                                                                    | Verifikasi akhir interaksi dan responsivitas                    |
+| DOCX              | Upload/ganti sumber privat, validasi ZIP/XML/placeholder, unduh sumber/contoh, generate/unduh hasil uji dan konfirmasi visual melalui PHPWord yang dipin                                                                                                                                                                                                                                | Variasi tata letak DOCX dalam verifikasi akhir manual           |
+| Database dan test | PostgreSQL untuk aplikasi maupun test database; runner terisolasi                                                                                                                                                                                                                                                                                                                       | Sisa verifikasi akhir manual                                    |
 
 Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency. Implementasi tahap 1–7 beserta 4A dan 5A diverifikasi dengan PHPUnit pada PostgreSQL disposable. Tahap 3 tidak menambah migration; skema aktif yang diperiksa sudah memiliki tabel templat tahap 1. Ketersediaan library atau komponen bersama belum membuktikan alur Templat Surat sudah berjalan. Menu Surat juga masih menggunakan tujuan `#`.
 
@@ -27,12 +27,12 @@ Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency
 
 ## 2. Alur pengelolaan
 
-| Tahap | Kegiatan |
-| --- | --- |
-| 1. Identitas | Isi nama dan pilih klasifikasi, lalu simpan draft awal |
+| Tahap          | Kegiatan                                                                          |
+| -------------- | --------------------------------------------------------------------------------- |
+| 1. Identitas   | Isi nama dan pilih klasifikasi, lalu simpan draft awal                            |
 | 2. Konfigurasi | Atur variabel dan penandatangan; tampilkan placeholder yang dapat disalin ke DOCX |
-| 3. DOCX | Upload, validasi, isi data contoh, generate hasil uji, lalu periksa secara visual |
-| 4. Publikasi | Publikasikan agar templat tersedia untuk pembuatan surat |
+| 3. DOCX        | Upload, validasi, isi data contoh, generate hasil uji, lalu periksa secara visual |
+| 4. Publikasi   | Publikasikan agar templat tersedia untuk pembuatan surat                          |
 
 - Nama templat wajib unik, dengan panjang 3–100 karakter.
 - Draft awal cukup berisi nama dan klasifikasi. Alurnya mengikuti tambah Daftar Referensi: simpan identitas dahulu, kemudian lanjutkan konfigurasi.
@@ -52,12 +52,12 @@ Fondasi awal diperiksa melalui kode, route, skema database aktif, dan dependency
 
 Admin mengatur nama placeholder, label, jenis, dan apakah wajib diisi.
 
-| Jenis | Penggunaan |
-| --- | --- |
-| Teks pendek | Nama atau isian singkat |
-| Teks panjang | Alamat atau keterangan |
-| Tanggal | Isian tanggal |
-| Combobox tunggal | Memilih satu item |
+| Jenis             | Penggunaan                                               |
+| ----------------- | -------------------------------------------------------- |
+| Teks pendek       | Nama atau isian singkat                                  |
+| Teks panjang      | Alamat atau keterangan                                   |
+| Tanggal           | Isian tanggal                                            |
+| Combobox tunggal  | Memilih satu item                                        |
 | Combobox multiple | Memilih beberapa item untuk mengisi baris tabel berulang |
 
 Combobox tunggal maupun multiple dapat menggunakan sumber:
@@ -71,17 +71,17 @@ Pilihan referensi mengikuti urutan master `sort_order`, lalu `id`. UUID digunaka
 
 Admin memilih kolom dan nama placeholder berdasarkan data existing.
 
-| Sumber | Data yang tersedia |
-| --- | --- |
-| Pegawai | Nomor urut dan seluruh katalog 25 atribut Pegawai: identitas/gelar, NIK/NIP, jenis kelamin, email, jabatan/kelompok, pangkat/golongan, tanggal bergabung, masa kerja, status pegawai/kontrak, serta STR/SIP |
-| Referensi | Nomor urut dan isi item |
+| Sumber    | Data yang tersedia                                                                                                                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pegawai   | Nomor urut dan seluruh katalog 25 atribut Pegawai: identitas/gelar, NIK/NIP, jenis kelamin, email, jabatan/kelompok, pangkat/golongan, tanggal bergabung, masa kerja, status pegawai/kontrak, serta STR/SIP |
+| Referensi | Nomor urut dan isi item                                                                                                                                                                                     |
 
 Nama pegawai beserta gelar mengikuti susunan `front_title`, `name`, dan `back_title` seperti Resource Pegawai saat ini; jabatan berasal dari relasi `jobTitle`. Atribut kosong pada baris terpilih menghasilkan teks kosong; tidak ada fallback multiple. Katalog backend menjadi sumber pilihan atribut, bukan serialisasi seluruh kolom model. ID internal, UUID, dan timestamps tidak menjadi isian surat.
 
 Contoh Surat Tugas Perjalanan:
 
-| No | Nama | NIP | Jabatan |
-| --- | --- | --- | --- |
+| No              | Nama              | NIP              | Jabatan              |
+| --------------- | ----------------- | ---------------- | -------------------- |
 | `${pegawai_no}` | `${pegawai_nama}` | `${pegawai_nip}` | `${pegawai_jabatan}` |
 
 - Admin menyiapkan satu baris contoh dalam DOCX.
@@ -133,12 +133,12 @@ Contoh Surat Tugas Perjalanan:
 
 Seluruh versi tetap terhubung ke satu identitas templat. Timeline versi ditampilkan pada halaman kelola.
 
-| Kondisi | Perilaku perubahan |
-| --- | --- |
-| Draft | Edit versi yang sama |
-| Publish, belum digunakan surat | Edit versi yang sama; publikasi dibatalkan, kemudian validasi, uji, dan publish ulang |
-| Publish, sudah digunakan minimal satu surat | Pertahankan versi asal; perubahan dibuat dalam draft versi baru |
-| Versi baru dipublikasikan | Digunakan untuk surat baru; surat lama tetap menggunakan versi asal |
+| Kondisi                                     | Perilaku perubahan                                                                    |
+| ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Draft                                       | Edit versi yang sama                                                                  |
+| Publish, belum digunakan surat              | Edit versi yang sama; publikasi dibatalkan, kemudian validasi, uji, dan publish ulang |
+| Publish, sudah digunakan minimal satu surat | Pertahankan versi asal; perubahan dibuat dalam draft versi baru                       |
+| Versi baru dipublikasikan                   | Digunakan untuk surat baru; surat lama tetap menggunakan versi asal                   |
 
 - Maksimal satu draft berjalan per templat.
 - Hanya satu versi terbit aktif untuk pembuatan surat baru.
@@ -171,14 +171,14 @@ Seluruh versi tetap terhubung ke satu identitas templat. Timeline versi ditampil
 
 Rencanakan `config/letter-templates.php` sebagai sumber aturan teknis.
 
-| Kelompok | Pengaturan |
-| --- | --- |
-| Upload | Ukuran maksimal DOCX sumber; default 10 MB |
-| Storage | Disk privat dan path sumber, hasil uji, serta berkas sementara |
-| Hasil uji | Masa simpan 24 jam, maksimal 20 MB, hash hasil, dan token pemeriksaan terbaru |
-| Keamanan ZIP | Batas jumlah entry, total ukuran dekompresi, dan rasio kompresi |
-| Variabel | Placeholder sesuai profil, teks pendek 255 karakter, teks panjang 10.000 karakter, maksimal 100 pilihan per multiple/500 baris total |
-| Generate | Anggaran proses 30 detik dengan checkpoint dan batas ekspansi XML sesuai profil DOCX |
+| Kelompok     | Pengaturan                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Upload       | Ukuran maksimal DOCX sumber; default 10 MB                                                                                           |
+| Storage      | Disk privat dan path sumber, hasil uji, serta berkas sementara                                                                       |
+| Hasil uji    | Masa simpan 24 jam, maksimal 20 MB, hash hasil, dan token pemeriksaan terbaru                                                        |
+| Keamanan ZIP | Batas jumlah entry, total ukuran dekompresi, dan rasio kompresi                                                                      |
+| Variabel     | Placeholder sesuai profil, teks pendek 255 karakter, teks panjang 10.000 karakter, maksimal 100 pilihan per multiple/500 baris total |
+| Generate     | Anggaran proses 30 detik dengan checkpoint dan batas ekspansi XML sesuai profil DOCX                                                 |
 
 Usulan direktori di disk privat:
 
@@ -229,19 +229,19 @@ letter-templates/
 
 ## 9. Ketentuan implementasi
 
-| Bagian | Keputusan |
-| --- | --- |
-| Model / domain | `LetterTemplate` / `MasterData` |
-| URL | `/letter-templates` |
-| Binding / alias route | `letterTemplate` menggunakan UUID / `lt` |
-| Nama halaman | Templat Surat, Tambah Templat Surat, Ubah Templat Surat |
-| Menu / pageId | UUID existing `a3063dc3-7414-4385-bf3f-0cf0742e3980` |
-| Database aplikasi / test | PostgreSQL 18 / PostgreSQL dengan database disposable; SQLite bukan target test |
-| Acuan implementasi | JobTitle untuk CRUD, Reference untuk simpan identitas lalu kelola, Employee untuk relasi/filter, serta komponen bersama; kontrak mengikuti `FEATURE_WORKFLOW.md` dan `LARAVEL_PATTERNS.md` |
-| Seeder | Tidak diperlukan |
-| Changelog | Ditambahkan dalam bahasa Indonesia saat fitur diimplementasikan |
-| Penyimpanan konfigurasi versi | Tabel relasional terpisah, bukan JSON untuk variabel, kolom, slot, dan kandidat |
-| PHPWord | Sudah terpasang; ikuti pin `dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` pada `composer.json` |
+| Bagian                        | Keputusan                                                                                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Model / domain                | `LetterTemplate` / `MasterData`                                                                                                                                                            |
+| URL                           | `/letter-templates`                                                                                                                                                                        |
+| Binding / alias route         | `letterTemplate` menggunakan UUID / `lt`                                                                                                                                                   |
+| Nama halaman                  | Templat Surat, Tambah Templat Surat, Ubah Templat Surat                                                                                                                                    |
+| Menu / pageId                 | UUID existing `a3063dc3-7414-4385-bf3f-0cf0742e3980`                                                                                                                                       |
+| Database aplikasi / test      | PostgreSQL 18 / PostgreSQL dengan database disposable; SQLite bukan target test                                                                                                            |
+| Acuan implementasi            | JobTitle untuk CRUD, Reference untuk simpan identitas lalu kelola, Employee untuk relasi/filter, serta komponen bersama; kontrak mengikuti `FEATURE_WORKFLOW.md` dan `LARAVEL_PATTERNS.md` |
+| Seeder                        | Tidak diperlukan                                                                                                                                                                           |
+| Changelog                     | Ditambahkan dalam bahasa Indonesia saat fitur diimplementasikan                                                                                                                            |
+| Penyimpanan konfigurasi versi | Tabel relasional terpisah, bukan JSON untuk variabel, kolom, slot, dan kandidat                                                                                                            |
+| PHPWord                       | Sudah terpasang; ikuti pin `dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e` pada `composer.json`                                                                                      |
 
 Route identitas/daftar/konfigurasi/DOCX `lt.*`, binding `letterTemplate`, model, dan halaman dasar sudah tersedia. Semua route tersebut memerlukan autentikasi; relasi versi/variabel/slot harus dibatasi ke templat induknya.
 
@@ -263,6 +263,5 @@ Sebelum pekerjaan terkait dimulai, rincikan:
 Alokasi nomor, pembuatan surat sebenarnya, revisi surat, dan penyerahan kepada pemohon belum masuk pekerjaan ini. Rincian teknis yang belum diputuskan tetap harus dirinci sebelum implementasi terkait.
 
 Tahap 6 lulus 34 test PHPUnit/445 assertion khusus publikasi dan versi; bersama regresi Templat Surat lulus 316 test/2.318 assertion. Sebanyak 38 test frontend terarah, TypeScript, lint terkait, Pint, formatter, serta build produksi lulus. Tidak ada migration atau dependency baru. Browser, pemeriksaan visual DOCX, dan konkurensi antarkoneksi belum dijalankan dan tetap mengikuti tahap akhir/7. Fitur Surat masih belum tersedia; pemakaian pertama diuji melalui data test, tanpa alokasi nomor.
-
 
 Tahap 7 selesai pada commit `5c59638`: cleanup terjadwal dan indeks pencarian berkas, pengujian integrasi sampai publikasi/copy/arsip/cleanup, serta runner konkurensi PostgreSQL tersendiri. Suite utama lulus 1.014 test/7.379 assertion; 35 skip suite khusus sudah dijalankan eksplisit melalui runner templat (24 test/325 assertion) dan arsip (274 test/2.197 assertion), keduanya tanpa skip. Pemeriksaan terarah tambahan lulus 15 test/83 assertion. Sebanyak 296 test frontend, TypeScript, lint, Pint, serta build produksi lulus. Browser pada database/storage disposable membuktikan alur utama sampai publikasi, reopen, dan arsip tanpa galat JavaScript dan tanpa overflow halaman pada 390 px. Sampel hasil DOCX dan panduan satu halaman A4 dirender dengan LibreOffice dan diperiksa visual. Pemeriksaan ini tidak mengklaim seluruh variasi tata letak DOCX atau seluruh checklist interaksi manual sudah selesai; rincian bukti dan cara menjalankan runner ada pada rencana teknis.

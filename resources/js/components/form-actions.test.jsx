@@ -23,9 +23,7 @@ describe('Form actions', () => {
 
 describe('Compact form actions', () => {
     it('keeps a native submit button and accessible cancel with tooltips, without visible text', () => {
-        const html = renderToStaticMarkup(
-            <FormActions compact cancelUrl="" onCancel={() => {}} processing={false} />,
-        );
+        const html = renderToStaticMarkup(<FormActions compact cancelUrl="" onCancel={() => {}} processing={false} />);
         expect(html).toMatch(/<button[^>]*type="submit"[^>]*aria-label="Simpan"/);
         expect(html).toMatch(/<button[^>]*type="button"[^>]*aria-label="Batal"/);
         expect(html).not.toContain('>Simpan<');

@@ -17,11 +17,7 @@ import { join, relative, sep } from 'node:path';
 
 const ROOT = process.cwd();
 const SCAN_DIRS = ['resources/js/pages', 'resources/js/components', 'resources/js/layouts'];
-const EXCLUDE = [
-    'resources/js/components/ui/',
-    'resources/js/components/reui/',
-    'resources/js/components/examples/',
-];
+const EXCLUDE = ['resources/js/components/ui/', 'resources/js/components/reui/', 'resources/js/components/examples/'];
 
 const args = new Set(process.argv.slice(2));
 const ALL = args.has('--all');
@@ -36,7 +32,8 @@ const LINE_RULES = [
         id: 'raw-element',
         level: 'error',
         test: /<(button|input|select|textarea|table)(?=[\s/>]|$)/,
-        message: 'Elemen HTML mentah. Pakai Button / Input / Select|OptionSelect / Textarea / Table dari components/ui.',
+        message:
+            'Elemen HTML mentah. Pakai Button / Input / Select|OptionSelect / Textarea / Table dari components/ui.',
     },
     {
         id: 'raw-palette',
@@ -95,7 +92,8 @@ const LINE_RULES = [
         id: 'duplicate-badge',
         level: 'error',
         test: /from ['"]@\/components\/reui\/badge['"]/,
-        message: 'Pakai @/components/ui/badge (kanonik), bukan reui/badge. Pemetaan varian ada di .ai/guidelines/ui.md.',
+        message:
+            'Pakai @/components/ui/badge (kanonik), bukan reui/badge. Pemetaan varian ada di .ai/guidelines/ui.md.',
     },
     {
         id: 'space-utility',

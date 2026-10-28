@@ -1,15 +1,15 @@
 catalog:
-    vite: npm:@voidzero-dev/vite-plus-core@1.1.0
-    vite-plus: 1.1.0
+  vite: npm:@voidzero-dev/vite-plus-core@1.1.0
+  vite-plus: 1.1.0
 overrides:
-    vite@*: 'catalog:'
+  vite@*: 'catalog:'
 peerDependencyRules:
-    allowAny:
-        - vite
-    allowedVersions:
-        vite: '*'
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'
 permissions:
-    '@tanstack/react-table':
-        skills: true
-    goey-toast:
-        skills: true
+  '@tanstack/react-table':
+    skills: true
+  goey-toast:
+    skills: true

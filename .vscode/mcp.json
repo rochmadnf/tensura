@@ -5,14 +5,9 @@
             "args": ["artisan", "boost:mcp"]
         },
         "codegraph": {
-          "type": "stdio",
-          "command": "codegraph",
-          "args": [
-            "serve",
-            "--mcp",
-            "--path",
-            "/home/rochmadnf/Sites/laravel/tensura"
-          ]
+            "type": "stdio",
+            "command": "codegraph",
+            "args": ["serve", "--mcp", "--path", "/home/rochmadnf/Sites/laravel/tensura"]
         }
     }
 }

@@ -53,25 +53,25 @@ Pemeriksaan berikut telah dijalankan setelah perubahan pada 27 Oktober 2026. Has
 
 Setelah warna tombol **Buat Instan** diselaraskan, TypeScript, lint pada `nav-main.tsx`/`sidebar.tsx`, build produksi, dan pemeriksaan diff dijalankan ulang dan lulus. Pengujian visual tombol tetap menunggu pemeriksaan pengguna.
 
-| Pemeriksaan | Hasil |
-| --- | --- |
-| `pnpm run types:check` | Lulus |
-| `pnpm exec vp lint --no-ignore resources/js/components/nav-main.tsx resources/js/components/nav-groups.tsx resources/js/components/ui/sidebar.tsx` | Lulus |
-| `pnpm run build` | Lulus; ada peringatan externalisasi modul `crypto` dari EmbedPDF dan ukuran chunk di atas 500 kB |
-| `git diff --check` | Lulus |
+| Pemeriksaan                                                                                                                                        | Hasil                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm run types:check`                                                                                                                             | Lulus                                                                                            |
+| `pnpm exec vp lint --no-ignore resources/js/components/nav-main.tsx resources/js/components/nav-groups.tsx resources/js/components/ui/sidebar.tsx` | Lulus                                                                                            |
+| `pnpm run build`                                                                                                                                   | Lulus; ada peringatan externalisasi modul `crypto` dari EmbedPDF dan ukuran chunk di atas 500 kB |
+| `git diff --check`                                                                                                                                 | Lulus                                                                                            |
 
 ## Catatan Hasil Manual
 
 Isi setelah pengujian. Item gagal harus diuji kembali setelah diperbaiki; item yang dilewati tetap dicatat sebagai belum diverifikasi.
 
-| Informasi | Hasil |
-| --- | --- |
-| Tanggal dan penguji | Belum diisi |
-| Versi Chromium dan sistem operasi | Belum diisi |
-| Commit/versi aplikasi | Belum diisi |
-| Tema dan ukuran layar yang diperiksa | Belum diisi |
+| Informasi                                | Hasil        |
+| ---------------------------------------- | ------------ |
+| Tanggal dan penguji                      | Belum diisi  |
+| Versi Chromium dan sistem operasi        | Belum diisi  |
+| Commit/versi aplikasi                    | Belum diisi  |
+| Tema dan ukuran layar yang diperiksa     | Belum diisi  |
 | Rasio kontras teks/garis pada kedua tema | Belum diukur |
-| Checklist yang belum dapat dijalankan | Belum diisi |
-| Kesimpulan | Belum diuji |
+| Checklist yang belum dapat dijalankan    | Belum diisi  |
+| Kesimpulan                               | Belum diuji  |
 
 Untuk setiap temuan, catat menu/halaman, tema, ukuran layar/zoom, langkah reproduksi, hasil yang muncul, dan hasil yang diharapkan. Tambahkan screenshot bila membantu menunjukkan masalah.

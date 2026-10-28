@@ -10,33 +10,33 @@ Disesuaikan dengan hasil pemeriksaan proyek dan dokumentasi resmi pada **27 Okto
 
 ### Komputer server
 
-| Bagian | Spesifikasi |
-| --- | --- |
-| Perangkat | Acer Aspire C24-1800 |
-| Sistem | Windows 11 Home Single Language, build 26200, 64-bit |
-| CPU | Intel Core i3-1305U, 5 core, 6 logical processor |
-| RAM | 8 GB terpasang, sekitar 3,1 GB tersedia saat idle |
+| Bagian      | Spesifikasi                                                    |
+| ----------- | -------------------------------------------------------------- |
+| Perangkat   | Acer Aspire C24-1800                                           |
+| Sistem      | Windows 11 Home Single Language, build 26200, 64-bit           |
+| CPU         | Intel Core i3-1305U, 5 core, 6 logical processor               |
+| RAM         | 8 GB terpasang, sekitar 3,1 GB tersedia saat idle              |
 | Penyimpanan | NVMe 512 GB; C: tersisa sekitar 56 GB, D: sekitar 224 GB, NTFS |
-| Jaringan | Ethernet 100 Mbps |
-| Pengguna | Tim internal, sekitar 3–7 orang |
+| Jaringan    | Ethernet 100 Mbps                                              |
+| Pengguna    | Tim internal, sekitar 3–7 orang                                |
 
 Komputer ini layak dicoba untuk penggunaan ringan. **RAM merupakan batas utama**, terutama saat beberapa pengguna membuka surat bersamaan dengan konversi PDF. Peningkatan ke 16 GB akan membantu jika pemakaian meningkat. Jumlah akun bukan jaminan kapasitas pengguna serentak; ukur beban nyata setelah deployment.
 
 ### Hasil pemeriksaan proyek
 
-| Bagian | Konfigurasi |
-| --- | --- |
-| Laravel | 13.38.0 |
-| Frontend | React 19, Inertia 3, Vite Plus |
-| Package manager | pnpm, `pnpm-lock.yaml`, dan katalog dependency |
-| PHP | Gunakan 8.4, termasuk `pdo_pgsql` dan `pcntl` |
-| Database | PostgreSQL 18 |
-| Queue surat | Connection `letters`, queue `letters` |
-| PDF | LibreOffice, Fontconfig, dan font |
-| Status operasi surat | SSE dan PostgreSQL `LISTEN/NOTIFY` |
-| Scheduler | Recovery setiap menit; cleanup setiap jam |
-| Penyimpanan | Dokumen, templat, dan font di `storage/app` |
-| Akun bawaan | `UserSeeder` memakai password `password`; hindari saat deployment |
+| Bagian               | Konfigurasi                                                       |
+| -------------------- | ----------------------------------------------------------------- |
+| Laravel              | 13.38.0                                                           |
+| Frontend             | React 19, Inertia 3, Vite Plus                                    |
+| Package manager      | pnpm, `pnpm-lock.yaml`, dan katalog dependency                    |
+| PHP                  | Gunakan 8.4, termasuk `pdo_pgsql` dan `pcntl`                     |
+| Database             | PostgreSQL 18                                                     |
+| Queue surat          | Connection `letters`, queue `letters`                             |
+| PDF                  | LibreOffice, Fontconfig, dan font                                 |
+| Status operasi surat | SSE dan PostgreSQL `LISTEN/NOTIFY`                                |
+| Scheduler            | Recovery setiap menit; cleanup setiap jam                         |
+| Penyimpanan          | Dokumen, templat, dan font di `storage/app`                       |
+| Akun bawaan          | `UserSeeder` memakai password `password`; hindari saat deployment |
 
 Node.js hanya digunakan saat build aset. Server tidak menjalankan Vite dev server atau SSR. Database, cache, session, dan antrean mengikuti konfigurasi database proyek tanpa tambahan Redis.
 
@@ -332,14 +332,14 @@ Buka file yang namanya tercantum di atas setiap blok kode, lalu salin **seluruh 
 
 Contoh: bagian `docker/entrypoint.sh` berarti isi file `entrypoint.sh` di dalam folder `docker`. Isi file tersebut adalah teks konfigurasi; jangan menjalankan bloknya langsung di PowerShell.
 
-| File | Kegunaan |
-| --- | --- |
-| `.dockerignore` | Menentukan berkas yang tidak dimasukkan ke proses build |
-| `Dockerfile` | Instruksi menyiapkan PHP, LibreOffice, dependency, dan aset frontend |
-| `docker/entrypoint.sh` | Perintah awal ketika container PHP dijalankan |
-| `docker/php.ini` | Pengaturan PHP |
-| `docker/fpm.conf` | Pengaturan proses PHP-FPM |
-| `docker/nginx.conf` | Pengaturan web server Nginx |
+| File                   | Kegunaan                                                             |
+| ---------------------- | -------------------------------------------------------------------- |
+| `.dockerignore`        | Menentukan berkas yang tidak dimasukkan ke proses build              |
+| `Dockerfile`           | Instruksi menyiapkan PHP, LibreOffice, dependency, dan aset frontend |
+| `docker/entrypoint.sh` | Perintah awal ketika container PHP dijalankan                        |
+| `docker/php.ini`       | Pengaturan PHP                                                       |
+| `docker/fpm.conf`      | Pengaturan proses PHP-FPM                                            |
+| `docker/nginx.conf`    | Pengaturan web server Nginx                                          |
 
 ### 5.3.1. Isi file `.dockerignore`
 
@@ -603,133 +603,133 @@ Isi `compose.yaml`:
 name: tensura
 
 x-logging: &logging
-  driver: json-file
-  options:
-    max-size: "10m"
-    max-file: "3"
+    driver: json-file
+    options:
+        max-size: '10m'
+        max-file: '3'
 
 x-php: &php
-  image: tensura-app:local
-  env_file:
-    - .env
-  user: www-data
-  init: true
-  restart: unless-stopped
-  stop_grace_period: 120s
-  volumes:
-    - app-storage:/var/www/html/storage
-  depends_on:
-    db:
-      condition: service_healthy
-  logging: *logging
+    image: tensura-app:local
+    env_file:
+        - .env
+    user: www-data
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 120s
+    volumes:
+        - app-storage:/var/www/html/storage
+    depends_on:
+        db:
+            condition: service_healthy
+    logging: *logging
 
 services:
-  db:
-    image: postgres:18-bookworm
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      TZ: Asia/Makassar
-    secrets:
-      - postgres_password
-    command:
-      - postgres
-      - -c
-      - shared_buffers=64MB
-      - -c
-      - max_connections=40
-      - -c
-      - work_mem=4MB
-    volumes:
-      - pg-data:/var/lib/postgresql
-    shm_size: 128m
-    mem_limit: 384m
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 20s
-    logging: *logging
+    db:
+        image: postgres:18-bookworm
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+            TZ: Asia/Makassar
+        secrets:
+            - postgres_password
+        command:
+            - postgres
+            - -c
+            - shared_buffers=64MB
+            - -c
+            - max_connections=40
+            - -c
+            - work_mem=4MB
+        volumes:
+            - pg-data:/var/lib/postgresql
+        shm_size: 128m
+        mem_limit: 384m
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
+            interval: 5s
+            timeout: 5s
+            retries: 20
+            start_period: 20s
+        logging: *logging
 
-  app:
-    <<: *php
-    build:
-      context: .
-      target: runtime
-    command: ["php-fpm", "-F"]
-    mem_limit: 1024m
+    app:
+        <<: *php
+        build:
+            context: .
+            target: runtime
+        command: ['php-fpm', '-F']
+        mem_limit: 1024m
 
-  web:
-    image: tensura-web:local
-    build:
-      context: .
-      target: web
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8080"
-    volumes:
-      - app-storage:/var/www/html/storage:ro
-    depends_on:
-      - app
-    mem_limit: 64m
-    logging: *logging
+    web:
+        image: tensura-web:local
+        build:
+            context: .
+            target: web
+        restart: unless-stopped
+        ports:
+            - '127.0.0.1:8080:8080'
+        volumes:
+            - app-storage:/var/www/html/storage:ro
+        depends_on:
+            - app
+        mem_limit: 64m
+        logging: *logging
 
-  worker:
-    <<: *php
-    command:
-      - php
-      - artisan
-      - queue:work
-      - letters
-      - --queue=letters
-      - --sleep=3
-      - --tries=3
-      - --timeout=90
-      - --memory=192
-      - --max-time=3600
-      - --no-interaction
-    mem_limit: 768m
+    worker:
+        <<: *php
+        command:
+            - php
+            - artisan
+            - queue:work
+            - letters
+            - --queue=letters
+            - --sleep=3
+            - --tries=3
+            - --timeout=90
+            - --memory=192
+            - --max-time=3600
+            - --no-interaction
+        mem_limit: 768m
 
-  scheduler:
-    <<: *php
-    command:
-      - php
-      - artisan
-      - schedule:work
-      - --no-interaction
-    mem_limit: 192m
+    scheduler:
+        <<: *php
+        command:
+            - php
+            - artisan
+            - schedule:work
+            - --no-interaction
+        mem_limit: 192m
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    profiles: ["public"]
-    restart: unless-stopped
-    command:
-      - tunnel
-      - --no-autoupdate
-      - run
-      - --token-file
-      - /run/secrets/tunnel_token
-    secrets:
-      - tunnel_token
-    depends_on:
-      - web
-    mem_limit: 128m
-    logging: *logging
+    cloudflared:
+        image: cloudflare/cloudflared:latest
+        profiles: ['public']
+        restart: unless-stopped
+        command:
+            - tunnel
+            - --no-autoupdate
+            - run
+            - --token-file
+            - /run/secrets/tunnel_token
+        secrets:
+            - tunnel_token
+        depends_on:
+            - web
+        mem_limit: 128m
+        logging: *logging
 
 volumes:
-  pg-data:
-    name: tensura-pg-data
-  app-storage:
-    name: tensura-app-storage
+    pg-data:
+        name: tensura-pg-data
+    app-storage:
+        name: tensura-app-storage
 
 secrets:
-  postgres_password:
-    file: ./secrets/postgres-password.txt
-  tunnel_token:
-    file: ./secrets/tunnel-token.txt
+    postgres_password:
+        file: ./secrets/postgres-password.txt
+    tunnel_token:
+        file: ./secrets/tunnel-token.txt
 ```
 
 Penjelasan:
@@ -1031,12 +1031,12 @@ Referensi: [One-time PIN](https://developers.cloudflare.com/cloudflare-one/integ
 
 Buat policy:
 
-| Pengaturan | Nilai |
-| --- | --- |
-| Nama | Tim Tensura |
-| Action | Allow |
-| Include selector | Emails |
-| Nilai | Email lengkap masing-masing anggota tim |
+| Pengaturan       | Nilai                                   |
+| ---------------- | --------------------------------------- |
+| Nama             | Tim Tensura                             |
+| Action           | Allow                                   |
+| Include selector | Emails                                  |
+| Nilai            | Email lengkap masing-masing anggota tim |
 
 Masukkan alamat email 3–7 orang secara spesifik. Hindari seluruh `gmail.com`, `outlook.com`, atau rule `Everyone`.
 
@@ -1122,13 +1122,13 @@ Referensi: [Parameter token Tunnel](https://developers.cloudflare.com/tunnel/ref
 
 Tunggu connector **Healthy**, lalu tambahkan **Published application route**:
 
-| Pengaturan | Nilai |
-| --- | --- |
-| Subdomain | tensura |
-| Domain | Domain Anda |
-| Path | Kosong |
-| Service type | HTTP |
-| Service URL | web:8080 |
+| Pengaturan   | Nilai       |
+| ------------ | ----------- |
+| Subdomain    | tensura     |
+| Domain       | Domain Anda |
+| Path         | Kosong      |
+| Service type | HTTP        |
+| Service URL  | web:8080    |
 
 Jika kolom mengharapkan URL lengkap, gunakan `http://web:8080`.
 
@@ -1155,18 +1155,18 @@ Gunakan ponsel dengan data seluler dan buka:
 https://tensura.organisasi-anda.com
 ```
 
-| Pengujian | Hasil yang diharapkan |
-| --- | --- |
-| Browser incognito, Tunnel saja | Langsung tampil halaman login Tensura |
+| Pengujian                                  | Hasil yang diharapkan                            |
+| ------------------------------------------ | ------------------------------------------------ |
+| Browser incognito, Tunnel saja             | Langsung tampil halaman login Tensura            |
 | Halaman yang memerlukan login, Tunnel saja | Pengunjung tanpa sesi diarahkan ke login Tensura |
-| Browser incognito, dengan Access | Halaman Cloudflare Access |
-| Email anggota tim, dengan Access | Autentikasi berhasil |
-| Email di luar daftar, dengan Access | Akses ditolak |
-| Setelah Access, jika digunakan | Halaman login Tensura |
-| Login aplikasi | Dashboard dan fitur bekerja |
-| Preview/PDF | Pekerjaan selesai dan berkas dapat diunduh |
-| Status operasi | SSE bekerja tanpa refresh manual |
-| Restart container | Data dan dokumen tetap ada |
+| Browser incognito, dengan Access           | Halaman Cloudflare Access                        |
+| Email anggota tim, dengan Access           | Autentikasi berhasil                             |
+| Email di luar daftar, dengan Access        | Akses ditolak                                    |
+| Setelah Access, jika digunakan             | Halaman login Tensura                            |
+| Login aplikasi                             | Dashboard dan fitur bekerja                      |
+| Preview/PDF                                | Pekerjaan selesai dan berkas dapat diunduh       |
+| Status operasi                             | SSE bekerja tanpa refresh manual                 |
+| Restart container                          | Data dan dokumen tetap ada                       |
 
 Uji juga tautan langsung dokumen, aset frontend, dan fungsi yang memerlukan worker.
 
@@ -1291,29 +1291,29 @@ docker system df
 
 ### Masalah umum
 
-| Gejala | Pemeriksaan dan tindakan |
-| --- | --- |
-| Docker gagal mulai | Periksa virtualisasi BIOS, versi WSL, update WSL, dan restart Windows |
-| Tidak dapat menghubungi daemon | Tunggu engine Docker Desktop siap |
-| Build kehabisan memori/exit 137 | Tutup aplikasi berat, build berurutan, hentikan stack saat build, atau build di komputer lain |
-| `catalog:` tidak dikenali | Gunakan pnpm dan lockfile proyek; jangan mengganti dengan `npm install` |
-| Wayfinder gagal saat build | Pastikan stage build memiliki PHP dan Composer dependencies |
-| Vite manifest tidak ditemukan | Periksa build frontend dan `public/build/manifest.json`; build ulang kedua image |
-| Browser mengakses port 5173 | Periksa `public/hot` atau HTML development lama |
-| Database tidak terhubung | Periksa `DB_HOST=db`, port 5432, password role, dan health database |
-| `key:generate` gagal membaca `.env` | Buat key melalui `php -r` pada langkah 7, simpan di `.env` Windows, lalu recreate layanan PHP jika sudah berjalan |
-| Password baru PostgreSQL tidak berlaku | Environment inisialisasi berlaku pada volume kosong; ubah password role secara benar dan sesuaikan `.env` |
-| Storage permission denied | Perbaiki ownership volume menjadi `www-data:www-data` |
-| Queue surat diam | Worker harus menjalankan `queue:work letters --queue=letters` |
-| Scheduler tidak sehat | Periksa container, `schedule:list`, dan heartbeat setelah satu menit |
-| PDF gagal | Periksa LibreOffice, Fontconfig, font fallback, log worker, dan `letters:health` |
-| Status surat tidak berubah | Periksa SSE, buffering Nginx, named tunnel, dan koneksi PostgreSQL langsung |
-| HTTP/HTTPS bercampur | Periksa `APP_URL`, trusted proxy, dan recreate container |
-| Login 419 | Periksa secure cookie, hostname, session database, dan hapus cookie lama |
-| Cloudflare 1033 | Connector tidak tersambung; periksa Docker, Internet, token, dan log |
-| Cloudflare 502 | Periksa origin `http://web:8080`, container web, dan PHP-FPM |
-| PIN tidak datang | Periksa spam, email pada policy, serta One-time PIN |
-| Access lolos tetapi login aplikasi gagal | Periksa akun Laravel; kedua autentikasi terpisah |
+| Gejala                                   | Pemeriksaan dan tindakan                                                                                          |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Docker gagal mulai                       | Periksa virtualisasi BIOS, versi WSL, update WSL, dan restart Windows                                             |
+| Tidak dapat menghubungi daemon           | Tunggu engine Docker Desktop siap                                                                                 |
+| Build kehabisan memori/exit 137          | Tutup aplikasi berat, build berurutan, hentikan stack saat build, atau build di komputer lain                     |
+| `catalog:` tidak dikenali                | Gunakan pnpm dan lockfile proyek; jangan mengganti dengan `npm install`                                           |
+| Wayfinder gagal saat build               | Pastikan stage build memiliki PHP dan Composer dependencies                                                       |
+| Vite manifest tidak ditemukan            | Periksa build frontend dan `public/build/manifest.json`; build ulang kedua image                                  |
+| Browser mengakses port 5173              | Periksa `public/hot` atau HTML development lama                                                                   |
+| Database tidak terhubung                 | Periksa `DB_HOST=db`, port 5432, password role, dan health database                                               |
+| `key:generate` gagal membaca `.env`      | Buat key melalui `php -r` pada langkah 7, simpan di `.env` Windows, lalu recreate layanan PHP jika sudah berjalan |
+| Password baru PostgreSQL tidak berlaku   | Environment inisialisasi berlaku pada volume kosong; ubah password role secara benar dan sesuaikan `.env`         |
+| Storage permission denied                | Perbaiki ownership volume menjadi `www-data:www-data`                                                             |
+| Queue surat diam                         | Worker harus menjalankan `queue:work letters --queue=letters`                                                     |
+| Scheduler tidak sehat                    | Periksa container, `schedule:list`, dan heartbeat setelah satu menit                                              |
+| PDF gagal                                | Periksa LibreOffice, Fontconfig, font fallback, log worker, dan `letters:health`                                  |
+| Status surat tidak berubah               | Periksa SSE, buffering Nginx, named tunnel, dan koneksi PostgreSQL langsung                                       |
+| HTTP/HTTPS bercampur                     | Periksa `APP_URL`, trusted proxy, dan recreate container                                                          |
+| Login 419                                | Periksa secure cookie, hostname, session database, dan hapus cookie lama                                          |
+| Cloudflare 1033                          | Connector tidak tersambung; periksa Docker, Internet, token, dan log                                              |
+| Cloudflare 502                           | Periksa origin `http://web:8080`, container web, dan PHP-FPM                                                      |
+| PIN tidak datang                         | Periksa spam, email pada policy, serta One-time PIN                                                               |
+| Access lolos tetapi login aplikasi gagal | Periksa akun Laravel; kedua autentikasi terpisah                                                                  |
 
 Jika firewall membatasi Tunnel, periksa akses **keluar** port **7844** untuk UDP/QUIC atau TCP/HTTP2. Jika UDP diblokir, coba menambahkan `--protocol http2` sebelum `run` pada command cloudflared. Pertahankan Windows Firewall aktif.
 
@@ -1369,16 +1369,16 @@ Tunggu sampai selesai. Jika muncul error, selesaikan error sebelum melanjutkan. 
 docker compose up -d --no-build --force-recreate app worker scheduler web
 ```
 
-| Bagian perintah | Arti |
-| --- | --- |
-| `up` | Menjalankan layanan |
-| `-d` | Berjalan di latar belakang |
-| `--no-build` | Memakai hasil build langkah sebelumnya |
+| Bagian perintah    | Arti                                            |
+| ------------------ | ----------------------------------------------- |
+| `up`               | Menjalankan layanan                             |
+| `-d`               | Berjalan di latar belakang                      |
+| `--no-build`       | Memakai hasil build langkah sebelumnya          |
 | `--force-recreate` | Membuat ulang container layanan yang disebutkan |
-| `app` | PHP yang menjalankan aplikasi |
-| `worker` | Pemroses antrean surat dan PDF |
-| `scheduler` | Pelaksana tugas terjadwal |
-| `web` | Nginx yang menerima permintaan web |
+| `app`              | PHP yang menjalankan aplikasi                   |
+| `worker`           | Pemroses antrean surat dan PDF                  |
+| `scheduler`        | Pelaksana tugas terjadwal                       |
+| `web`              | Nginx yang menerima permintaan web              |
 
 Database dan dokumen tetap berada pada volume yang sama. Tidak perlu menjalankan `down`, menghapus volume, atau membuat database kembali. Pergantian container dapat memutus akses sebentar; lakukan ketika tim sedang tidak aktif.
 
@@ -1436,13 +1436,13 @@ docker compose --parallel 1 build app web
 
 Setelah build berhasil, jalankan perintah recreate yang sama.
 
-| Jenis perubahan | Tindakan |
-| --- | --- |
-| Enum, controller, atau kode PHP tanpa perubahan skema/data | Build `app`, lalu recreate `app`, `worker`, `scheduler`, dan `web` |
-| Frontend atau hasil build aset | Build `app web`, lalu recreate keempat layanan tersebut |
-| Nilai `.env` | Recreate layanan; tidak perlu build image |
+| Jenis perubahan                                                  | Tindakan                                                                                                              |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Enum, controller, atau kode PHP tanpa perubahan skema/data       | Build `app`, lalu recreate `app`, `worker`, `scheduler`, dan `web`                                                    |
+| Frontend atau hasil build aset                                   | Build `app web`, lalu recreate keempat layanan tersebut                                                               |
+| Nilai `.env`                                                     | Recreate layanan; tidak perlu build image                                                                             |
 | Perubahan skema atau nilai enum yang memerlukan penyesuaian data | Ikuti prosedur backup dan maintenance, jalankan migration atau penyesuaian data yang disiapkan, lalu recreate layanan |
-| Proses macet tanpa perubahan kode atau environment | Restart layanan terkait dapat mencukupi |
+| Proses macet tanpa perubahan kode atau environment               | Restart layanan terkait dapat mencukupi                                                                               |
 
 ### Performa pada RAM 8 GB
 
@@ -1456,11 +1456,11 @@ Setelah build berhasil, jalankan perintah recreate yang sama.
 
 ## 14. Alternatif tanpa domain
 
-| Pilihan | Domain sendiri | Bentuk akses | Kesesuaian |
-| --- | --- | --- | --- |
-| Named tunnel + Access hostname publik | Diperlukan untuk jalur panduan ini | Browser biasa, URL tetap | Pilihan utama |
-| Quick Tunnel | Tidak diperlukan | URL sementara `trycloudflare.com` | Uji singkat; SSE tidak didukung |
-| Jaringan privat Cloudflare One | Bisa tanpa domain publik sendiri | Umumnya client dan konfigurasi jaringan privat | Alternatif jika tim bersedia memasang client |
+| Pilihan                               | Domain sendiri                     | Bentuk akses                                   | Kesesuaian                                   |
+| ------------------------------------- | ---------------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| Named tunnel + Access hostname publik | Diperlukan untuk jalur panduan ini | Browser biasa, URL tetap                       | Pilihan utama                                |
+| Quick Tunnel                          | Tidak diperlukan                   | URL sementara `trycloudflare.com`              | Uji singkat; SSE tidak didukung              |
+| Jaringan privat Cloudflare One        | Bisa tanpa domain publik sendiri   | Umumnya client dan konfigurasi jaringan privat | Alternatif jika tim bersedia memasang client |
 
 Cloudflare Access juga mendukung aplikasi jaringan privat. Namun, jalur aplikasi web publik dengan hostname tetap pada panduan ini memerlukan domain aktif di Cloudflare. Alamat organisasi `nama-tim.cloudflareaccess.com` digunakan untuk layanan Access/App Launcher dan tidak otomatis menjadi hostname publik origin Tensura.
 

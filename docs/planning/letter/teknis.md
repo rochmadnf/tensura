@@ -28,7 +28,6 @@ Snapshot JSONB versi 1 menyimpan pilihan berurutan, atribut master yang diperluk
 
 Verifikasi tahap 5: 107 test PHPUnit/1.067 assertion terkait lulus, termasuk regresi renderer, options, dan listing; seluruh 345 test frontend lulus. Pint, lint terarah file perubahan, dan build lulus. TypeScript lulus memakai konfigurasi HEAD yang disalin ke `/tmp` dengan path absolut; konfigurasi kerja tidak diubah. Pemeriksaan global standar terakhir tertahan karena penambahan `baseUrl` pada `tsconfig.json` di luar perubahan Surat, yang sudah tidak didukung TypeScript 7. Pengujian dua operator mencakup penolakan payload usang; konkurensi antarkoneksi menyeluruh tetap tahap 10. Checklist visual pengguna belum dijalankan.
 
-
 Tahap 6 menyediakan generate DOCX draft lewat operasi durable dan antrean database `letters`, status Menunggu/Diproses/Selesai/Gagal/Usang, notifikasi SSE global pada layout persisten, serta konfirmasi pemeriksaan DOCX. Tabel `letter_operations`, `letter_artifacts`, dan `letter_preview_checks` telah diterapkan pada database lokal. Bukti pemeriksaan dipisahkan per artefak dan aktor supaya pemeriksaan operator lain tidak tertimpa; bukti mengikat revision, snapshot/konfigurasi/sumber, hash DOCX, profil font/renderer, dan jenis viewer. Browser melaporkan render selesai sebelum tombol konfirmasi dapat digunakan; pengakuan browser bukan pembuktian otomatis kesesuaian visual.
 
 Worker merender snapshot tersimpan dalam subprocess maksimal 30 detik di direktori staging unik. Sebelum memasang artefak, transaksi memeriksa ulang revision, templat aktif, kandidat, hash sumber, lease, dan profil font efektif. Kegagalan/rollback tidak mengambil nomor dan tidak mengganti input draft. Preview bernomor `XX.XX` diberi warna warning pada run token sistem; cetak viewer memiliki penanda DRAFT. Tidak ada tombol unduh Word draft atau penerbitan pada tahap ini. Preview kedaluwarsa setelah 24 jam dan memerlukan generate ulang. Cleanup berkas draft/yatim menyeluruh tetap tahap 10.
@@ -40,7 +39,6 @@ SSE memakai koneksi PDO PostgreSQL terpisah tanpa transaction pooling. LISTEN di
 Development Linux: jalankan ulang `composer run dev` setelah pembaruan agar proses `letters` dan `scheduler` ikut berjalan. Proses server development memakai `PHP_CLI_SERVER_WORKERS=8 php artisan serve --no-reload`; worker antrean memakai `php artisan queue:work letters --queue=letters --tries=3 --timeout=90`. Server delapan worker adalah batas development; sisakan worker HTTP untuk request biasa di luar koneksi SSE terbuka. Jika server dijalankan sendiri, gunakan beberapa worker dan `--no-reload`; PHP development server satu worker tidak memadai untuk SSE. Pada PHP-FPM/proxy, sediakan kapasitas proses/koneksi PostgreSQL sesuai tab aktif, nonaktifkan buffering SSE, dan gunakan timeout proxy di atas 60 detik. Proses server `composer run dev` memakai port eksplisit dari `APP_URL` atau 8000 bila tidak dicantumkan; proses server mandiri mengikuti host/port yang dipilih operator.
 
 Verifikasi tahap 6: 94 test PHPUnit/849 assertion terkait dan 367 test frontend lulus; Pint, lint global, pemeriksaan tipe standar, serta build produksi lulus. LISTEN/NOTIFY antarkoneksi dan subprocess render nyata diuji nonvisual. Rincian dicatat pada [checklist tahap 6](../../tests/letter/tahap-6.md). Kelayakan tampilan dan hasil cetak DOCX tetap menunggu pengujian mandiri pengguna; penggunaan viewer ini tidak menyatakan layout sudah setara Word. PDF, nomor resmi, dan unduhan resmi mengikuti tahap 7–8.
-
 
 Tahap 7 menyediakan penerbitan awal idempoten melalui antrean `letters`, alokasi otomatis/manual, klaim aktif, versi resmi, Word resmi, serta dropdown Unduh. PDF ditandai belum tersedia dan diimplementasikan pada tahap 8. Pengguna secara eksplisit mengizinkan dropdown dibuat sebelum penilaian visual viewer; izin ini tidak menyatakan kesetiaan tampilan sudah terbukti. Detail surat terbit menyediakan viewer dengan nomor resmi tanpa penanda DRAFT, nilai yang benar-benar dipakai pada dokumen, penerbit/waktu/versi, dan riwayat penerbitan.
 
@@ -147,17 +145,17 @@ Runner `phpunit.letters.xml` memakai database disposable berawalan `tensura_test
 
 `letter_number_periods` mempunyai **9 kolom**:
 
-| Kolom | Kontrak |
-| --- | --- |
-| `id` | Primary key numerik |
-| `uuid` | Identitas publik unik |
-| `letter_number_id` | FK klasifikasi, penghapusan dibatasi bila masih dirujuk |
-| `year` | Tahun periode |
-| `month` | Bulan 1–12 |
-| `last_page_number` | Posisi halaman terakhir urutan otomatis, nullable |
-| `last_sequence_number` | Posisi nomor terakhir urutan otomatis, nullable |
-| `created_at` | Waktu dibuat |
-| `updated_at` | Waktu diperbarui |
+| Kolom                  | Kontrak                                                 |
+| ---------------------- | ------------------------------------------------------- |
+| `id`                   | Primary key numerik                                     |
+| `uuid`                 | Identitas publik unik                                   |
+| `letter_number_id`     | FK klasifikasi, penghapusan dibatasi bila masih dirujuk |
+| `year`                 | Tahun periode                                           |
+| `month`                | Bulan 1–12                                              |
+| `last_page_number`     | Posisi halaman terakhir urutan otomatis, nullable       |
+| `last_sequence_number` | Posisi nomor terakhir urutan otomatis, nullable         |
+| `created_at`           | Waktu dibuat                                            |
+| `updated_at`           | Waktu diperbarui                                        |
 
 - Unique `(letter_number_id, year, month)`; kedua posisi harus sama-sama null atau valid. Halaman integer positif, urutan 1–99; halaman tidak dibatasi tipe smallint master lama. Batas implementasi halaman 2.147.483.647; bila habis, tolak tanpa memutar nomor. Tahun input 1–9999 dengan tanggal valid.
 - Angka null berarti belum pernah alokasi otomatis dan kandidat awal `01.01`. Sesudah `01.99` lanjut `02.01`. Periode lama tetap tersedia saat bulan berjalan berubah.
@@ -170,15 +168,15 @@ Runner `phpunit.letters.xml` memakai database disposable berawalan `tensura_test
 
 ### Surat, draft, artefak, dan audit
 
-| Tabel/modul | Isi dan invariant |
-| --- | --- |
-| `letters` | UUID, perihal, pembuat, templat asal, status Draft/Terbit/Batal, pointer versi resmi, data pembatalan, timestamps |
-| `letter_drafts` | Satu draft kerja per surat, jenis awal/revisi/pemulihan, versi templat, tanggal, pilihan nomor, alasan, revision integer, data formulir/snapshot, fingerprint pemeriksaan |
-| `letter_versions` | Versi resmi append-only, nomor/tanggal lengkap, versi templat, snapshot nilai efektif, locale/format, tanggal acuan atribut, alasan, aktor, waktu, pointer artefak Word |
-| `letter_artifacts` | Pemilik draft/versi, jenis Word/PDF, disk/path privat, hash/size, fingerprint sumber/render, status, warning font, expiry untuk draft saja |
-| `letter_operations` | UUID, jenis operasi, aktor, target/revision, idempotency key dan request hash, status queued/running/succeeded/failed/stale, lease/attempt, hasil/galat aman |
-| `letter_audits` | Pelaku beserta identitas/nama tersimpan, kejadian, waktu, alasan, perubahan, dan hubungan ke versi/operasi/nomor |
-| `document_fonts` | Metadata font aplikasi, keluarga/varian, hash unik, status instalasi, pengunggah, disk/path privat, timestamps |
+| Tabel/modul         | Isi dan invariant                                                                                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `letters`           | UUID, perihal, pembuat, templat asal, status Draft/Terbit/Batal, pointer versi resmi, data pembatalan, timestamps                                                         |
+| `letter_drafts`     | Satu draft kerja per surat, jenis awal/revisi/pemulihan, versi templat, tanggal, pilihan nomor, alasan, revision integer, data formulir/snapshot, fingerprint pemeriksaan |
+| `letter_versions`   | Versi resmi append-only, nomor/tanggal lengkap, versi templat, snapshot nilai efektif, locale/format, tanggal acuan atribut, alasan, aktor, waktu, pointer artefak Word   |
+| `letter_artifacts`  | Pemilik draft/versi, jenis Word/PDF, disk/path privat, hash/size, fingerprint sumber/render, status, warning font, expiry untuk draft saja                                |
+| `letter_operations` | UUID, jenis operasi, aktor, target/revision, idempotency key dan request hash, status queued/running/succeeded/failed/stale, lease/attempt, hasil/galat aman              |
+| `letter_audits`     | Pelaku beserta identitas/nama tersimpan, kejadian, waktu, alasan, perubahan, dan hubungan ke versi/operasi/nomor                                                          |
+| `document_fonts`    | Metadata font aplikasi, keluarga/varian, hash unik, status instalasi, pengunggah, disk/path privat, timestamps                                                            |
 
 - FK relasi memakai id numerik; payload dan route memakai UUID. Enum mengikuti pola proyek. Tambahkan indeks listing, pending operations, foreign key, dan artefak sesuai query nyata.
 - Konfigurasi templat tetap relasional. Nilai formulir dinamis, snapshot resolved, dan rincian audit disimpan sebagai JSONB dengan shape/version eksplisit; tidak menambah satu kolom SQL untuk setiap variabel templat.
@@ -218,18 +216,18 @@ Pembatalan melepas klaim aktif dan membuang draft revisi dalam satu transaksi. P
 
 Setiap tahap berikut wajib menambahkan/memperbarui test yang bermakna dan melaporkan kemampuan web. Checkbox progres baru dicentang setelah implementasi dan pemeriksaan otomatis tahap tersebut selesai; checklist visual tetap dimiliki pengguna.
 
-| Tahap | Pekerjaan dan hasil yang dapat dicoba melalui web | Commit yang direncanakan | Uji mandiri |
-| --- | --- | --- | --- |
-| 1 | Viewer DOCX hanya-baca pada hasil uji Templat Surat existing: buka, zoom, pindah halaman, dan Cetak. Tidak membuat fitur Surat/penerbitan dulu. Pengguna menilai kelayakan sampel sebelum preview DOCX menjadi default. | `feat: add read-only DOCX preview and printing` | [Tahap 1](../../tests/letter/tahap-1.md) |
-| 2 | Tabel periode 9 kolom, detail Penomoran Surat, persiapan periode angka lama, dan perlindungan master terikat. Web dapat melihat klasifikasi/periode dan menetapkan angka awal; counter lama belum dihapus. | `feat: add monthly letter numbering periods` | [Tahap 2](../../tests/letter/tahap-2.md) |
-| 3 | Pisahkan renderer/snapshot dari orkestrasi generate uji, tambahkan token sistem/format tanggal pada templat, pertahankan regresi DOCX. Web dapat menyiapkan, memvalidasi, dan menguji templat dengan token nomor/tanggal tanpa mengambil nomor Surat. | `feat: support system letter fields and reusable rendering` | [Tahap 3](../../tests/letter/tahap-3.md) |
-| 4 | Inventory/pemeriksaan font, unggah font aplikasi, panel Font tersedia, pemuatan font browser, warning nonblocking. Web dapat mengetahui dan melengkapi font pada kartu DOCX Sumber. | `feat: add document font checks and managed font uploads` | [Tahap 4](../../tests/letter/tahap-4.md) |
-| 5 | Fondasi data Surat, daftar/detail/tambah/edit/hapus draft, form dinamis, snapshot, revision guard, penyesuaian templat, dan refresh master eksplisit. Web dapat menyimpan dan melanjutkan draft; belum dapat menerbitkan. | `feat: add shared letter draft management` | [Tahap 5](../../tests/letter/tahap-5.md) |
-| 6 | Operasi durable, worker, SSE global, generate DOCX draft, preview dan konfirmasi yang terikat revision/font. Web dapat meminta preview, pindah halaman sambil menunggu, membuka hasil, dan menyatakan sudah memeriksa; belum mendapat nomor resmi. | `feat: generate letter previews with queued jobs and SSE` | [Tahap 6](../../tests/letter/tahap-6.md) |
-| 7 | Penerbitan idempoten, alokasi otomatis/manual, klaim nomor, Word resmi, riwayat dasar, dan dropdown Unduh. Jika viewer layak, menu Word aktif; PDF ditandai belum tersedia sampai tahap 8. Web dapat menerbitkan dan mengunduh Word bernomor resmi. | `feat: issue letters with atomic numbering and Word downloads` | [Tahap 7](../../tests/letter/tahap-7.md) |
-| 8 | Selesai: konversi PDF on demand, dedup/retry, EmbedPDF headless serta Cetak PDF. Dropdown Unduh mengaktifkan Word/PDF, dan Lihat/Cetak PDF tersedia pada preview. Web dapat mengunduh PDF tanpa konversi berulang untuk hasil yang sama. | `feat: add on-demand PDF conversion and viewing` | [Tahap 8](../../tests/letter/tahap-8.md) |
-| 9 | Revisi satu draft, alasan, versi historis, pembatalan, pemulihan, pelepasan/penggunaan ulang nomor, dan timeline lengkap. Web dapat menjalankan seluruh siklus Surat serta menelusuri nomor/dokumen historis. | `feat: add letter revisions cancellation and recovery` | [Tahap 9](../../tests/letter/tahap-9.md) |
-| 10 | Cleanup/recovery scheduler, konkurensi nyata, deployment health check, regresi integrasi, dan migration penghapusan counter master setelah prasyarat persiapan terpenuhi. Web menggunakan seluruh alur dengan hanya satu sumber counter. | `feat: finalize letter reliability and retire legacy counters` | [Tahap 10](../../tests/letter/tahap-10.md) |
+| Tahap | Pekerjaan dan hasil yang dapat dicoba melalui web                                                                                                                                                                                                     | Commit yang direncanakan                                       | Uji mandiri                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ |
+| 1     | Viewer DOCX hanya-baca pada hasil uji Templat Surat existing: buka, zoom, pindah halaman, dan Cetak. Tidak membuat fitur Surat/penerbitan dulu. Pengguna menilai kelayakan sampel sebelum preview DOCX menjadi default.                               | `feat: add read-only DOCX preview and printing`                | [Tahap 1](../../tests/letter/tahap-1.md)   |
+| 2     | Tabel periode 9 kolom, detail Penomoran Surat, persiapan periode angka lama, dan perlindungan master terikat. Web dapat melihat klasifikasi/periode dan menetapkan angka awal; counter lama belum dihapus.                                            | `feat: add monthly letter numbering periods`                   | [Tahap 2](../../tests/letter/tahap-2.md)   |
+| 3     | Pisahkan renderer/snapshot dari orkestrasi generate uji, tambahkan token sistem/format tanggal pada templat, pertahankan regresi DOCX. Web dapat menyiapkan, memvalidasi, dan menguji templat dengan token nomor/tanggal tanpa mengambil nomor Surat. | `feat: support system letter fields and reusable rendering`    | [Tahap 3](../../tests/letter/tahap-3.md)   |
+| 4     | Inventory/pemeriksaan font, unggah font aplikasi, panel Font tersedia, pemuatan font browser, warning nonblocking. Web dapat mengetahui dan melengkapi font pada kartu DOCX Sumber.                                                                   | `feat: add document font checks and managed font uploads`      | [Tahap 4](../../tests/letter/tahap-4.md)   |
+| 5     | Fondasi data Surat, daftar/detail/tambah/edit/hapus draft, form dinamis, snapshot, revision guard, penyesuaian templat, dan refresh master eksplisit. Web dapat menyimpan dan melanjutkan draft; belum dapat menerbitkan.                             | `feat: add shared letter draft management`                     | [Tahap 5](../../tests/letter/tahap-5.md)   |
+| 6     | Operasi durable, worker, SSE global, generate DOCX draft, preview dan konfirmasi yang terikat revision/font. Web dapat meminta preview, pindah halaman sambil menunggu, membuka hasil, dan menyatakan sudah memeriksa; belum mendapat nomor resmi.    | `feat: generate letter previews with queued jobs and SSE`      | [Tahap 6](../../tests/letter/tahap-6.md)   |
+| 7     | Penerbitan idempoten, alokasi otomatis/manual, klaim nomor, Word resmi, riwayat dasar, dan dropdown Unduh. Jika viewer layak, menu Word aktif; PDF ditandai belum tersedia sampai tahap 8. Web dapat menerbitkan dan mengunduh Word bernomor resmi.   | `feat: issue letters with atomic numbering and Word downloads` | [Tahap 7](../../tests/letter/tahap-7.md)   |
+| 8     | Selesai: konversi PDF on demand, dedup/retry, EmbedPDF headless serta Cetak PDF. Dropdown Unduh mengaktifkan Word/PDF, dan Lihat/Cetak PDF tersedia pada preview. Web dapat mengunduh PDF tanpa konversi berulang untuk hasil yang sama.              | `feat: add on-demand PDF conversion and viewing`               | [Tahap 8](../../tests/letter/tahap-8.md)   |
+| 9     | Revisi satu draft, alasan, versi historis, pembatalan, pemulihan, pelepasan/penggunaan ulang nomor, dan timeline lengkap. Web dapat menjalankan seluruh siklus Surat serta menelusuri nomor/dokumen historis.                                         | `feat: add letter revisions cancellation and recovery`         | [Tahap 9](../../tests/letter/tahap-9.md)   |
+| 10    | Cleanup/recovery scheduler, konkurensi nyata, deployment health check, regresi integrasi, dan migration penghapusan counter master setelah prasyarat persiapan terpenuhi. Web menggunakan seluruh alur dengan hanya satu sumber counter.              | `feat: finalize letter reliability and retire legacy counters` | [Tahap 10](../../tests/letter/tahap-10.md) |
 
 ### Pemeriksaan otomatis per tahap
 

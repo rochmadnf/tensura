@@ -24,13 +24,13 @@ Hapus popup hasil proses dari SSE. SSE tetap memperbarui status surat secara dia
 
 Gunakan tabel `notifications` yang mengikuti struktur Laravel, dengan UUID notifikasi dan relasi pengguna memakai primary key numerik yang sudah ada. Tambahkan `event_key` dengan constraint unik per penerima untuk mencegah duplikasi.
 
-| Hasil proses | Masuk pusat notifikasi |
-| --- | --- |
-| Surat berhasil diterbitkan | Ya |
-| PDF berhasil tersedia | Ya |
-| Preview berhasil | Tidak; cukup perbarui halaman surat |
-| Preview, penerbitan, atau PDF berstatus gagal/usang | Ya |
-| Antrean, sedang berjalan, dan percobaan ulang otomatis | Tidak |
+| Hasil proses                                           | Masuk pusat notifikasi              |
+| ------------------------------------------------------ | ----------------------------------- |
+| Surat berhasil diterbitkan                             | Ya                                  |
+| PDF berhasil tersedia                                  | Ya                                  |
+| Preview berhasil                                       | Tidak; cukup perbarui halaman surat |
+| Preview, penerbitan, atau PDF berstatus gagal/usang    | Ya                                  |
+| Antrean, sedang berjalan, dan percobaan ulang otomatis | Tidak                               |
 
 - Catat notifikasi pada perubahan status akhir, dalam transaksi yang sama dengan perubahan operasi. Rollback tidak boleh meninggalkan notifikasi.
 - Satu hasil operasi menghasilkan maksimal satu notifikasi per penerima. Pengulangan worker tidak membuat entri baru atau mengembalikan notifikasi yang sudah dibaca menjadi belum dibaca.

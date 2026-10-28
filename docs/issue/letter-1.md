@@ -31,20 +31,20 @@ Saat **“Pilihan lebih dari satu”** diaktifkan, tampilkan bagian **“Cara me
 
 > Gunakan satu baris contoh untuk satu orang. Letakkan semua variabel pada baris yang sama. Baris tersebut akan diulang sesuai jumlah pilihan.
 
-| Nama | NIP | Jabatan |
-|---|---|---|
+| Nama              | NIP              | Jabatan              |
+| ----------------- | ---------------- | -------------------- |
 | `${pemohon_nama}` | `${pemohon_nip}` | `${pemohon_jabatan}` |
 
 ### Panduan vertikal
 
 > Gunakan beberapa baris untuk satu orang. Pasang penanda awal sebelum isi baris pertama dan penanda akhir setelah isi baris terakhir. Seluruh baris dalam blok akan diulang sebagai satu kesatuan.
 
-| Label | Pemisah | Nilai |
-|---|---|---|
-| `${blok:pemohon}`Nama | : | `${pemohon_nama}` |
-| NIP | : | `${pemohon_nip}` |
-| Pangkat/Gol | : | `${pemohon_pangkat}` / `${pemohon_golongan}` |
-| Jabatan | : | `${pemohon_jabatan}${/blok:pemohon}` |
+| Label                 | Pemisah | Nilai                                        |
+| --------------------- | ------- | -------------------------------------------- |
+| `${blok:pemohon}`Nama | :       | `${pemohon_nama}`                            |
+| NIP                   | :       | `${pemohon_nip}`                             |
+| Pangkat/Gol           | :       | `${pemohon_pangkat}` / `${pemohon_golongan}` |
+| Jabatan               | :       | `${pemohon_jabatan}${/blok:pemohon}`         |
 
 ### Ketentuan bantuan
 

@@ -127,16 +127,16 @@ Gunakan database pengujian dengan data sintetis. Untuk setiap skenario, catat ha
 
 ## Hasil verifikasi implementasi
 
-| Pemeriksaan | Hasil |
-| --- | --- |
+| Pemeriksaan                                                                                                                      | Hasil                                                                                                                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `vendor/bin/phpunit tests/Feature/EmployeeImportTest.php tests/Feature/EmployeeStoreTest.php tests/Feature/EmployeeEditTest.php` | Lulus: 199 tes, 858 assertion. Termasuk impor 1.000 pegawai, template unduhan, kalender tanggal Excel 1900/1904, dan gangguan penyimpanan setelah sebagian baris berhasil. |
-| `pnpm run types:check` | Lulus. |
-| `pnpm exec vp lint resources/js/pages/employee/import.tsx resources/js/pages/employee/index.tsx` | Lulus. |
-| `pnpm run build` | Lulus; terdapat peringatan ukuran chunk aplikasi di atas 500 kB. |
-| `vendor/bin/pint --dirty --format agent` | Lulus. |
-| Prettier untuk kedua halaman pegawai yang diubah | Lulus. |
-| Pengujian visual otomatis | Tidak dijalankan sesuai permintaan. |
-| Checklist visual manual versi awal | Selesai diperiksa pengguna secara mandiri. |
+| `pnpm run types:check`                                                                                                           | Lulus.                                                                                                                                                                     |
+| `pnpm exec vp lint resources/js/pages/employee/import.tsx resources/js/pages/employee/index.tsx`                                 | Lulus.                                                                                                                                                                     |
+| `pnpm run build`                                                                                                                 | Lulus; terdapat peringatan ukuran chunk aplikasi di atas 500 kB.                                                                                                           |
+| `vendor/bin/pint --dirty --format agent`                                                                                         | Lulus.                                                                                                                                                                     |
+| Prettier untuk kedua halaman pegawai yang diubah                                                                                 | Lulus.                                                                                                                                                                     |
+| Pengujian visual otomatis                                                                                                        | Tidak dijalankan sesuai permintaan.                                                                                                                                        |
+| Checklist visual manual versi awal                                                                                               | Selesai diperiksa pengguna secara mandiri.                                                                                                                                 |
 
 Versi terpasang: Laravel Excel 4.0.6 dan PhpSpreadsheet 5.10.0. Tidak ada perubahan versi paket lama atau migrasi database.
 
@@ -177,13 +177,13 @@ Checklist lama di atas tetap menjadi catatan pengujian yang telah diselesaikan p
 
 ### Verifikasi nonvisual revisi
 
-| Pemeriksaan | Hasil |
-| --- | --- |
-| PHPUnit: `EmployeeIndexTest`, `EmployeeImportTest`, `EmployeeExportTest` | Lulus: 110 tes, 1.132 assertion. |
-| Tes interaksi `employee-transfer.test.jsx` melalui `vp test run` | Lulus: 9 tes. Tidak menggunakan browser atau screenshot. |
-| TypeScript | Lulus. |
-| Lint file frontend yang terdampak | Lulus. |
-| Build frontend | Lulus; peringatan ukuran chunk aplikasi di atas 500 kB masih ada. |
-| Pint | Lulus. |
-| Pengujian visual otomatis | Tidak dijalankan sesuai permintaan. |
-| Checklist visual revisi | Menunggu pemeriksaan manual pengguna. |
+| Pemeriksaan                                                              | Hasil                                                             |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| PHPUnit: `EmployeeIndexTest`, `EmployeeImportTest`, `EmployeeExportTest` | Lulus: 110 tes, 1.132 assertion.                                  |
+| Tes interaksi `employee-transfer.test.jsx` melalui `vp test run`         | Lulus: 9 tes. Tidak menggunakan browser atau screenshot.          |
+| TypeScript                                                               | Lulus.                                                            |
+| Lint file frontend yang terdampak                                        | Lulus.                                                            |
+| Build frontend                                                           | Lulus; peringatan ukuran chunk aplikasi di atas 500 kB masih ada. |
+| Pint                                                                     | Lulus.                                                            |
+| Pengujian visual otomatis                                                | Tidak dijalankan sesuai permintaan.                               |
+| Checklist visual revisi                                                  | Menunggu pemeriksaan manual pengguna.                             |

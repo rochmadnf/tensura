@@ -40,6 +40,10 @@ export default defineConfig({
     lint: {
         jsPlugins: ['eslint-plugin-unused-imports'],
         ignorePatterns: [
+            '.ai/skills/**',
+            '.agents/**',
+            '.claude/**',
+            '.github/skills/**',
             'vendor/**',
             'node_modules/**',
             'public/**',

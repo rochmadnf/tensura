@@ -18,25 +18,25 @@ Setiap surat memiliki judul/perihal yang wajib diisi operator. Judul digunakan u
 
 **Pilih templat → Isi perihal, data, penandatangan, dan tanggal → Simpan draft → Preview dan konfirmasi pemeriksaan → Terbitkan → Download Word.**
 
-| Tahap | Ketentuan |
-| --- | --- |
-| Draft | Belum mengambil nomor resmi; dapat dilengkapi dan diperiksa |
-| Pemeriksaan | Operator wajib membuka preview terbaru dan mengonfirmasi sudah memeriksa |
-| Terbit | Nomor resmi diberikan setelah pemeriksaan ketersediaan pada saat penerbitan |
-| Revisi | Perubahan disiapkan sebagai draft revisi; versi terbit sebelumnya tetap resmi sampai revisi diterbitkan |
-| Batal | Wajib alasan; surat dan riwayat tetap disimpan, sedangkan nomor boleh digunakan kembali |
-| Pemulihan | Surat tetap Batal selama draft pemulihan disiapkan; kembali Terbit setelah pemeriksaan dan penerbitan pemulihan berhasil |
+| Tahap       | Ketentuan                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Draft       | Belum mengambil nomor resmi; dapat dilengkapi dan diperiksa                                                              |
+| Pemeriksaan | Operator wajib membuka preview terbaru dan mengonfirmasi sudah memeriksa                                                 |
+| Terbit      | Nomor resmi diberikan setelah pemeriksaan ketersediaan pada saat penerbitan                                              |
+| Revisi      | Perubahan disiapkan sebagai draft revisi; versi terbit sebelumnya tetap resmi sampai revisi diterbitkan                  |
+| Batal       | Wajib alasan; surat dan riwayat tetap disimpan, sedangkan nomor boleh digunakan kembali                                  |
+| Pemulihan   | Surat tetap Batal selama draft pemulihan disiapkan; kembali Terbit setelah pemeriksaan dan penerbitan pemulihan berhasil |
 
 Perubahan isi setelah pemeriksaan mewajibkan preview dan konfirmasi ulang. Alur perubahan templat, konflik pengeditan, dan kegagalan pemrosesan mengikuti ketentuan di bawah.
 
 ## 3. Preview dan unduhan
 
-| Aksi | Perilaku |
-| --- | --- |
-| Preview | Diutamakan DOCX langsung di browser, hanya-baca, jika hasil uji kelayakannya diterima pengguna |
-| Cetak | Mencetak dari viewer; draft tetap ditandai DRAFT dan belum bernomor resmi |
-| Lihat/Cetak PDF | Konversi LibreOffice atas permintaan sebagai alternatif pemeriksaan/cetak |
-| Unduh | Setelah terbit, satu dropdown Unduh menyediakan Word (.docx) dan PDF (.pdf), bersyarat kelayakan preview DOCX |
+| Aksi            | Perilaku                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------- |
+| Preview         | Diutamakan DOCX langsung di browser, hanya-baca, jika hasil uji kelayakannya diterima pengguna                |
+| Cetak           | Mencetak dari viewer; draft tetap ditandai DRAFT dan belum bernomor resmi                                     |
+| Lihat/Cetak PDF | Konversi LibreOffice atas permintaan sebagai alternatif pemeriksaan/cetak                                     |
+| Unduh           | Setelah terbit, satu dropdown Unduh menyediakan Word (.docx) dan PDF (.pdf), bersyarat kelayakan preview DOCX |
 
 - Preview draft menampilkan nomor seperti `445/XX.XX/PKM-KMJ/X/2026`, dengan warna teks warning/kuning. Bagian halaman dan urutan belum merupakan nomor resmi; bulan dan tahun mengikuti periode surat.
 - Preview surat terbit menggunakan nomor resminya.
@@ -62,14 +62,14 @@ Perubahan isi setelah pemeriksaan mewajibkan preview dan konfirmasi ulang. Alur 
 
 Contoh nomor resmi: **`445/23.44/PKM-KMJ/X/2026`**.
 
-| Bagian | Makna |
-| --- | --- |
-| `445` | Kode klasifikasi dari master `classification_code`, mengikuti klasifikasi templat |
-| `23` | Nomor halaman, `page_number` |
-| `44` | Nomor urut, `sequence_number` |
-| `PKM-KMJ` | Kode instansi statis |
-| `X` | Bulan dalam angka Romawi |
-| `2026` | Tahun periode penomoran |
+| Bagian    | Makna                                                                             |
+| --------- | --------------------------------------------------------------------------------- |
+| `445`     | Kode klasifikasi dari master `classification_code`, mengikuti klasifikasi templat |
+| `23`      | Nomor halaman, `page_number`                                                      |
+| `44`      | Nomor urut, `sequence_number`                                                     |
+| `PKM-KMJ` | Kode instansi statis                                                              |
+| `X`       | Bulan dalam angka Romawi                                                          |
+| `2026`    | Tahun periode penomoran                                                           |
 
 ### Placeholder sistem
 
@@ -174,14 +174,14 @@ Penyesuaian versi tidak otomatis mengambil ulang nilai pegawai/referensi yang ma
 
 ## 9. Kegagalan generate dan penerbitan
 
-| Kejadian | Perlakuan |
-| --- | --- |
-| Generate Word gagal | Isian draft tetap tersimpan; tampilkan penyebab yang dapat ditindaklanjuti dan aksi Coba Lagi |
-| Render preview draft utama gagal | Draft tetap tersimpan; pemeriksaan dan penerbitan tertahan sampai hasil yang diperiksa tersedia |
-| Konversi PDF alternatif gagal | Dapat dicoba ulang; tidak menghalangi pemeriksaan DOCX yang sah. Jika memilih pemeriksaan melalui PDF, tunggu PDF tersedia |
-| Penerbitan gagal sebelum berhasil | Surat baru tetap draft; nomor tidak dianggap terpakai dan operator dapat mencoba kembali |
-| Word resmi berhasil dibuat dan penerbitan berhasil, tetapi PDF resmi gagal | Surat tetap Terbit, Word dapat diunduh, dan konversi PDF dapat dicoba ulang tanpa nomor baru |
-| Penerbitan berhasil tetapi respons ke operator terputus | Saat dibuka atau dicoba kembali, aplikasi mengembalikan surat yang sudah terbit tanpa penerbitan ganda atau nomor kedua |
+| Kejadian                                                                   | Perlakuan                                                                                                                  |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Generate Word gagal                                                        | Isian draft tetap tersimpan; tampilkan penyebab yang dapat ditindaklanjuti dan aksi Coba Lagi                              |
+| Render preview draft utama gagal                                           | Draft tetap tersimpan; pemeriksaan dan penerbitan tertahan sampai hasil yang diperiksa tersedia                            |
+| Konversi PDF alternatif gagal                                              | Dapat dicoba ulang; tidak menghalangi pemeriksaan DOCX yang sah. Jika memilih pemeriksaan melalui PDF, tunggu PDF tersedia |
+| Penerbitan gagal sebelum berhasil                                          | Surat baru tetap draft; nomor tidak dianggap terpakai dan operator dapat mencoba kembali                                   |
+| Word resmi berhasil dibuat dan penerbitan berhasil, tetapi PDF resmi gagal | Surat tetap Terbit, Word dapat diunduh, dan konversi PDF dapat dicoba ulang tanpa nomor baru                               |
+| Penerbitan berhasil tetapi respons ke operator terputus                    | Saat dibuka atau dicoba kembali, aplikasi mengembalikan surat yang sudah terbit tanpa penerbitan ganda atau nomor kedua    |
 
 - Pada kegagalan revisi, versi resmi sebelumnya tetap tersedia sampai penerbitan revisi berhasil.
 - Pada kegagalan pemulihan sebelum berhasil terbit, surat tetap Batal dan draft pemulihan tetap dapat dilanjutkan.

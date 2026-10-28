@@ -16,9 +16,9 @@ Dokumen ini mencatat rencana Archive tahap awal untuk modul Reference, termasuk 
 
 ## 2. Navigasi
 
-| Pintu masuk | Perilaku |
-| --- | --- |
-| Menu **Archive** di sidebar | Membuka daftar arsip terpusat; tahap awal hanya memuat Reference |
+| Pintu masuk                            | Perilaku                                                           |
+| -------------------------------------- | ------------------------------------------------------------------ |
+| Menu **Archive** di sidebar            | Membuka daftar arsip terpusat; tahap awal hanya memuat Reference   |
 | Tombol **Arsip** pada daftar Reference | Membuka daftar yang sama dengan konteks dan filter modul Reference |
 
 - Kedua pintu masuk menggunakan sumber data yang sama.
@@ -27,10 +27,10 @@ Dokumen ini mencatat rencana Archive tahap awal untuk modul Reference, termasuk 
 
 ## 3. Pengarsipan
 
-| Aksi | Data yang diarsipkan |
-| --- | --- |
+| Aksi       | Data yang diarsipkan                                          |
+| ---------- | ------------------------------------------------------------- |
 | Hapus grup | Grup beserta seluruh item yang masih aktif sebagai satu paket |
-| Hapus item | Satu item mandiri beserta identitas grup asalnya |
+| Hapus item | Satu item mandiri beserta identitas grup asalnya              |
 
 - Simpan data asal, ID, UUID, timestamp asli, waktu pengarsipan, dan pengguna yang menghapus.
 - Bedakan item yang dihapus mandiri dengan item yang ikut dalam paket penghapusan grup.
@@ -45,27 +45,27 @@ Satu baris mewakili paket grup yang dihapus atau item yang dihapus mandiri. Chil
 
 ### Kolom
 
-| Kolom | Isi |
-| --- | --- |
-| **Data** | Nama grup atau konten item yang diarsipkan; dapat diklik untuk membuka detail |
-| **Modul** | Nama modul; hanya tampil pada daftar arsip terpusat |
-| **Jenis** | Grup atau Item |
-| **Induk** | Nama grup asal untuk item; tanda `—` untuk grup |
-| **Item tersisa** | Jumlah children yang masih diarsipkan; tanda `—` untuk item mandiri |
-| **Status induk** | Masih diarsipkan, Aktif, atau Tidak tersedia |
-| **Diarsipkan pada** | Tanggal dan waktu penghapusan |
-| **Diarsipkan oleh** | Nama pengguna yang menghapus |
-| **Aksi** | Menu tindakan per baris |
+| Kolom               | Isi                                                                           |
+| ------------------- | ----------------------------------------------------------------------------- |
+| **Data**            | Nama grup atau konten item yang diarsipkan; dapat diklik untuk membuka detail |
+| **Modul**           | Nama modul; hanya tampil pada daftar arsip terpusat                           |
+| **Jenis**           | Grup atau Item                                                                |
+| **Induk**           | Nama grup asal untuk item; tanda `—` untuk grup                               |
+| **Item tersisa**    | Jumlah children yang masih diarsipkan; tanda `—` untuk item mandiri           |
+| **Status induk**    | Masih diarsipkan, Aktif, atau Tidak tersedia                                  |
+| **Diarsipkan pada** | Tanggal dan waktu penghapusan                                                 |
+| **Diarsipkan oleh** | Nama pengguna yang menghapus                                                  |
+| **Aksi**            | Menu tindakan per baris                                                       |
 
 Status konflik bukan kolom tetap karena kondisi data aktif dapat berubah. Konflik diperiksa pada pratinjau restore.
 
 ### Aksi per baris
 
-| Aksi | Perilaku |
-| --- | --- |
-| **Detail** | Membuka isi arsip, children, dan pilihan restore |
-| **Pulihkan…** | Membuka detail langsung ke bagian pemulihan; pengguna memilih mode lalu melihat pratinjau |
-| **Hapus Permanen…** | Membuka konfirmasi Delete Forever untuk paket atau item pada baris tersebut |
+| Aksi                | Perilaku                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| **Detail**          | Membuka isi arsip, children, dan pilihan restore                                          |
+| **Pulihkan…**       | Membuka detail langsung ke bagian pemulihan; pengguna memilih mode lalu melihat pratinjau |
+| **Hapus Permanen…** | Membuka konfirmasi Delete Forever untuk paket atau item pada baris tersebut               |
 
 ### Kontrol daftar
 
@@ -94,13 +94,13 @@ Alur pemulihan:
 
 ## 6. Lima mode restore
 
-| Mode | Perilaku | Syarat |
-| --- | --- | --- |
-| **1. Induk saja** | Pulihkan grup tanpa children | Identitas dan nama grup tidak konflik |
-| **2. Induk + children** | Pulihkan grup beserta seluruh children yang aman | Konflik grup harus diselesaikan dahulu |
-| **3. Semua children** | Pulihkan seluruh children yang masih diarsipkan | Induk sudah aktif |
-| **4. Satu child** | Pulihkan satu item melalui tombol pada baris | Induk sudah aktif |
-| **5. Children terpilih** | Pulihkan item yang dipilih melalui checkbox | Induk sudah aktif dan minimal satu item dipilih |
+| Mode                     | Perilaku                                         | Syarat                                          |
+| ------------------------ | ------------------------------------------------ | ----------------------------------------------- |
+| **1. Induk saja**        | Pulihkan grup tanpa children                     | Identitas dan nama grup tidak konflik           |
+| **2. Induk + children**  | Pulihkan grup beserta seluruh children yang aman | Konflik grup harus diselesaikan dahulu          |
+| **3. Semua children**    | Pulihkan seluruh children yang masih diarsipkan  | Induk sudah aktif                               |
+| **4. Satu child**        | Pulihkan satu item melalui tombol pada baris     | Induk sudah aktif                               |
+| **5. Children terpilih** | Pulihkan item yang dipilih melalui checkbox      | Induk sudah aktif dan minimal satu item dipilih |
 
 - Mode 3–5 tersedia setelah mode 1 berhasil, atau untuk sisa children setelah mode 2.
 - Penggabungan yang dikonfirmasi secara eksplisit dapat menetapkan grup aktif lain sebagai tujuan children.
@@ -117,12 +117,12 @@ Alur pemulihan:
 
 ## 7. Konflik dan pemulihan sebagian
 
-| Konflik | Perilaku |
-| --- | --- |
-| Nama atau identitas induk bentrok | Tahan paket sampai konflik diselesaikan |
-| Konten child sudah ada dalam grup tujuan | Lewati child tersebut; child lain yang aman tetap dipulihkan |
-| Identitas child bentrok | Tahan child terkait tanpa menimpa data aktif |
-| Grup tujuan item belum aktif | Tahan pemulihan dan tampilkan arahan untuk memulihkan induk dahulu |
+| Konflik                                  | Perilaku                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| Nama atau identitas induk bentrok        | Tahan paket sampai konflik diselesaikan                            |
+| Konten child sudah ada dalam grup tujuan | Lewati child tersebut; child lain yang aman tetap dipulihkan       |
+| Identitas child bentrok                  | Tahan child terkait tanpa menimpa data aktif                       |
+| Grup tujuan item belum aktif             | Tahan pemulihan dan tampilkan arahan untuk memulihkan induk dahulu |
 
 ### Penyelesaian konflik nama grup
 
@@ -141,11 +141,11 @@ Alur pemulihan:
 
 ## 8. Delete Forever
 
-| Aksi | Perilaku |
-| --- | --- |
-| **Hapus paket permanen** | Hapus grup yang masih diarsipkan, metadata paket, dan seluruh children arsip tersisa |
-| **Hapus satu child permanen** | Hapus satu item arsip |
-| **Hapus children terpilih permanen** | Hapus item arsip yang dipilih melalui checkbox |
+| Aksi                                 | Perilaku                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| **Hapus paket permanen**             | Hapus grup yang masih diarsipkan, metadata paket, dan seluruh children arsip tersisa |
+| **Hapus satu child permanen**        | Hapus satu item arsip                                                                |
+| **Hapus children terpilih permanen** | Hapus item arsip yang dipilih melalui checkbox                                       |
 
 - Pengguna wajib mengonfirmasi sebelum eksekusi. Konfirmasi menampilkan nama data, jumlah children terdampak, dan keterangan bahwa data tidak dapat dipulihkan.
 - Delete Forever hanya menghapus data arsip. Induk maupun children yang sudah aktif tetap utuh.
