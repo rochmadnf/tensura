@@ -23,6 +23,7 @@ import type { ArchiveRestoreFlow } from './use-archive-restore';
 import { canConfirmRestore, canPreviewRestore, selectedRecordUuids } from './restore-state';
 import { CandidateList, RestorePreview } from './restore-preview';
 import { TargetGroupPicker } from './target-group-picker';
+import { Alert, AlertDescription } from '@/components/reui/alert';
 
 const modeLabels: Record<ArchiveRestoreMode, string> = {
     parent_only: 'Pulihkan Induk Saja',
@@ -208,9 +209,9 @@ export function RestoreWorkbench({
                         <RenameGroup key={parent.label} parent={parent} flow={flow} />
                     )}
                     {state.notice && (
-                        <p role="alert" className="text-sm">
-                            {state.notice}
-                        </p>
+                        <Alert variant={state.noticeVariant}>
+                            <AlertDescription>{state.notice}</AlertDescription>
+                        </Alert>
                     )}
                     {state.preview && (
                         <>

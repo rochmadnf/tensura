@@ -5,6 +5,7 @@ import { Edit04Icon } from '@hugeicons/core-free-icons';
 import jt from '@/routes/jt';
 
 import { DeleteAction } from './delete-action';
+import { Badge } from '@/components/ui/badge';
 
 export type JobTitleColumns = {
     id: string;
@@ -34,9 +35,9 @@ export const columns = columnHelper.columns([
     columnHelper.accessor('group', {
         header: 'Kelompok',
         cell: ({ cell }) => (
-            <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground tabular-nums ring-1 ring-border ring-inset">
+            <Badge variant="secondary" className="tabular-nums">
                 {cell.getValue().label ?? '—'}
-            </span>
+            </Badge>
         ),
     }),
     columnHelper.display({

@@ -5,6 +5,7 @@ import { Edit04Icon, InfoIcon } from '@hugeicons/core-free-icons';
 import ln from '@/routes/ln';
 
 import { DeleteAction } from './delete-action';
+import { Badge } from '@/components/ui/badge';
 
 export type LetterNumberColumns = {
     id: string;
@@ -38,9 +39,9 @@ export const columns = columnHelper.columns([
     columnHelper.accessor('code', {
         header: 'Kode Klasifikasi',
         cell: ({ cell }) => (
-            <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground tabular-nums ring-1 ring-border ring-inset">
+            <Badge variant="secondary" className="tabular-nums">
                 {cell.getValue()}
-            </span>
+            </Badge>
         ),
     }),
     columnHelper.display({

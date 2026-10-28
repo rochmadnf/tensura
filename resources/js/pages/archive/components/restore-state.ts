@@ -18,6 +18,7 @@ export interface RestoreState {
     activity: 'idle' | 'preview' | 'restore' | 'rename' | 'refresh';
     generation: number;
     notice: string | null;
+    noticeVariant: 'info' | 'destructive';
     result: ArchiveRestoreResult | null;
     renameDirty: boolean;
 }
@@ -34,6 +35,7 @@ export function initialRestoreState(hasParent: boolean, standalone: boolean): Re
         activity: 'idle',
         generation: 0,
         notice: null,
+        noticeVariant: 'info',
         result: null,
         renameDirty: false,
     };
@@ -83,6 +85,7 @@ function invalidate(state: RestoreState): RestoreState {
         activity: 'idle',
         generation: state.generation + 1,
         notice: null,
+        noticeVariant: 'info',
     };
 }
 
@@ -127,6 +130,7 @@ export function restoreReducer(state: RestoreState, action: RestoreAction): Rest
                 confirmationOpen: false,
                 activity: 'preview',
                 notice: action.notice ?? null,
+                noticeVariant: 'info',
                 result: null,
             };
         case 'preview-loaded':
@@ -160,13 +164,14 @@ export function restoreReducer(state: RestoreState, action: RestoreAction): Rest
                 renameDirty: false,
                 activity: 'refresh',
                 notice: 'Nama grup arsip diperbarui. Buat pratinjau baru sebelum memulihkan.',
+                noticeVariant: 'info',
             };
         case 'refreshed':
             return { ...state, activity: 'idle' };
         case 'deleted':
             return { ...invalidate(state), rowSelection: {}, childUuid: null, result: null };
         case 'failed':
-            return { ...invalidate(state), activity: 'idle', notice: action.message };
+            return { ...invalidate(state), activity: 'idle', notice: action.message, noticeVariant: 'destructive' };
     }
 }
 
