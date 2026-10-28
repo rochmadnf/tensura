@@ -34,18 +34,12 @@ class LetterIssuanceState
         if ($draft->revision !== (int) ($data['revision'] ?? $draft->revision) || $data['publication_month'] !== now()->format('Y-m')) {
             throw ValidationException::withMessages(['issuance' => 'Draft atau bulan penerbitan berubah. Muat ulang status dan konfirmasi tanggal/periode lagi.']);
         }
-        $artifact = $letter->artifacts()->where('uuid', $data['artifact'])->whereNull('letter_version_id')->whereIn('kind', ['docx', 'pdf'])->first();
+        $artifact = $letter->artifacts()->where('uuid', $data['artifact'])->whereNull('letter_version_id')->where('kind', 'pdf')->first();
         if ($artifact === null) {
-            throw ValidationException::withMessages(['issuance' => 'Preview yang diperiksa tidak ditemukan. Buka dan periksa preview terbaru.']);
+            throw ValidationException::withMessages(['issuance' => 'PDF yang diperiksa tidak ditemukan. Buka dan konfirmasikan PDF terbaru.']);
         }
-        if ($artifact->kind === 'pdf') {
-            $word = $this->pdfs->assertCurrent($letter, $artifact);
-            $fingerprint = $this->pdfs->evidence($artifact);
-        } else {
-            $this->previews->assertCurrent($letter, $artifact);
-            $word = $artifact;
-            $fingerprint = $this->previews->evidence($artifact);
-        }
+        $word = $this->pdfs->assertCurrent($letter, $artifact);
+        $fingerprint = $this->pdfs->evidence($artifact);
         $check = $artifact->checks()->where('actor_uuid', $actor)->whereNotNull('confirmed_at')->first();
         if (!hash_equals($fingerprint, $data['fingerprint']) || $check === null || !hash_equals($fingerprint, $check->fingerprint)) {
             throw ValidationException::withMessages(['issuance' => 'Anda perlu membuka dan mengonfirmasi pemeriksaan preview terbaru sebelum menerbitkan.']);

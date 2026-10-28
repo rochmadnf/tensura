@@ -237,14 +237,12 @@ export default function LetterShow({
                         <LetterIssueAction
                             letterId={letter.id}
                             revision={draft.revision}
-                            preview={
-                                pdf?.artifact?.confirmed
-                                    ? {
-                                          ...preview,
-                                          artifact: { ...pdf.artifact, expires_at: preview.artifact?.expires_at ?? '' },
-                                      }
-                                    : preview
-                            }
+                            preview={{
+                                ...preview,
+                                artifact: pdf?.artifact
+                                    ? { ...pdf.artifact, expires_at: preview.artifact?.expires_at ?? '' }
+                                    : null,
+                            }}
                             issuance={issuance}
                             disabled={editing || saving || (operation !== null && operation !== 'issue')}
                             onOpenChange={(open) => setOperation(open ? 'issue' : null)}

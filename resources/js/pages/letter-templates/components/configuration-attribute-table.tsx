@@ -118,6 +118,7 @@ function AttributeRowEditor({
                 >
                     <FormActions
                         cancelUrl=""
+                        compact
                         onCancel={props.onClose}
                         processing={form.processing}
                         disabled={props.disabled}

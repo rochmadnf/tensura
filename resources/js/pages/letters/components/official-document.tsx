@@ -2,7 +2,6 @@ import { CancelledDownloadLink } from './cancelled-download-link';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01Icon } from '@hugeicons/core-free-icons';
 import { FormCard } from '@/components/form-card';
-import { DocxPreview } from '@/components/docx-preview';
 import { Button } from '@/components/ui/button';
 import { PdfPreview } from '@/components/pdf-preview';
 import { useLetterPdf } from '@/hooks/use-letter-pdf';
@@ -16,7 +15,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { file, download } from '@/routes/ltr/versions';
+import { download } from '@/routes/ltr/versions';
 import type { LetterOfficial, LetterPdf } from '@/schemas/letter-preview';
 
 export function LetterOfficialDocument({
@@ -44,12 +43,6 @@ export function LetterOfficialDocument({
             <div className="flex flex-col gap-4">
                 <p className="text-sm font-medium break-words">{official.number}</p>
                 <div className="flex flex-wrap gap-2">
-                    <DocxPreview
-                        url={file({ letter: letterId, version: official.id }).url}
-                        maxBytes={official.max_bytes}
-                        fontReport={official.font_report}
-                        title="Preview Surat Terbit"
-                    />
                     {pdf.artifact && (
                         <PdfPreview
                             url={pdfFile({ letter: letterId, artifact: pdf.artifact.id }).url}

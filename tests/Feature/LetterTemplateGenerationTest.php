@@ -19,6 +19,7 @@ use DOMDocument;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use PhpOffice\PhpWord\IOFactory;
@@ -397,6 +398,77 @@ class LetterTemplateGenerationTest extends TestCase
     public static function expansionModes(): array
     {
         return ['table rows' => [true], 'literal text' => [false]];
+    }
+
+    public function test_test_result_offers_private_pdf_preview_and_download_without_changing_docx_or_confirmation(): void
+    {
+        $version = $this->draft();
+        $this->source($version, 'Surat contoh');
+        $this->post($this->url($version), $this->payload($version, []))->assertSessionHasNoErrors();
+        $version->refresh();
+        $original = Storage::disk($version->test_disk)->get($version->test_path);
+        $pdf = "%PDF-1.7\n1 0 obj <</Type /Catalog>> endobj\n%%EOF\n";
+        Process::fake(['*--convert-to*' => function ($process) use ($pdf) {
+            $output = $process->command[array_search('--outdir', $process->command, true) + 1];
+            file_put_contents($output . '/document.pdf', $pdf);
+
+            return Process::result();
+        }]);
+        $url = route('lt.test.download', [$version->template->uuid, $version->uuid, 'test_token' => app(LetterTemplateTestEvidence::class)->token($version), 'format' => 'pdf']);
+        foreach ([false, true] as $download) {
+            $response = $this->get($url . '&download=' . (int) $download)->assertOk()->assertHeader('Content-Type', 'application/pdf')->assertHeader('Cache-Control', 'no-store, private');
+            $path = $response->baseResponse->getFile()->getPathname();
+            try {
+                $this->assertSame($pdf, file_get_contents($path));
+                if ($download) {
+                    $response->assertDownload('hasil-uji-templat-v' . $version->version_number . '.pdf');
+                }
+            } finally {
+                unlink($path);
+            }
+        }
+        $this->assertSame($original, Storage::disk($version->test_disk)->get($version->test_path));
+        $this->assertNull($version->fresh()->visually_confirmed_at);
+        $this->assertSame([], Storage::disk(config('letters.disk'))->allFiles(config('letters.paths.staging')));
+        $this->getJson($url . '&format=invalid')->assertUnprocessable()->assertJsonValidationErrors('format');
+        $version->update(['test_expires_at' => now()->subSecond()]);
+        $this->getJson($url)->assertUnprocessable()->assertJsonValidationErrors('test');
+    }
+
+    public function test_pdf_conversion_failure_keeps_docx_available_and_cleans_temporary_files(): void
+    {
+        $version = $this->draft();
+        $this->source($version, 'Surat contoh');
+        $this->post($this->url($version), $this->payload($version, []))->assertSessionHasNoErrors();
+        $version->refresh();
+        Exceptions::fake();
+        Process::fake(['*--convert-to*' => Process::result(exitCode: 1)]);
+        $args = [$version->template->uuid, $version->uuid, 'test_token' => app(LetterTemplateTestEvidence::class)->token($version)];
+        $this->getJson(route('lt.test.download', [...$args, 'format' => 'pdf']))->assertUnprocessable()->assertJsonValidationErrors('pdf');
+        $this->get(route('lt.test.download', $args))->assertOk()->assertDownload();
+        $this->assertSame([], Storage::disk(config('letters.disk'))->allFiles(config('letters.paths.staging')));
+        $this->assertNull($version->fresh()->visually_confirmed_at);
+    }
+
+    public function test_template_pdf_is_discarded_when_the_test_result_changes_during_conversion(): void
+    {
+        $version = $this->draft();
+        $this->source($version, 'Surat contoh');
+        $this->post($this->url($version), $this->payload($version, []))->assertSessionHasNoErrors();
+        $version->refresh();
+        $token = app(LetterTemplateTestEvidence::class)->token($version);
+        Process::fake(['*--convert-to*' => function ($process) use ($version) {
+            $output = $process->command[array_search('--outdir', $process->command, true) + 1];
+            file_put_contents($output . '/document.pdf', "%PDF-1.7\n1 0 obj <</Type /Catalog>> endobj\n%%EOF\n");
+            $version->update(['test_expires_at' => now()->subSecond()]);
+
+            return Process::result();
+        }]);
+
+        $this->getJson(route('lt.test.download', [$version->template->uuid, $version->uuid, 'test_token' => $token, 'format' => 'pdf']))->assertUnprocessable()->assertJsonValidationErrors('test');
+
+        $this->assertSame([], Storage::disk(config('letters.disk'))->allFiles(config('letters.paths.staging')));
+        $this->assertNull($version->fresh()->visually_confirmed_at);
     }
 
     private function draft(): LetterTemplateVersion

@@ -3,7 +3,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Button } from '@/components/ui/button';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 
-export function CopyPlaceholder({ name }: { name: string }) {
+export function CopyPlaceholder({ name, label }: { name: string; label?: string }) {
     const placeholder = '${' + name + '}';
     async function copy() {
         try {
@@ -23,11 +23,11 @@ export function CopyPlaceholder({ name }: { name: string }) {
                 variant="outline"
                 size="sm"
                 onClick={copy}
-                disabled={!/^[a-z][a-z0-9_]*$/.test(name) || name.length > 100}
-                aria-label={`Salin variabel ${name}`}
+                disabled={!/^(?:\/?blok:)?[a-z][a-z0-9_]*$/.test(name) || name.replace(/^\/?blok:/, '').length > 100}
+                aria-label={label ?? `Salin variabel ${name}`}
             >
                 <HugeiconsIcon icon={Copy01Icon} data-icon="inline-start" aria-hidden="true" />
-                Salin
+                {label ?? 'Salin'}
             </Button>
         </div>
     );

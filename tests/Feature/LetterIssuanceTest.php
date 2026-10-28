@@ -16,6 +16,7 @@ use App\Models\LetterOperation;
 use App\Models\LetterVersion;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\LetterPdfState;
 use App\Services\Letter\LetterPreviewState;
 use App\Services\Letter\RunLetterIssuance;
 use App\Services\Letter\RunLetterPreview;
@@ -33,10 +34,12 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Tests\CreatesPdfArtifact;
 use Tests\TestCase;
 
 class LetterIssuanceTest extends TestCase
 {
+    use CreatesPdfArtifact;
     use LazilyRefreshDatabase;
 
     public function test_issues_atomically_using_only_the_checked_values_and_downloads_the_same_official_word(): void
@@ -281,7 +284,7 @@ class LetterIssuanceTest extends TestCase
         $uuid = $this->requestIssue($letter, $data);
         $this->postJson(route('ltr.issue', $letter->uuid), [...$data, 'revision' => 2])->assertUnprocessable()->assertJsonValidationErrors('idempotency_key');
         $this->actingAs(UserFactory::new()->create());
-        $check = ['revision' => 1, 'fingerprint' => $data['fingerprint'], 'preview_kind' => 'docx', 'confirmed' => true];
+        $check = ['revision' => 1, 'fingerprint' => $data['fingerprint'], 'preview_kind' => 'pdf', 'confirmed' => true];
         $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $data['artifact']]), $check)->assertOk();
         $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $data['artifact']]), $check)->assertOk();
         $this->postJson(route('ltr.issue', $letter->uuid), $data)->assertUnprocessable()->assertJsonValidationErrors('issuance');
@@ -329,6 +332,22 @@ class LetterIssuanceTest extends TestCase
         }
     }
 
+    public function test_legacy_confirmed_docx_check_cannot_authorize_new_issuance(): void
+    {
+        $letter = $this->draft();
+        $data = $this->inspected($letter);
+        $pdf = LetterArtifact::where('uuid', $data['artifact'])->sole();
+        $word = $pdf->sourceArtifact;
+        $fingerprint = app(LetterPreviewState::class)->evidence($word);
+        $word->checks()->create(['actor_uuid' => auth()->user()->uuid, 'actor_name' => auth()->user()->name, 'preview_kind' => 'docx', 'fingerprint' => $fingerprint, 'rendered_at' => now(), 'confirmed_at' => now()]);
+
+        $this->postJson(route('ltr.issue', $letter->uuid), [...$data, 'artifact' => $word->uuid, 'fingerprint' => $fingerprint])->assertUnprocessable()->assertJsonValidationErrors('issuance');
+
+        $this->assertDatabaseCount('letter_versions', 0);
+        $this->assertDatabaseCount('letter_number_assignments', 0);
+        $this->get(route('ltr.previews.file', [$letter->uuid, $word->uuid]))->assertDownload('draft.docx');
+    }
+
     private function draft(): Letter
     {
         Storage::fake('local');
@@ -359,8 +378,9 @@ class LetterIssuanceTest extends TestCase
         $this->renderFake();
         app(RunLetterPreview::class)->run($uuid);
         $artifact = LetterArtifact::where('letter_id', $letter->id)->sole();
-        $fingerprint = app(LetterPreviewState::class)->evidence($artifact);
-        $data = ['revision' => 1, 'fingerprint' => $fingerprint, 'preview_kind' => 'docx', 'confirmed' => true];
+        $artifact = $this->pdfArtifact($artifact);
+        $fingerprint = app(LetterPdfState::class)->evidence($artifact);
+        $data = ['revision' => 1, 'fingerprint' => $fingerprint, 'preview_kind' => 'pdf', 'confirmed' => true];
         $this->postJson(route('ltr.previews.rendered', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
         $this->postJson(route('ltr.previews.confirm', [$letter->uuid, $artifact->uuid]), $data)->assertOk();
 

@@ -25,8 +25,8 @@ export function DocumentFonts({ disabled = false, uploadFor }: { disabled?: bool
                     <DialogHeader>
                         <DialogTitle>{uploadFor ? `Lengkapi font ${uploadFor}` : 'Font tersedia'}</DialogTitle>
                         <DialogDescription>
-                            Font server untuk konversi PDF. Font tambahan berlaku untuk seluruh templat dan dimuat
-                            terpisah pada viewer web. DOCX unduhan tetap memakai pengaturan font aslinya.
+                            Font server digunakan untuk konversi PDF. Font tambahan berlaku untuk seluruh templat. DOCX
+                            unduhan tetap memakai pengaturan font aslinya.
                         </DialogDescription>
                     </DialogHeader>
                     {open && <FontManager />}
@@ -260,12 +260,6 @@ export function DocumentFontWarnings({
                             </li>
                         ))}
                     </ul>
-                    {report.entries.some((font) => font.available && !font.browser_url) && (
-                        <FieldDescription>
-                            Sebagian font sistem hanya tersedia di server. Viewer web memakai font komputer/browser atau
-                            fallback; unggah berkas font yang sama agar dapat dimuat dari aplikasi.
-                        </FieldDescription>
-                    )}
                     {report.limitations?.map((message) => (
                         <FieldDescription key={message}>{message}</FieldDescription>
                     ))}

@@ -1,18 +1,24 @@
 {
-    "agents": ["codex", "copilot", "claude_code"],
+    "agents": [
+        "codex",
+        "copilot",
+        "claude_code"
+    ],
     "cloud": false,
     "guidelines": true,
     "mcp": true,
     "nightwatch": false,
-    "packages": ["maatwebsite/excel"],
+    "packages": [
+        "maatwebsite/excel"
+    ],
     "sail": false,
     "skills": [
         "infer-conventions",
         "laravel-best-practices",
         "testing-best-practices",
         "wayfinder-development",
-        "inertia-react-development",
         "tailwindcss-development",
+        "inertia-react-development",
         "laravel-excel",
         "code-review",
         "codebase-design",
@@ -29,7 +35,6 @@
         "vercel-react-best-practices",
         "shadcn",
         "typescript-advanced-types",
-        "ui-styling",
         "ui-ux-pro-max",
         "writing-guidelines"
     ]

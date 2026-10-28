@@ -124,6 +124,7 @@ export function ConfigurationSlotRow({
                 >
                     <FormActions
                         cancelUrl=""
+                        compact
                         onCancel={onClose}
                         processing={form.processing}
                         disabled={disabled}

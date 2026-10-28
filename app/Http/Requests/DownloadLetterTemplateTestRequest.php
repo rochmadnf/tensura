@@ -14,6 +14,6 @@ class DownloadLetterTemplateTestRequest extends FormRequest
     /** @return array<string, array<string>> */
     public function rules(): array
     {
-        return ['test_token' => ['required', 'string', 'size:64']];
+        return ['test_token' => ['required', 'string', 'size:64'], 'format' => ['sometimes', 'required', 'in:docx,pdf'], 'download' => ['sometimes', 'boolean']];
     }
 }

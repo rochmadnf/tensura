@@ -124,7 +124,7 @@ describe('Per-item configuration editing', () => {
         expect(byType(page, ConfigurationSlotRow)).toHaveLength(0);
         expect(byType(page, FormActions)).toHaveLength(0);
     });
-    it('places the current example download once in the DOCX header beside Edit', () => {
+    it('places horizontal and vertical example downloads in the DOCX header beside Edit', () => {
         const page = LetterTemplateDocumentForm({
             templateId: 'template',
             document: { id: 'version', source: null, state: 'pending', errors: [], placeholders: [] },
@@ -139,7 +139,8 @@ describe('Per-item configuration editing', () => {
         });
         const card = byType(page, FormCard)[0];
         const headerLinks = findAll(card.props.action, (item) => item.props.render?.type === 'a');
-        expect(headerLinks).toHaveLength(1);
+        expect(headerLinks).toHaveLength(2);
+        expect(headerLinks[1].props.render.props.href).toContain('layout=vertical');
         expect(headerLinks[0].props.render.props.href).toContain('/example');
         expect(findAll(page, (item) => item.props.render?.props.href?.includes('/example'))).toHaveLength(0);
     });

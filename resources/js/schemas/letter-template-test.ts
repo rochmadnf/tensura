@@ -16,6 +16,7 @@ export type LetterTemplateTest = {
         max_rows: number;
         expires_hours: number;
         max_output_bytes: number;
+        max_pdf_bytes: number;
     };
     variables: {
         id: string;

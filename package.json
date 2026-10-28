@@ -10,6 +10,7 @@
         "check:fix": "vp check --fix",
         "lint": "vp lint",
         "types:check": "tsc --noEmit",
+        "check:ui": "node scripts/check-ui.mjs",
         "p:format": "prettier --write .",
         "p:check": "prettier --check .",
         "shadcn": "shadcn"

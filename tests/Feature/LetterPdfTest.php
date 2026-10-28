@@ -130,7 +130,6 @@ class LetterPdfTest extends TestCase
     public function test_official_pdf_is_frozen_across_font_and_converter_changes_and_word_bytes_remain_identical(): void
     {
         [$letter, $word] = $this->draft();
-        $this->confirm($letter, $word);
         $this->issue($letter, $word);
         $letter = $letter->fresh();
         $word = $letter->currentVersion->wordArtifact;
@@ -138,7 +137,7 @@ class LetterPdfTest extends TestCase
         $uuid = $this->requestPdf($letter, $word);
         $this->fakeConversion();
         app(RunLetterPdf::class)->run($uuid);
-        $pdf = $letter->artifacts()->where('kind', 'pdf')->sole();
+        $pdf = $letter->artifacts()->where('source_artifact_id', $word->id)->where('kind', 'pdf')->sole();
         $this->assertNull($pdf->expires_at);
         $this->assertSame($word->letter_version_id, $pdf->letter_version_id);
         $this->assertSame($bytes, Storage::disk('local')->get($word->path));
@@ -154,10 +153,9 @@ class LetterPdfTest extends TestCase
         $this->getJson(route('ltr.pdfs.file', [$letter->uuid, $pdf->uuid]))->assertUnprocessable()->assertJsonValidationErrors('pdf');
     }
 
-    public function test_conversion_retries_then_allows_a_fresh_manual_request_without_invalidating_docx_confirmation(): void
+    public function test_conversion_retries_then_allows_a_fresh_manual_request_without_confirming_the_word_source(): void
     {
         [$letter, $word] = $this->draft();
-        $this->confirm($letter, $word);
         $key = (string) Str::uuid();
         $uuid = $this->requestPdf($letter, $word, $key);
         Process::fake(['*--convert-to*' => Process::result(exitCode: 1, errorOutput: '/private/path')]);
@@ -181,7 +179,7 @@ class LetterPdfTest extends TestCase
         $this->fakeConversion();
         app(RunLetterPdf::class)->run($retry);
         $this->assertSame(Status::SUCCEEDED, LetterOperation::query()->where('uuid', $retry)->sole()->status);
-        $this->assertNotNull($word->checks()->sole()->confirmed_at);
+        $this->assertSame(0, $word->checks()->count());
         $this->assertDatabaseCount('letter_number_assignments', 0);
     }
 
@@ -264,10 +262,9 @@ class LetterPdfTest extends TestCase
         $this->get(route('ltr.pdfs.file', [$letter->uuid, $pdf->uuid]))->assertRedirectToRoute('login.index');
     }
 
-    public function test_a_new_draft_pdf_profile_requires_new_examination_without_clearing_the_valid_docx_check(): void
+    public function test_a_new_draft_pdf_profile_requires_new_examination_and_has_no_docx_check(): void
     {
         [$letter, $word] = $this->draft();
-        $this->confirm($letter, $word);
         $first = $this->requestPdf($letter, $word);
         $this->fakeConversion();
         app(RunLetterPdf::class)->run($first);
@@ -282,9 +279,9 @@ class LetterPdfTest extends TestCase
         $this->assertNotSame($old->uuid, $current->uuid);
         $this->assertNotSame($old->font_fingerprint, $current->font_fingerprint);
         $this->assertSame(0, $current->checks()->count());
-        $this->assertNotNull($word->checks()->sole()->confirmed_at);
+        $this->assertSame(0, $word->checks()->count());
         $this->assertSame($second, $this->requestPdf($letter, $word));
-        $this->get(route('ltr.show', $letter->uuid))->assertInertia(fn(AssertableInertia $page) => $page->where('pdf.artifact.id', $current->uuid)->where('pdf.artifact.confirmed', false)->where('preview.artifact.confirmed', true));
+        $this->get(route('ltr.show', $letter->uuid))->assertInertia(fn(AssertableInertia $page) => $page->where('pdf.artifact.id', $current->uuid)->where('pdf.artifact.confirmed', false)->where('preview.artifact.confirmed', false));
         $this->assertDatabaseCount('letter_number_assignments', 0);
     }
 
@@ -332,7 +329,6 @@ class LetterPdfTest extends TestCase
         $fonts = Process::run(['/usr/bin/pdffonts', Storage::disk('local')->path($pdf->path)]);
         $this->assertStringContainsString('LiberationSans', $fonts->output());
         $this->assertSame($original, Storage::disk('local')->get($word->path));
-        $this->confirm($letter, $word);
         $this->issue($letter, $word);
         $official = $letter->fresh()->currentVersion->wordArtifact;
         $uuid = $this->requestPdf($letter->fresh(), $official);
@@ -392,6 +388,17 @@ class LetterPdfTest extends TestCase
 
     private function issue(Letter $letter, LetterArtifact $artifact): void
     {
+        if ($artifact->kind === 'docx') {
+            $pdf = $letter->artifacts()->where('source_artifact_id', $artifact->id)->where('kind', 'pdf')->latest('id')->first();
+            if ($pdf === null) {
+                $uuid = $this->requestPdf($letter, $artifact);
+                $this->fakeConversion();
+                app(RunLetterPdf::class)->run($uuid);
+                $pdf = $letter->artifacts()->where('source_artifact_id', $artifact->id)->where('kind', 'pdf')->latest('id')->firstOrFail();
+            }
+            $artifact = $pdf;
+            $this->confirm($letter, $artifact);
+        }
         $uuid = $this->postJson(route('ltr.issue', $letter->uuid), ['revision' => 1, 'artifact' => $artifact->uuid, 'fingerprint' => $this->checkData($artifact)['fingerprint'], 'publication_month' => '2026-10', 'keep_period' => true, 'confirmed' => true, 'idempotency_key' => (string) Str::uuid()])->assertAccepted()->json('operation.id');
         $this->fakeRenderer();
         app(RunLetterIssuance::class)->run($uuid);

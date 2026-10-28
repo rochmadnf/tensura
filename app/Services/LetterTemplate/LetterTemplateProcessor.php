@@ -43,6 +43,9 @@ class LetterTemplateProcessor extends TemplateProcessor
 
     public function cloneRepeatedRow(string $placeholder, int $count): void
     {
+        if ($this->cloneRepeatedBlock($placeholder, $count)) {
+            return;
+        }
         $position = strpos($this->tempDocumentMainPart, '${' . $placeholder . '}');
         if ($position === false) {
             throw ValidationException::withMessages(['test' => 'Baris templat tidak ditemukan. Validasi ulang DOCX.']);
@@ -56,6 +59,9 @@ class LetterTemplateProcessor extends TemplateProcessor
 
     public function deleteEmptyTableRow(string $placeholder): void
     {
+        if ($this->cloneRepeatedBlock($placeholder, 0)) {
+            return;
+        }
         $this->deleteRow($placeholder);
         $document = new DOMDocument();
         $document->loadXML($this->tempDocumentMainPart, LIBXML_NONET);
@@ -65,6 +71,52 @@ class LetterTemplateProcessor extends TemplateProcessor
             $table->parentNode->removeChild($table);
         }
         $this->tempDocumentMainPart = $document->saveXML();
+    }
+
+    private function cloneRepeatedBlock(string $placeholder, int $count): bool
+    {
+        $parts = $this->renderedParts();
+        $blocks = (new ReadRepeatedLetterBlocks())->read($parts);
+        foreach ($blocks as $name => $block) {
+            if (!in_array($placeholder, $block['placeholders'], true)) {
+                continue;
+            }
+            $document = $parts['word/document.xml'];
+            $rows = $block['rows'];
+            $length = array_sum(array_map(fn(\DOMElement $row): int => strlen($document->saveXML($row)), $rows));
+            if (strlen($this->tempDocumentMainPart) + $length * max(0, $count - 1) > config('letter-templates.zip.max_xml_bytes')) {
+                throw ValidationException::withMessages(['test' => 'Isi blok hasil uji terlalu besar. Kurangi data pilihan.']);
+            }
+            $table = $rows[0]->parentNode;
+            for ($index = 1; $index <= $count; $index++) {
+                foreach ($rows as $position => $row) {
+                    if ($index === $count && $block['separator'] && $position === count($rows) - 1) {
+                        continue;
+                    }
+                    $copy = $row->cloneNode(true);
+                    $xpath = new DOMXPath($document);
+                    $xpath->registerNamespace('w', InspectLetterTemplateDocx::WORD_NAMESPACE);
+                    foreach ($xpath->query('.//w:t', $copy) as $text) {
+                        $value = str_replace(['${blok:' . $name . '}', '${/blok:' . $name . '}'], '', $text->textContent);
+                        $text->textContent = preg_replace_callback('/\$\{([^}]+)\}/u', fn(array $match): string => '${' . $match[1] . '#' . $index . '}', $value);
+                    }
+                    $table->insertBefore($copy, $rows[0]);
+                }
+            }
+            foreach ($rows as $row) {
+                $table->removeChild($row);
+            }
+            $xpath = new DOMXPath($document);
+            $xpath->registerNamespace('w', InspectLetterTemplateDocx::WORD_NAMESPACE);
+            if ($xpath->query('w:tr', $table)->length === 0) {
+                $table->parentNode->removeChild($table);
+            }
+            $this->tempDocumentMainPart = $document->saveXML();
+
+            return true;
+        }
+
+        return false;
     }
 
     /** @param array<string, string> $values */

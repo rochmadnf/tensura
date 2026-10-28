@@ -8,12 +8,14 @@ use App\Http\Requests\DownloadLetterTemplateTestRequest;
 use App\Http\Requests\GenerateLetterTemplateTestRequest;
 use App\Models\MasterData\LetterTemplate;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\LetterTemplate\GenerateLetterTemplatePdf;
 use App\Services\LetterTemplate\GenerateLetterTemplateTest;
 use App\Services\LetterTemplate\LetterTemplateTestEvidence;
 use App\Services\LetterTemplate\RecordLetterTemplateAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LetterTemplateTestController extends Controller
@@ -25,8 +27,18 @@ class LetterTemplateTestController extends Controller
         return redirect()->route('lt.edit', $letterTemplate->uuid);
     }
 
-    public function show(DownloadLetterTemplateTestRequest $request, LetterTemplate $letterTemplate, LetterTemplateVersion $version, LetterTemplateTestEvidence $evidence): StreamedResponse
+    public function show(DownloadLetterTemplateTestRequest $request, LetterTemplate $letterTemplate, LetterTemplateVersion $version, LetterTemplateTestEvidence $evidence, GenerateLetterTemplatePdf $pdf): StreamedResponse|BinaryFileResponse
     {
+        if ($request->validated('format', 'docx') === 'pdf') {
+            $path = $pdf->generate($version, $request->validated('test_token'));
+            $response = $request->boolean('download')
+                ? response()->download($path, 'hasil-uji-templat-v' . $version->version_number . '.pdf')
+                : response()->file($path);
+
+            $response->headers->add(['Content-Type' => 'application/pdf', 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+
+            return $response->deleteFileAfterSend(true);
+        }
         $file = DB::transaction(function () use ($request, $letterTemplate, $version, $evidence): array {
             $version = $letterTemplate->versions()->whereKey($version->id)->sharedLock()->firstOrFail();
             $evidence->assertCurrent($version, $request->validated('test_token'));

@@ -38,12 +38,16 @@ class AboutPageTest extends TestCase
             ->assertOk()->assertInertia(fn(Assert $page) => $page
             ->component('about/index')
             ->where('page.id', 'about')
-            ->where('app.version', '0.2.0')
-            ->has('releases', 2)
-            ->where('releases.0.version', '0.2.0')
-            ->where('releases.0.content_html', fn(string $html): bool => str_contains($html, 'Pusat notifikasi') && str_contains($html, 'Animasi dan suara'))
-            ->where('releases.1.version', '0.1.0')
-            ->where('releases.1.content_html', fn(string $html): bool => str_contains($html, 'Pengelolaan surat') && str_contains($html, 'Aplikasi masih dalam pengembangan awal.')));
+            ->where('app.version', '0.3.1')
+            ->has('releases', 4)
+            ->where('releases.0.version', '0.3.1')
+            ->where('releases.0.content_html', fn(string $html): bool => str_contains($html, 'Pengujian template lebih konsisten'))
+            ->where('releases.1.version', '0.3.0')
+            ->where('releases.1.content_html', fn(string $html): bool => str_contains($html, 'Blok berulang vertikal') && str_contains($html, 'Pemeriksaan melalui PDF'))
+            ->where('releases.2.version', '0.2.0')
+            ->where('releases.2.content_html', fn(string $html): bool => str_contains($html, 'Pusat notifikasi') && str_contains($html, 'Animasi dan suara'))
+            ->where('releases.3.version', '0.1.0')
+            ->where('releases.3.content_html', fn(string $html): bool => str_contains($html, 'Pengelolaan surat') && str_contains($html, 'Aplikasi masih dalam pengembangan awal.')));
     }
 
     public function test_releases_are_sorted_numerically_and_keep_their_identity_independent_of_the_current_version(): void

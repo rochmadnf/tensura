@@ -1,7 +1,6 @@
 import { Children, isValidElement } from 'react';
 import { beforeEach, expect, it, vi } from 'vite-plus/test';
 import { LetterOfficialDocument } from './official-document';
-import { DocxPreview } from '@/components/docx-preview';
 import { PdfPreview } from '@/components/pdf-preview';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 const conversion = vi.hoisted(() => ({ operation: null, working: false, generate: vi.fn(), error: '' }));
@@ -45,9 +44,6 @@ it('offers one download dropdown and requests PDF only when its menu item is sel
     expect(conversion.generate).not.toHaveBeenCalled();
     items[1].props.onClick();
     expect(conversion.generate).toHaveBeenCalledOnce();
-    const preview = tree.find((node) => node.type === DocxPreview);
-    expect(preview.props.draft).not.toBe(true);
-    expect(preview.props.url).toBe('/letters/letter/versions/version/word');
 });
 it('keeps Word available while PDF is being converted', () => {
     conversion.working = true;

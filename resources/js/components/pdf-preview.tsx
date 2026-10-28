@@ -11,6 +11,7 @@ export function PdfPreview({
     onReady,
     onOpenChange,
     footer,
+    title,
 }: {
     url: string;
     maxBytes: number;
@@ -19,6 +20,7 @@ export function PdfPreview({
     onReady?: () => Promise<void>;
     onOpenChange?: (open: boolean) => void;
     footer?: ReactNode;
+    title?: string;
 }) {
     const [open, setOpen] = useState(false);
     function changeOpen(value: boolean) {
@@ -33,7 +35,7 @@ export function PdfPreview({
             <Dialog open={open} onOpenChange={changeOpen}>
                 <DialogContent className="flex h-[90dvh] max-w-[calc(100%-2rem)] flex-col sm:max-w-[calc(100%-4rem)]">
                     <DialogHeader>
-                        <DialogTitle>{draft ? 'Preview PDF Draft' : 'PDF Surat Resmi'}</DialogTitle>
+                        <DialogTitle>{title ?? (draft ? 'Preview PDF Draft' : 'PDF Surat Resmi')}</DialogTitle>
                         <DialogDescription>
                             {draft
                                 ? 'Hanya-baca. Nomor XX.XX dan penanda DRAFT belum merupakan dokumen resmi.'
