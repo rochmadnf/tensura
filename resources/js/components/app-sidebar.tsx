@@ -34,6 +34,7 @@ import jt from '@/routes/jt';
 import empl from '@/routes/empl';
 import { index as archiveIndex } from '@/routes/archives';
 import { NavSecondary } from './nav-secondary';
+import { IconTile } from './reui/icon-tile';
 
 const navigations = {
     navMain: [
@@ -107,8 +108,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton className="data-[slot=sidebar-menu-button]:p-1.5!" render={<a href="#" />}>
-                            <HugeiconsIcon icon={MailboxIcon} strokeWidth={2} className="size-5!" />
+                        <SidebarMenuButton size="lg" render={<a href="#" />}>
+                            <IconTile variant="solid" size="sm">
+                                <HugeiconsIcon icon={MailboxIcon} strokeWidth={2} />
+                            </IconTile>
                             <span className="text-base font-semibold">{app.name}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
