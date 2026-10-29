@@ -6,6 +6,20 @@ Tanggal: 30 Oktober 2026. Contract ID: `letter-inputs-calendar/v1`.
 
 Dokumen ini menetapkan kontrak kerja backend/frontend berdasarkan [proposal](letter-questions-work-calendar-proposal.md). Ini hasil permintaan pengguna untuk membuat kesepakatan agar agent dapat bekerja paralel; bukan laporan implementasi. Default teknis yang sebelumnya terbuka ditetapkan di sini dan dapat diubah hanya melalui prosedur perubahan kontrak pada bagian terakhir. Ketentuan ini tidak menggantikan kewajiban meminta persetujuan komponen/dependensi yang belum disetujui atau persetujuan PR.
 
+## Catatan implementasi backend, 30 Oktober 2026
+
+Contract ID tetap `letter-inputs-calendar/v1`; tidak ada perubahan keputusan bisnis. Lihat [handoff aktual](letter-inputs-calendar-backend-handoff.md) untuk setup, fixture, commit, dan hasil test.
+
+- Semua endpoint JSON pada bagian 6 sudah tersedia. `wc.index` dan wrapper Inertia belum didaftarkan sampai halaman frontend siap.
+- Error umum endpoint baru menambahkan kode `unauthenticated`, `forbidden`, `not_found`, `session_expired`, `rate_limited`, dan `server_error`. Error domain tetap mengikuti kontrak. Route Surat/templat existing mempertahankan pola response existing.
+- Resource editor dan generate uji memakai `is_required`/`is_multiple`; definisi form Surat memakai nama existing `required`/`multiple`. Konfigurasi `radio`, `numeric`, `date_range` tersedia pada masing-masing Resource tersebut.
+- Snapshot memakai `question_results[UUID]={input,config,timezone,result}`. Detail state `missing` memiliki `years:[]` dan tahun yang perlu disiapkan pada `changed_years`. Hasil sah pertanyaan lain tetap disimpan dalam snapshot parsial.
+- Daftar dependency dapat memuat tahun sama dengan work_revision berbeda bila dua pertanyaan dibekukan pada waktu berbeda. Satu dependency usang membuat state draft stale; jangan hanya mengambil revision terakhir tahun itu.
+- Map revisi pada event hasil GET mencakup seluruh tahun event, termasuk tahun di luar period tampilan. Untuk tahun tujuan baru, ambil revision aktual sebelum mengirim mutasi.
+- Format paket pertukaran tetap versi 1 karena parser lama sudah menolak key/enum baru secara ketat. Pembaca baru menerima paket lama; impor tidak menyertakan kalender atau hasil perhitungan.
+- URL sumber helper memakai `https://tanggalans.com/kalender-{year}/`; garis miring penutup mencegah redirect. Pemeriksaan live struktur sumber dilaporkan terpisah dari test fixture.
+- Jenis baru belum dibuka pada `LetterTemplateVariableTypeEnum::options()` sampai editor, form Surat, dan generate uji frontend siap. Backend tidak menunggu frontend untuk verifikasi endpoint.
+
 ## 1. Branch, baseline, dan penanggung jawab
 
 | Peran                                           | Agent                | Branch                            |

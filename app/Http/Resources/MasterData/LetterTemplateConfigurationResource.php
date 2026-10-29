@@ -12,6 +12,7 @@ use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVariableColumn;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Services\LetterTemplate\EmployeeAttributeCatalog;
+use App\Services\LetterTemplate\LetterQuestionConfiguration;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,7 @@ class LetterTemplateConfigurationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $this->resource->loadMissing('variables.radioOptions');
         $slotCount = $this->signerSlots->count();
 
         return [
@@ -38,6 +40,7 @@ class LetterTemplateConfigurationResource extends JsonResource
             'has_configuration' => (bool) $this->configuration_saved,
             'editable' => $this->status === LetterTemplateVersionStatusEnum::DRAFT && $this->first_used_at === null,
             'variables' => $this->variables->map(fn(LetterTemplateVariable $variable): array => [
+                ...app(LetterQuestionConfiguration::class)->read($variable),
                 'id' => $variable->uuid, 'name' => $variable->name, 'label' => $variable->label,
                 'type' => $variable->type->value, 'is_required' => $variable->is_required,
                 'option_source' => $variable->option_source?->value, 'reference_group' => $variable->referenceGroup?->uuid,

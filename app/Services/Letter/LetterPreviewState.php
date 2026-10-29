@@ -19,10 +19,15 @@ class LetterPreviewState
     public function lock(Letter $letter, int $revision, bool $editable = true): array
     {
         LetterTemplate::query()->whereKey($letter->letter_template_id)->sharedLock()->firstOrFail();
+        $candidate = $letter->draft()->first();
+        app(LetterCalendarState::class)->lock($candidate?->snapshot ?? [], $candidate?->form_data['values'] ?? []);
         $letter = Letter::query()->whereKey($letter->id)->lockForUpdate()->firstOrFail();
         $draft = $letter->draft()->lockForUpdate()->first();
         if ($draft === null) {
             throw ValidationException::withMessages(['draft' => 'Draft sudah dibuang. Muat versi terbaru.']);
+        }
+        if ($candidate?->id !== $draft->id || $candidate?->revision !== $draft->revision) {
+            throw ValidationException::withMessages(['revision' => 'Draft berubah saat menunggu. Muat versi terbaru.']);
         }
         if ($editable) {
             $this->state->assertEditable($letter, $draft, $revision);
@@ -34,6 +39,7 @@ class LetterPreviewState
     public function assertReady(Letter $letter, LetterDraft $draft): void
     {
         $this->state->assertEditable($letter, $draft, $draft->revision);
+        app(LetterCalendarState::class)->assertCurrent($draft->snapshot);
         $version = $draft->templateVersion;
         if (!$letter->template->is_active || $letter->template->active_version_id !== $version->id || $version->status !== LetterTemplateVersionStatusEnum::PUBLISHED || !($draft->snapshot['complete'] ?? false)) {
             throw ValidationException::withMessages(['preview' => 'Lengkapi draft dan sesuaikan ke versi templat aktif sebelum memeriksa dokumen.']);

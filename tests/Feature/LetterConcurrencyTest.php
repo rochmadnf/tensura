@@ -11,19 +11,25 @@ use App\Models\Letter;
 use App\Models\LetterArtifact;
 use App\Models\LetterAudit;
 use App\Models\LetterOperation;
+use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Models\WorkCalendarYear;
 use App\Services\Letter\CleanupLetterFiles;
 use App\Services\Letter\LetterPdfState;
 use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\RunLetterIssuance;
 use App\Services\Letter\RunLetterPreview;
 use App\Services\LetterNumber\RetireLetterNumberCounters;
+use App\Services\WorkCalendar\CalendarFailure;
+use App\Services\WorkCalendar\ImportIndonesianHolidays;
+use App\Services\WorkCalendar\ManageWorkCalendar;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -146,7 +152,7 @@ class LetterConcurrencyTest extends TestCase
     {
         $letter = $this->draft();
         $uuid = $this->prepare($letter);
-        $artifact = $letter->artifacts()->sole();
+        $artifact = $letter->artifacts()->where('kind', 'docx')->sole();
         $artifact->update(['expires_at' => now()->subMinute()]);
         $result = $this->whileLocked(
             function () use ($artifact, $uuid): void {
@@ -255,6 +261,117 @@ class LetterConcurrencyTest extends TestCase
         $this->assertDatabaseCount('letter_number_assignments', 1);
         $this->assertSame(1, LetterOperation::where('uuid', $uuid)->sole()->attempts);
         Storage::disk('letter-concurrency')->assertExists($letter->fresh()->currentVersion->wordArtifact->path);
+    }
+
+    public function test_calendar_change_fences_a_waiting_issuance_without_consuming_a_number(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        $this->whileLocked(
+            fn() => app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor),
+            function () use ($uuid): array {
+                app(RunLetterIssuance::class)->run($uuid);
+
+                return ['done' => true];
+            },
+        );
+        $this->assertSame(OperationStatus::STALE, LetterOperation::where('uuid', $uuid)->sole()->status);
+        $this->assertDatabaseCount('letter_versions', 0);
+        $this->assertDatabaseCount('letter_number_assignments', 0);
+    }
+
+    public function test_calendar_write_waits_until_issuance_commits_its_frozen_duration(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        $this->whileLocked(
+            fn() => app(RunLetterIssuance::class)->run($uuid),
+            fn(): array => app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor),
+        );
+        $this->assertSame(LetterStatusEnum::PUBLISHED, $letter->fresh()->status);
+        $this->assertSame('6 (Enam) hari', $letter->fresh()->currentVersion->snapshot['values']['cuti:durasi']);
+        $this->assertDatabaseCount('letter_number_assignments', 1);
+    }
+
+    public function test_competing_calendar_events_reject_the_stale_revision_atomically(): void
+    {
+        $actor = UserFactory::new()->create();
+        WorkCalendarYear::factory()->create(['year' => 2026]);
+        $input = ['title' => 'Libur', 'kind' => 'holiday', 'all_day' => true, 'start_date' => '2026-11-02', 'end_date' => '2026-11-02', 'calendar_revisions' => ['2026' => 1]];
+        $result = $this->whileLocked(
+            fn() => app(ManageWorkCalendar::class)->event($input, $actor),
+            function () use ($input, $actor): array {
+                try {
+                    app(ManageWorkCalendar::class)->event($input, $actor);
+                } catch (CalendarFailure $exception) {
+                    return ['code' => $exception->reason];
+                }
+
+                return ['code' => 'unexpected_success'];
+            },
+        );
+        $this->assertSame('revision_conflict', $result['code']);
+        $this->assertDatabaseCount('calendar_events', 1);
+        $this->assertDatabaseCount('work_calendar_exceptions', 1);
+    }
+
+    public function test_calendar_change_during_render_is_rechecked_before_final_number_claim(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        Process::fake(['*letters:render-preview*' => function ($process) use ($actor) {
+            $exit = Artisan::call('letters:render-preview', ['directory' => $process->command[3]]);
+            app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor);
+
+            return Process::result(exitCode: $exit);
+        }]);
+        app(RunLetterIssuance::class)->run($uuid);
+        $this->assertSame(OperationStatus::STALE, LetterOperation::where('uuid', $uuid)->sole()->status);
+        $this->assertDatabaseCount('letter_versions', 0);
+        $this->assertDatabaseCount('letter_number_assignments', 0);
+    }
+
+    public function test_competing_holiday_apply_requests_commit_the_import_once(): void
+    {
+        $actor = UserFactory::new()->create();
+        WorkCalendarYear::factory()->create(['year' => 2026]);
+        $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $html = '<div class="entry-content">';
+        foreach ($months as $index => $month) {
+            $html .= '<div class="kalender-indo"><span class="kal-title-link">' . $month . ' 2026</span><ul class="kal-libur-list">' . ($index === 0 ? '<li><span class="kal-libur-day">1</span> Tahun Baru</li>' : '') . '</ul></div>';
+        }
+        Http::preventStrayRequests();
+        Http::fake(['tanggalans.com/*' => Http::response($html . '</div>')]);
+        $preview = app(ImportIndonesianHolidays::class)->preview(2026, ['revision' => 1, 'include_collective_leave' => false], $actor);
+        $input = ['preview_id' => $preview['id'], 'preview_token' => $preview['token'], 'selected_ids' => [$preview['items'][0]['id']]];
+        $result = $this->whileLocked(
+            fn() => app(ImportIndonesianHolidays::class)->apply(2026, $input, $actor),
+            fn(): array => app(ImportIndonesianHolidays::class)->apply(2026, $input, $actor),
+        );
+        $this->assertSame(1, $result['created']);
+        $this->assertSame(2, $result['calendar']['revision']);
+        $this->assertDatabaseCount('calendar_events', 1);
+        $this->assertDatabaseCount('work_calendar_exceptions', 1);
+        Http::assertSentCount(1);
+    }
+
+    private function workingRange(Letter $letter): Letter
+    {
+        WorkCalendarYear::factory()->ready()->create(['year' => 2026]);
+        $version = $letter->draft->templateVersion;
+        $variable = LetterTemplateVariable::factory()->create(['version_id' => $version->id, 'name' => 'cuti', 'type' => 8, 'is_required' => true, 'date_range' => ['basis' => 'working_days', 'date_format' => 'd F Y']]);
+        $version->update(['validation_result' => ['valid' => true, 'placeholders' => ['nomor_surat', 'tanggal_surat', 'cuti:durasi', 'cuti:mulai']]]);
+        $doc = new PhpWord();
+        $doc->addSection()->addText('Surat ${nomor_surat} ${tanggal_surat} ${cuti:mulai} ${cuti:durasi}');
+        $disk = Storage::disk($version->source_disk);
+        IOFactory::createWriter($doc, 'Word2007')->save($disk->path($version->source_path));
+        $version->update(['source_sha256' => hash_file('sha256', $disk->path($version->source_path))]);
+        $this->save($letter->fresh(), ['values' => [$variable->uuid => ['start_date' => '2026-11-01', 'end_date' => '2026-11-07']]])->assertSessionHasNoErrors();
+
+        return $letter->fresh();
     }
 
     private function crash(callable $work): void

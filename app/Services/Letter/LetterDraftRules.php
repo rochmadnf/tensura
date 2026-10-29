@@ -8,6 +8,7 @@ use App\Models\MasterData\LetterTemplateVersion;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Validator;
 
 class LetterDraftRules
@@ -45,7 +46,19 @@ class LetterDraftRules
         foreach ($variables as $variable) {
             $path = 'values.' . $variable->uuid;
             $rules[$path] = [$variable->is_required ? 'required' : 'nullable'];
-            if ($variable->is_multiple) {
+            if ($variable->type->value === 8) {
+                $rules[$path][] = 'array:start_date,end_date';
+                $rules[$path . '.start_date'] = [$variable->is_required ? 'required' : 'required_with:' . $path, 'date_format:Y-m-d', 'after_or_equal:1900-01-01', 'before_or_equal:2199-12-31'];
+                $rules[$path . '.end_date'] = [$variable->is_required ? 'required' : 'required_with:' . $path, 'date_format:Y-m-d', 'after_or_equal:' . $path . '.start_date', 'before_or_equal:2199-12-31'];
+            } elseif (in_array($variable->type->value, [5, 6, 7], true)) {
+                $rules[$path][] = function (string $attribute, mixed $value, \Closure $fail) use ($variable): void {
+                    try {
+                        app(ResolveLetterQuestion::class)->resolve($variable, $value);
+                    } catch (ValidationException $exception) {
+                        $fail(collect($exception->errors())->flatten()->first());
+                    }
+                };
+            } elseif ($variable->is_multiple) {
                 $rules[$path] = [...$rules[$path], 'array', 'list', 'max:' . config('letter-templates.test.max_rows')];
                 if ($variable->is_required) {
                     $rules[$path][] = 'min:1';

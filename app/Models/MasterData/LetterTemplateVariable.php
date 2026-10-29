@@ -18,7 +18,7 @@ class LetterTemplateVariable extends Model
     /** @use HasFactory<LetterTemplateVariableFactory> */
     use HasFactory, HasUuids;
 
-    protected $fillable = ['version_id', 'name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple', 'default_text'];
+    protected $fillable = ['version_id', 'name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple', 'default_text', 'radio', 'numeric', 'date_range'];
 
     /** @return list<string> */
     public function uniqueIds(): array
@@ -33,7 +33,7 @@ class LetterTemplateVariable extends Model
             'option_source' => LetterTemplateOptionSourceEnum::class,
             'is_required' => 'boolean',
             'is_multiple' => 'boolean',
-            'sort_order' => 'integer',
+            'sort_order' => 'integer', 'radio' => 'array', 'numeric' => 'array', 'date_range' => 'array',
         ];
     }
 
@@ -45,6 +45,11 @@ class LetterTemplateVariable extends Model
     public function referenceGroup(): BelongsTo
     {
         return $this->belongsTo(ReferenceGroup::class, 'reference_group_id');
+    }
+
+    public function radioOptions(): HasMany
+    {
+        return $this->hasMany(LetterTemplateRadioOption::class, 'variable_id')->orderBy('sort_order')->orderBy('id');
     }
 
     public function columns(): HasMany

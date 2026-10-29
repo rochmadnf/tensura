@@ -10,12 +10,13 @@ class LetterTemplateConfigurationHash
 {
     public function hash(LetterTemplateVersion $version): string
     {
-        $version->loadMissing(['template', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
+        $version->loadMissing(['template', 'variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $data = [
             'letter_date_format' => $version->letter_date_format ?? 'd-m-Y', 'system_fields' => 1,
             'contract' => EmployeeAttributeCatalog::REVISION, 'locale' => config('app.locale'),
             'name' => $version->template->name, 'letter_number_id' => $version->letter_number_id,
             'variables' => $version->variables->map(fn(LetterTemplateVariable $variable): array => [
+                ...($variable->type->value >= 5 ? app(LetterQuestionConfiguration::class)->read($variable) : []),
                 ...$variable->only(['name', 'label', 'type', 'is_required', 'option_source', 'reference_group_id', 'is_multiple', 'default_text']),
                 'employee_attributes' => EmployeeAttributeCatalog::settings($variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all()),
                 'columns' => $variable->columns->map->only(['source_attribute', 'placeholder', 'date_format'])->all(),

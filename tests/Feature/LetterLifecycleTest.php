@@ -10,7 +10,9 @@ use App\Jobs\IssueLetter;
 use App\Models\Letter;
 use App\Models\LetterArtifact;
 use App\Models\LetterOperation;
+use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Models\WorkCalendarYear;
 use App\Services\Letter\LetterPdfState;
 use App\Services\Letter\ManageLetterLifecycle;
 use App\Services\Letter\RunLetterIssuance;
@@ -204,6 +206,53 @@ class LetterLifecycleTest extends TestCase
         $this->assertNull(app(ManageLetterLifecycle::class)->detail($letter->fresh())['number_owner']);
         $this->assertSame(1, $letter->audits()->where('event', 'number.reused')->count());
         $this->assertSame(1, $letter->audits()->where('event', 'number.available')->count());
+    }
+
+    public function test_calendar_refresh_requires_confirmation_and_preserves_official_revision_and_recovery_history(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $this->assertSame('01 November 2026', $letter->draft->snapshot['values']['cuti:mulai']);
+        $this->publish($letter);
+        $base = $letter->fresh()->currentVersion;
+        $this->action($letter->fresh(), 'revise');
+        $letter = $letter->fresh();
+        $this->save($letter, ['reason' => 'Penyesuaian kalender'])->assertSessionHasNoErrors();
+        $this->patchJson(route('wc.years.update', 2026), ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]])->assertOk();
+        $this->save($letter->fresh(), ['subject' => 'Tetap enam hari'])->assertSessionHasNoErrors();
+        $letter = $letter->fresh();
+        $this->assertSame('6 (Enam) hari', $letter->draft->snapshot['values']['cuti:durasi']);
+        $this->postJson(route('ltr.previews.store', $letter->uuid), ['draft_id' => $letter->draft->uuid, 'base_version' => $base->uuid, 'revision' => $letter->draft->revision, 'idempotency_key' => (string) Str::uuid()])->assertUnprocessable()->assertJsonValidationErrors('calendar');
+        $this->postJson(route('wc.years.confirm', 2026), ['revision' => 2])->assertOk();
+        $draft = $letter->draft;
+        $identity = ['draft_id' => $draft->uuid, 'base_version' => $base->uuid, 'revision' => $draft->revision];
+        $plan = $this->getJson(route('ltr.masters.preview', [$letter->uuid, ...$identity]))->assertOk()->json();
+        $this->assertStringContainsString('5 (Lima) hari', json_encode($plan['changes']));
+        $this->post(route('ltr.masters.apply', $letter->uuid), [...$identity, 'confirmed' => true, 'change_token' => $plan['change_token']])->assertSessionHasNoErrors();
+        $this->assertSame('5 (Lima) hari', $letter->fresh()->draft->snapshot['values']['cuti:durasi']);
+        $this->publish($letter->fresh());
+        $this->assertSame('6 (Enam) hari', $base->fresh()->snapshot['values']['cuti:durasi']);
+        $this->action($letter->fresh(), 'cancel', ['reason' => 'Perbaikan']);
+        $this->action($letter->fresh(), 'recover');
+        $this->assertSame('5 (Lima) hari', $letter->fresh()->draft->snapshot['values']['cuti:durasi']);
+        $this->save($letter->fresh(), ['reason' => 'Pulihkan'])->assertSessionHasNoErrors();
+        $this->publish($letter->fresh());
+        $this->assertSame(3, $letter->versions()->count());
+    }
+
+    private function workingRange(Letter $letter): Letter
+    {
+        WorkCalendarYear::factory()->ready()->create(['year' => 2026]);
+        $version = $letter->draft->templateVersion;
+        $variable = LetterTemplateVariable::factory()->create(['version_id' => $version->id, 'name' => 'cuti', 'type' => 8, 'is_required' => true, 'date_range' => ['basis' => 'working_days', 'date_format' => 'd F Y']]);
+        $version->update(['validation_result' => ['valid' => true, 'placeholders' => ['nomor_surat', 'tanggal_surat', 'cuti:durasi', 'cuti:mulai']]]);
+        $doc = new PhpWord();
+        $doc->addSection()->addText('Surat ${nomor_surat} ${tanggal_surat} ${cuti:mulai} ${cuti:durasi}');
+        $disk = Storage::disk($version->source_disk);
+        IOFactory::createWriter($doc, 'Word2007')->save($disk->path($version->source_path));
+        $version->update(['source_sha256' => hash_file('sha256', $disk->path($version->source_path))]);
+        $this->save($letter->fresh(), ['values' => [$variable->uuid => ['start_date' => '2026-11-01', 'end_date' => '2026-11-07']]])->assertSessionHasNoErrors();
+
+        return $letter->fresh();
     }
 
     private function draft(bool $reset = true, ?LetterTemplateVersion $template = null): Letter

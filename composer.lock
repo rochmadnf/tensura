@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b400601e730298ab9091e0250b60bc3b",
+    "content-hash": "d0b21635cb49f326f06d2eb2b5d8d5c2",
     "packages": [
         {
             "name": "brick/math",
@@ -4254,6 +4254,79 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.4"
             },
             "time": "2026-09-16T11:39:30+00:00"
+        },
+        {
+            "name": "riskihajar/terbilang",
+            "version": "2.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/riskihajar/terbilang.git",
+                "reference": "e2b68a00044b9f86907ccb2920c411a3911e7adc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/riskihajar/terbilang/zipball/e2b68a00044b9f86907ccb2920c411a3911e7adc",
+                "reference": "e2b68a00044b9f86907ccb2920c411a3911e7adc",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "larastan/larastan": "^2.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^7.0|^8.0",
+                "orchestra/testbench": "^8.28|^9.5|^10.0|^11.0",
+                "pestphp/pest": "^2.0|^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^2.0|^3.0",
+                "phpstan/extension-installer": "^1.1",
+                "phpstan/phpstan-deprecation-rules": "^1.0",
+                "phpstan/phpstan-phpunit": "^1.0",
+                "phpunit/phpunit": "^10.0|^11.0|^12.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Terbilang": "Riskihajar\\Terbilang\\Facades\\Terbilang"
+                    },
+                    "providers": [
+                        "Riskihajar\\Terbilang\\TerbilangServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Riskihajar\\Terbilang\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rizky Hajar",
+                    "email": "riskihajar@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Number to words conversion support multi language.",
+            "homepage": "https://github.com/riskihajar/terbilang",
+            "keywords": [
+                "date to words",
+                "laravel",
+                "number to roman",
+                "number to words",
+                "riskihajar",
+                "terbilang"
+            ],
+            "support": {
+                "issues": "https://github.com/riskihajar/terbilang/issues",
+                "source": "https://github.com/riskihajar/terbilang/tree/2.1.1"
+            },
+            "time": "2026-02-21T12:35:58+00:00"
         },
         {
             "name": "symfony/clock",

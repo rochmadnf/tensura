@@ -5,6 +5,7 @@ namespace App\Services\LetterTemplate;
 use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\ResolveLetterQuestion;
 use Illuminate\Database\Eloquent\Collection;
 
 class LetterTemplateTestFields
@@ -12,12 +13,12 @@ class LetterTemplateTestFields
     /** @return Collection<int, LetterTemplateVariable> */
     public function variables(LetterTemplateVersion $version): Collection
     {
-        $version->loadMissing('variables.columns');
+        $version->loadMissing(['variables.columns', 'variables.radioOptions']);
         $found = $version->validation_result['placeholders'] ?? [];
 
         return $version->variables->filter(function (LetterTemplateVariable $variable) use ($found): bool {
-            $names = $variable->is_multiple ? $variable->columns->pluck('placeholder')->all()
-                : ($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name]);
+            $names = $variable->type->value >= 5 ? app(ResolveLetterQuestion::class)->names($variable) : ($variable->is_multiple ? $variable->columns->pluck('placeholder')->all()
+                : ($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name]));
 
             return array_intersect($found, $names) !== [];
         })->values();

@@ -14,8 +14,10 @@ use App\Models\MasterData\ReferenceGroup;
 use App\Models\MasterData\ReferenceItem;
 use App\Services\LetterTemplate\EmployeeAttributeCatalog;
 use App\Services\LetterTemplate\FormatEmployeeDate;
+use App\Services\LetterTemplate\LetterQuestionConfiguration;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
 use App\Services\LetterTemplate\ResolveEmployeeAttributes;
+use App\Services\WorkCalendar\CalendarFailure;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +33,7 @@ class ResolveLetterDocumentSnapshot
      * @param  array{employees?: array<string, array{attributes: array, job_title: ?array}>, references?: array<string, array{content: string}>}  $frozenMasters
      * @return array{schema_version: int, locale: string, as_of: string, date_format: string, inputs: array, configuration: array, values: array<string, string>, rows: list<array{anchor: string, count: int}>, masters: array{employees: array, references: array}}
      */
-    public function resolve(LetterTemplateVersion $version, array $data, CarbonImmutable $asOf, string $number, array $frozenMasters = []): array
+    public function resolve(LetterTemplateVersion $version, array $data, CarbonImmutable $asOf, string $number, array $frozenMasters = [], array $frozenQuestions = [], bool $allowMissingCalendar = false): array
     {
         $version->loadMissing(['variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $variables = $this->fields->variables($version);
@@ -44,6 +46,8 @@ class ResolveLetterDocumentSnapshot
 
         $masters = ['employees' => [], 'references' => []];
         $values = [];
+        $questions = [];
+        $missingCalendar = [];
         $totalRows = 0;
         $rows = [];
         foreach ($variables as $variable) {
@@ -61,7 +65,28 @@ class ResolveLetterDocumentSnapshot
                     }
                 }
             }
-            if ($variable->is_multiple) {
+            if (in_array($variable->type->value, [5, 6, 7, 8], true)) {
+                try {
+                    $definition = app(LetterQuestionConfiguration::class)->read($variable);
+                    $previous = $frozenQuestions[$variable->uuid] ?? null;
+                    $resolved = $previous !== null && $previous['input'] === $input && $previous['config'] === $definition ? $previous['result'] : app(ResolveLetterQuestion::class)->resolve($variable, $input);
+                    $questions[$variable->uuid] = ['input' => $input, 'config' => $definition, 'timezone' => config('app.timezone'), 'result' => $resolved];
+                } catch (CalendarFailure $exception) {
+                    if (in_array($exception->reason, ['calendar_year_missing', 'calendar_not_ready'], true)) {
+                        if (!$allowMissingCalendar) {
+                            throw $exception;
+                        }
+                        $missingCalendar[] = $variable->label . ': ' . $exception->getMessage();
+
+                        continue;
+                    }
+                    throw ValidationException::withMessages(['values.' . $variable->uuid => $exception->getMessage()]);
+                } catch (ValidationException $exception) {
+                    throw ValidationException::withMessages(['values.' . $variable->uuid => collect($exception->errors())->flatten()->all()]);
+                }
+                $values = [...$values, ...$resolved['tokens']];
+                $data['values'][$variable->uuid] = $resolved['value'];
+            } elseif ($variable->is_multiple) {
                 $totalRows += count($selected);
                 if ($totalRows > config('letter-templates.test.max_total_rows')) {
                     throw ValidationException::withMessages(['test' => 'Jumlah keseluruhan baris pilihan melewati batas pengujian.']);
@@ -112,17 +137,19 @@ class ResolveLetterDocumentSnapshot
         $values = [...$values, ...$this->system->values($number, $asOf, $version->letter_date_format ?? 'd-m-Y')];
 
         return [
+            'complete' => $missingCalendar === [], 'calendar_missing' => $missingCalendar !== [], 'missing' => $missingCalendar,
             'schema_version' => 1, 'locale' => config('app.locale'), 'as_of' => $asOf->toDateString(),
             'date_format' => $version->letter_date_format ?? 'd-m-Y', 'inputs' => $data,
             'configuration' => [
                 'variables' => $variables->map(fn($variable): array => [
+                    ...($variable->type->value >= 5 ? app(LetterQuestionConfiguration::class)->read($variable) : []),
                     ...$variable->only(['uuid', 'name', 'type', 'option_source', 'reference_group_id', 'default_text', 'is_multiple']),
                     'attributes' => $variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(),
                     'columns' => $variable->columns->map->only(['source_attribute', 'placeholder', 'date_format'])->all(),
                 ])->all(),
                 'signers' => $version->signerSlots->map(fn($slot): array => ['uuid' => $slot->uuid, 'attributes' => $slot->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all()])->all(),
             ],
-            'values' => $values, 'rows' => $rows, 'masters' => $masters,
+            'question_results' => $questions, 'values' => $values, 'rows' => $rows, 'masters' => $masters,
         ];
     }
 
