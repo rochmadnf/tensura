@@ -1,7 +1,9 @@
 {
     "schema_version": 1,
     "license_confirmation": "Pemilik proyek mengonfirmasi izin distribusi repository, server, dan browser pada 2026-10-28.",
-    "missing": ["Cambria · Regular"],
+    "missing": [
+        "Cambria · Regular"
+    ],
     "fonts": [
         {
             "file": "arialbd.ttf",
@@ -68,7 +70,7 @@
             "webfont": true
         },
         {
-            "file": "cambriab.ttf",
+            "file": "cambria-bold.ttf",
             "family": "Cambria",
             "style": "Bold",
             "sha256": "6685c657a7e292083e28f19bbf1a1e90509ce3e1130dbc4ed1c62ba3f9140543",
@@ -76,7 +78,7 @@
             "webfont": true
         },
         {
-            "file": "cambriaz.ttf",
+            "file": "cambria-bold-italic.ttf",
             "family": "Cambria",
             "style": "Bold Italic",
             "sha256": "fa90f376ad37f308a819b341c8185f788d30a1012829278592eab45a41818d1a",
@@ -84,7 +86,7 @@
             "webfont": true
         },
         {
-            "file": "cambriai.ttf",
+            "file": "cambria-italic.ttf",
             "family": "Cambria",
             "style": "Italic",
             "sha256": "6905f0ac846d1ec4326cd14a46cb7379204940aa293b098ee4c1a69723bbd165",
@@ -252,6 +254,14 @@
             "webfont": true
         },
         {
+            "file": "garamond-bold.ttf",
+            "family": "Garamond",
+            "style": "Bold",
+            "sha256": "76487d4b739ffea6d64f86d0e6a19a8d0031dc67ba2fa2518bbc1818351543ff",
+            "server": true,
+            "webfont": false
+        },
+        {
             "file": "georgiab.ttf",
             "family": "Georgia",
             "style": "Bold",
@@ -280,14 +290,6 @@
             "family": "Georgia",
             "style": "Regular",
             "sha256": "38dffcaf1fac89492f7c56c600a14daf36ae42f7c21985cd4134ae113124a58f",
-            "server": true,
-            "webfont": true
-        },
-        {
-            "file": "plus-jakarta-sans-regular.ttf",
-            "family": "Plus Jakarta Sans",
-            "style": "Regular",
-            "sha256": "ca6ef907028d1d1808870967d7b7ddcf68c0f33552d15d7f0c6c7d6ae97e7571",
             "server": true,
             "webfont": true
         },
