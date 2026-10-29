@@ -4,6 +4,7 @@ namespace App\Services\LetterTemplate;
 
 use App\Enums\LetterTemplateOptionSourceEnum;
 use App\Models\MasterData\LetterTemplateVersion;
+use App\Services\Letter\ResolveLetterQuestion;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpWord\Element\Section;
 use PhpOffice\PhpWord\IOFactory;
@@ -20,6 +21,7 @@ class BuildLetterTemplateExample
             'template',
             'letterNumber',
             'variables.referenceGroup',
+            'variables.radioOptions',
             'variables.columns',
             'variables.employeeAttributes',
             'signerSlots.employeeAttributes',
@@ -77,7 +79,11 @@ class BuildLetterTemplateExample
                 if (filled($variable->default_text)) {
                     $section->addText('Teks alternatif: ' . $this->plain($variable->default_text));
                 }
-                if ($variable->is_multiple) {
+                if ($variable->type->value >= 5) {
+                    foreach (app(ResolveLetterQuestion::class)->names($variable) as $token) {
+                        $section->addText('${' . $token . '}');
+                    }
+                } elseif ($variable->is_multiple) {
                     $section->addText($layout === 'vertical'
                         ? 'Unsur satu pilihan disusun ke bawah. Penanda awal dan akhir membatasi seluruh baris satu orang. Baris kosong penutup menjadi pemisah antarorang dan dihapus pada orang terakhir.'
                         : 'Satu pilihan menempati satu baris. Letakkan semua placeholder kelompok pada baris contoh yang sama; penanda blok tidak diperlukan.');

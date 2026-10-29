@@ -32,6 +32,7 @@ class LetterTemplateConfigurationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $this->resource->loadMissing('variables.radioOptions');
         $slotCount = $this->signerSlots->count();
 
         return [

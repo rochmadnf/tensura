@@ -10,6 +10,7 @@ use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\MasterData\ReferenceItem;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
+use Illuminate\Validation\ValidationException;
 
 class AdjustLetterDraftTemplate
 {
@@ -31,6 +32,16 @@ class AdjustLetterDraftTemplate
             $previous = $old->get($name);
             $compatible = $previous !== null && $this->signature($previous) === $this->signature($variable);
             $input = $compatible ? ($stored['values'][$previous->uuid] ?? null) : null;
+            if ($compatible && $variable->type->value === 5 && $input !== null && !$variable->radioOptions->contains('code', $input)) {
+                $compatible = false;
+            }
+            if ($compatible && in_array($variable->type->value, [6, 7], true) && $input !== null) {
+                try {
+                    app(ResolveLetterQuestion::class)->resolve($variable, $input);
+                } catch (ValidationException) {
+                    $compatible = false;
+                }
+            }
             if ($compatible && $variable->type === LetterTemplateVariableTypeEnum::COMBOBOX && !$this->validChoice($variable, $input)) {
                 $compatible = false;
             }
@@ -86,7 +97,7 @@ class AdjustLetterDraftTemplate
 
     private function signature(LetterTemplateVariable $variable): array
     {
-        return [$variable->type->value, $variable->option_source?->value, $variable->reference_group_id, $variable->is_multiple];
+        return [$variable->type->value, $variable->option_source?->value, $variable->reference_group_id, $variable->is_multiple, $variable->type->value === 8 ? ($variable->date_range['basis'] ?? null) : null];
     }
 
     private function validChoice(LetterTemplateVariable $variable, mixed $input): bool

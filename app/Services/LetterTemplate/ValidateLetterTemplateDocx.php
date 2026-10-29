@@ -10,6 +10,7 @@ use App\Models\MasterData\User;
 use App\Services\Letter\DocumentFontRegistry;
 use App\Services\Letter\InspectDocumentFonts;
 use App\Services\Letter\LetterSystemFields;
+use App\Services\Letter\ResolveLetterQuestion;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
@@ -65,7 +66,7 @@ class ValidateLetterTemplateDocx
     public function inspectPlaceholders(string $path, LetterTemplateVersion $version): array
     {
         $parts = $this->inspector->read($path);
-        $version->loadMissing(['variables.columns', 'signerSlots']);
+        $version->loadMissing(['variables.radioOptions', 'variables.columns', 'signerSlots']);
         $known = LetterSystemFields::NAMES;
         $multiple = [];
         foreach ($version->variables as $variable) {
@@ -75,7 +76,7 @@ class ValidateLetterTemplateDocx
                     $multiple[$column->placeholder] = $variable->name;
                 }
             } else {
-                $known = [...$known, ...($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name])];
+                $known = [...$known, ...($variable->type->value >= 5 ? app(ResolveLetterQuestion::class)->names($variable) : ($variable->option_source === LetterTemplateOptionSourceEnum::EMPLOYEE ? array_keys(EmployeeAttributeCatalog::tokens($variable->name)) : [$variable->name]))];
             }
         }
         $blocks = $this->blocks->read($parts, $multiple);
@@ -132,7 +133,7 @@ class ValidateLetterTemplateDocx
                     if (preg_match('/\A\/?blok:[a-z][a-z0-9_]*\z/', $name)) {
                         continue;
                     }
-                    if (strlen($name) > config('letter-templates.placeholders.max_length') || !preg_match('/\A[a-z][a-z0-9_]*\z/D', $name)) {
+                    if (strlen($name) > config('letter-templates.placeholders.max_length') || !preg_match('/\A[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*)?\z/D', $name)) {
                         $errors[] = 'Nama variabel tidak sesuai format. Salin variabel dari Konfigurasi Formulir Surat dan tempelkan kembali ke dokumen.';
                     } elseif (!in_array($name, $known, true)) {
                         $errors[] = "Variabel {$name} belum terdaftar. Tambahkan pada Konfigurasi Formulir Surat atau sesuaikan nama variabel di dokumen.";
@@ -163,6 +164,15 @@ class ValidateLetterTemplateDocx
             $phpWordNames = $processor->getVariables();
         } finally {
             unset($processor);
+        }
+        foreach ($version->variables as $variable) {
+            if ($variable->type->value === 5) {
+                foreach (app(ResolveLetterQuestion::class)->names($variable) as $token) {
+                    if (!in_array($token, $found, true)) {
+                        $errors[] = "Placeholder opsi {$token} belum dipasang pada DOCX.";
+                    }
+                }
+            }
         }
         $names = array_values(array_unique($found));
         if (array_diff($phpWordNames, $names) !== [] || array_diff($names, $phpWordNames) !== []) {

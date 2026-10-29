@@ -35,6 +35,6 @@ class LetterDraftSnapshot
         }
         $validation->validate();
 
-        return ['complete' => true, ...$this->resolver->resolve($version, $data, $date, $this->system->exampleNumber($version->letterNumber->classification_code, $date), $previous['masters'] ?? [])];
+        return ['complete' => true, ...$this->resolver->resolve($version, $data, $date, $this->system->exampleNumber($version->letterNumber->classification_code, $date), $previous['masters'] ?? [], $previous['question_results'] ?? [])];
     }
 }

@@ -7,6 +7,7 @@ use App\Models\MasterData\LetterTemplateSignerSlot;
 use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Services\Letter\DocumentFontRegistry;
+use App\Services\LetterTemplate\LetterQuestionConfiguration;
 use App\Services\LetterTemplate\LetterTemplateConfigurationHash;
 use App\Services\LetterTemplate\LetterTemplateTestEvidence;
 use App\Services\LetterTemplate\LetterTemplateTestFields;
@@ -42,6 +43,7 @@ class LetterTemplateTestResource extends JsonResource
             'fonts' => [...app(DocumentFontRegistry::class)->report($version->test_font_requirements['requirements'] ?? []), 'limitations' => $version->test_font_requirements['limitations'] ?? []],
             'limits' => [...config('letter-templates.test'), 'max_pdf_bytes' => config('letters.pdf.max_bytes')],
             'variables' => $variables->map(fn(LetterTemplateVariable $variable): array => [
+                ...app(LetterQuestionConfiguration::class)->read($variable),
                 'id' => $variable->uuid, 'label' => $variable->label, 'type' => $variable->type->value, 'is_required' => $variable->is_required,
                 'is_multiple' => $variable->is_multiple,
                 'options' => [],

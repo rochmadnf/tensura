@@ -23,10 +23,11 @@ class LetterTemplateExchangeConfiguration
     /** @return ExchangeConfiguration */
     public function export(LetterTemplateVersion $version): array
     {
-        $version->load(['variables.columns', 'variables.employeeAttributes', 'signerSlots.employeeAttributes']);
+        $version->load(['variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.employeeAttributes']);
 
         return [
             'variables' => $version->variables->map(fn(LetterTemplateVariable $variable): array => [
+                ...($variable->type->value >= 5 ? [...app(LetterQuestionConfiguration::class)->read($variable), 'radio' => $variable->radio === null ? null : [...$variable->radio, 'options' => $variable->radioOptions->map(fn($option): array => ['code' => $option->code, 'label' => $option->label])->all()]] : []),
                 'name' => $variable->name, 'label' => $variable->label, 'type' => $variable->type->value,
                 'is_required' => $variable->is_required, 'is_multiple' => $variable->is_multiple,
                 'option_source' => $variable->option_source?->value, 'default_text' => $variable->default_text,
@@ -49,7 +50,7 @@ class LetterTemplateExchangeConfiguration
             'variables.*.columns' => ['present', 'array', 'list', 'max:100'],
         ])->validate();
         foreach ($configuration['variables'] as &$variable) {
-            if (!is_array($variable) || array_diff(array_keys($variable), ['name', 'label', 'type', 'is_required', 'is_multiple', 'option_source', 'default_text', 'columns', 'employee_attributes']) !== []) {
+            if (!is_array($variable) || array_diff(array_keys($variable), ['name', 'label', 'type', 'is_required', 'is_multiple', 'option_source', 'default_text', 'columns', 'employee_attributes', 'radio', 'numeric', 'date_range']) !== []) {
                 $this->reject();
             }
             if (!is_int($variable['type'] ?? null) || !is_bool($variable['is_required'] ?? null) || !is_bool($variable['is_multiple'] ?? null) || (isset($variable['option_source']) && !is_int($variable['option_source']))) {

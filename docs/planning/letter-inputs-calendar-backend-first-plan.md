@@ -2,7 +2,7 @@
 
 Tanggal keputusan: 30 Oktober 2026.
 
-Status: rencana disepakati pengguna, belum implementasi. Pekerjaan saat dokumen ini dibuat hanya menyimpan rencana; bukan instruksi mulai mengubah aplikasi atau menjalankan migration.
+Status: implementasi backend dimulai atas instruksi pengguna. Progres dan bukti verifikasi ada pada bagian 8; frontend menunggu handoff backend.
 
 ## 1. Keputusan terbaru dan urutan baca
 
@@ -135,8 +135,8 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 ## 8. Status awal
 
 - [x] Baseline backend `66b303e`; branch `feat/letter-inputs-calendar-api`, checkout terisolasi `/tmp/tensura-calendar-api`.
-- [x] BE1 selesai: migration/config/opsi radio relasional, validasi, audit/fingerprint, dan paket terbilang 2.1.1. Verifikasi 124 test / 954 assertion dan Pint lulus pada database disposable `tensura_test_calendar_api`. Jenis baru belum ditawarkan oleh daftar opsi UI. BE2–BE5 belum selesai.
-- [ ] BE2 selesai dan terverifikasi.
+- [x] BE1 selesai: migration/config/opsi radio relasional, validasi, audit/fingerprint, dan paket terbilang 2.1.1. Verifikasi 124 test / 954 assertion dan Pint lulus pada database disposable `tensura_test_calendar_api`. Jenis baru belum ditawarkan oleh daftar opsi UI. Tahap berikutnya dicatat terpisah.
+- [x] BE2 selesai: token/resolver/snapshot, render literal, copy/penyesuaian dan pertukaran. Test integrasi pertanyaan dijalankan pada checkpoint ini; jenis baru masih tersembunyi di opsi UI.
 - [ ] BE3 selesai dan terverifikasi.
 - [ ] BE4 selesai dan terverifikasi.
 - [ ] BE5 selesai dan terverifikasi.

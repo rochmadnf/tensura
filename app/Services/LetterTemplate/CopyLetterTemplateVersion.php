@@ -18,14 +18,15 @@ class CopyLetterTemplateVersion
      */
     public function copy(LetterTemplate $template, LetterTemplateVersion $source, array &$createdFiles): LetterTemplateVersion
     {
-        $source->loadMissing(['variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
+        $source->loadMissing(['variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
         $draft = $template->versions()->create([
             'letter_date_format' => $source->letter_date_format,
             'version_number' => $template->versions()->max('version_number') + 1,
             'letter_number_id' => $source->letter_number_id, 'status' => LetterTemplateVersionStatusEnum::DRAFT,
         ]);
         foreach ($source->variables as $variable) {
-            $copy = $draft->variables()->create($variable->only(['name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple', 'default_text']));
+            $copy = $draft->variables()->create($variable->only(['name', 'label', 'type', 'is_required', 'sort_order', 'option_source', 'reference_group_id', 'is_multiple', 'default_text', 'radio', 'numeric', 'date_range']));
+            $copy->radioOptions()->createMany($variable->radioOptions->map->only(['code', 'label', 'sort_order'])->all());
             $copy->columns()->createMany($variable->columns->map->only(['source_attribute', 'placeholder', 'sort_order', 'date_format'])->all());
             $copy->employeeAttributes()->createMany($variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all());
         }

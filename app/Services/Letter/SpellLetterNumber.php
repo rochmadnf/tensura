@@ -10,7 +10,10 @@ class SpellLetterNumber
 {
     public function __construct(private Terbilang $terbilang) {}
 
-    /** @return array{value: string, display: string, words: string} */
+    /**
+     * @param  array{mode: string, scale: int, allow_negative: bool}  $settings
+     * @return array{value: string, display: string, words: string}
+     */
     public function resolve(string $value, array $settings, bool $money = false): array
     {
         if (!preg_match('/\A(-?)([0-9]{1,12})(?:\.([0-9]{1,6}))?\z/D', $value, $parts)) {
