@@ -14,6 +14,8 @@ use Throwable;
 
 class InstallDocumentFont
 {
+    private bool $locked = false;
+
     public function __construct(private DocumentFontRegistry $registry) {}
 
     public function install(UploadedFile $upload, User $actor): DocumentFont
@@ -78,20 +80,34 @@ class InstallDocumentFont
         }
     }
 
-    public function installFile(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont
+    public function synchronized(Closure $operation): mixed
     {
+        if ($this->locked) {
+            return $operation();
+        }
         $disk = Storage::disk(config('document-fonts.disk'));
         $disk->makeDirectory(config('document-fonts.runtime_directory'));
         $lock = fopen($disk->path(config('document-fonts.runtime_directory') . '/install.lock'), 'c');
-        if ($lock === false || !flock($lock, LOCK_EX)) {
-            $this->reject('Instalasi font sedang digunakan. Coba lagi.');
+        if ($lock === false) {
+            $this->reject('Kunci instalasi font belum dapat dibuat.');
         }
         try {
-            return $this->installUnlocked($source, $filename, $actor, $bundled);
+            if (!flock($lock, LOCK_EX)) {
+                $this->reject('Instalasi font sedang digunakan. Coba lagi.');
+            }
+            $this->locked = true;
+
+            return $operation();
         } finally {
+            $this->locked = false;
             flock($lock, LOCK_UN);
             fclose($lock);
         }
+    }
+
+    public function installFile(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont
+    {
+        return $this->synchronized(fn(): DocumentFont => $this->installUnlocked($source, $filename, $actor, $bundled));
     }
 
     private function installUnlocked(string $source, string $filename, ?User $actor = null, bool $bundled = false): DocumentFont

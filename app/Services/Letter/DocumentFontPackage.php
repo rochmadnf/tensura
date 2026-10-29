@@ -3,6 +3,8 @@
 namespace App\Services\Letter;
 
 use App\Models\DocumentFont;
+use Closure;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use RuntimeException;
 
@@ -34,6 +36,28 @@ class DocumentFontPackage
         ])->validate();
 
         return $this->manifest = $manifest;
+    }
+
+    public function synchronized(Closure $operation): mixed
+    {
+        $disk = Storage::disk(config('document-fonts.disk'));
+        $runtime = config('document-fonts.runtime_directory');
+        $disk->makeDirectory($runtime);
+        $directory = config('document-fonts.package_directory');
+        $lock = fopen($disk->path($runtime . '/package-' . hash('sha256', realpath($directory) ?: $directory) . '.lock'), 'c');
+        if ($lock === false) {
+            throw new RuntimeException('Kunci paket font belum dapat dibuat.');
+        }
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB)) {
+                throw new RuntimeException('Paket font sedang diperbarui. Coba lagi.');
+            }
+
+            return $operation();
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
 
     /** @return array<string, mixed>|null */

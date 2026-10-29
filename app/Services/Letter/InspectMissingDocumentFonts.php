@@ -3,8 +3,6 @@
 namespace App\Services\Letter;
 
 use App\Models\MasterData\LetterTemplateVersion;
-use App\Services\LetterTemplate\InspectLetterTemplateDocx;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
@@ -20,7 +18,7 @@ class InspectMissingDocumentFonts
     /** @var list<array{string, string}> */
     private array $incompleteRows = [];
 
-    public function __construct(private DocumentFontPackage $package, private DocumentFontRegistry $registry, private InspectLetterTemplateDocx $documents, private InspectDocumentFonts $fonts) {}
+    public function __construct(private DocumentFontPackage $package, private DocumentFontRegistry $registry, private ReadLetterTemplateFonts $fonts) {}
 
     /**
      * @return array{package: list<array{string, string, string, string}>, templates: list<array{string, string, string, string, string}>, incomplete: list<array{string, string}>, summary: array{package_checked: int, versions_checked: int, versions_skipped: int, versions_with_findings: int}, exit_code: int}
@@ -113,20 +111,7 @@ class InspectMissingDocumentFonts
         $name = $version->template?->name ?? $version->uuid;
         $origin = $name . ' · versi ' . $version->version_number;
         try {
-            if ($version->source_disk === null || $version->source_disk === '') {
-                throw new RuntimeException('Disk DOCX sumber belum tersedia.');
-            }
-            $disk = Storage::disk($version->source_disk);
-            if (!$disk->exists($version->source_path)) {
-                throw new RuntimeException('DOCX sumber tidak ditemukan.');
-            }
-            if ($disk->size($version->source_path) > config('letter-templates.max_upload_kb') * 1024) {
-                throw new RuntimeException('Ukuran DOCX sumber melewati batas konfigurasi aplikasi.');
-            }
-            if ($version->source_sha256 === null || hash_file('sha256', $disk->path($version->source_path)) !== $version->source_sha256) {
-                throw new RuntimeException('Checksum DOCX sumber tidak sesuai atau belum tersedia.');
-            }
-            $usage = $this->fonts->inspect($this->documents->read($disk->path($version->source_path)));
+            $usage = $this->fonts->read($version);
             foreach (array_unique($usage['limitations']) as $limitation) {
                 $this->incompleteRows[] = [$origin, $limitation];
             }

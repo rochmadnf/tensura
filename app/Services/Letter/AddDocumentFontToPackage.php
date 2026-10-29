@@ -15,6 +15,12 @@ class AddDocumentFontToPackage
     /** @return array{file: string, family: string, style: string, sha256: string, server: bool, webfont: bool} */
     public function add(string $source, bool $webfont): array
     {
+        return $this->package->synchronized(fn(): array => $this->addUnlocked($source, $webfont));
+    }
+
+    /** @return array{file: string, family: string, style: string, sha256: string, server: bool, webfont: bool} */
+    private function addUnlocked(string $source, bool $webfont): array
+    {
         $extension = strtolower(pathinfo($source, PATHINFO_EXTENSION));
         if (!is_file($source) || !is_readable($source) || !in_array($extension, ['ttf', 'otf'], true)) {
             throw new RuntimeException('Pilih berkas font TTF/OTF yang dapat dibaca.');
@@ -31,16 +37,8 @@ class AddDocumentFontToPackage
         $runtime = config('document-fonts.runtime_directory');
         $disk->makeDirectory($runtime);
         $directory = config('document-fonts.package_directory');
-        $lockPath = $disk->path($runtime . '/package-' . hash('sha256', realpath($directory) ?: $directory) . '.lock');
-        $lock = fopen($lockPath, 'c');
-        if ($lock === false) {
-            throw new RuntimeException('Kunci paket font belum dapat dibuat.');
-        }
         $snapshot = null;
         try {
-            if (!flock($lock, LOCK_EX | LOCK_NB)) {
-                throw new RuntimeException('Paket font sedang diperbarui. Coba lagi.');
-            }
             $manifest = $this->package->manifest(refresh: true);
             $snapshot = $disk->path($runtime . '/' . Str::uuid() . '.' . $extension);
             if ($this->files->put($snapshot, $contents) !== strlen($contents)) {
@@ -100,8 +98,6 @@ class AddDocumentFontToPackage
             if ($snapshot !== null) {
                 $this->files->delete($snapshot);
             }
-            flock($lock, LOCK_UN);
-            fclose($lock);
         }
     }
 

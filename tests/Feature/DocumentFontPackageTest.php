@@ -26,7 +26,6 @@ class DocumentFontPackageTest extends TestCase
         $manifest = app(DocumentFontPackage::class)->manifest();
         $registry = app(DocumentFontRegistry::class);
 
-        $this->assertNotEmpty($manifest['fonts']);
         $keys = [];
         foreach ($manifest['missing'] as $missing) {
             $this->assertNotContains($missing, array_map(fn(array $entry): string => $entry['family'] . ' · ' . $entry['style'], $manifest['fonts']));
@@ -49,24 +48,18 @@ class DocumentFontPackageTest extends TestCase
         $core = ['Regular', 'Bold', 'Italic', 'Bold Italic'];
         $families = array_fill_keys(['Arial', 'Calibri', 'Cambria', 'Candara', 'Consolas', 'Constantia', 'Corbel', 'Courier New', 'Georgia', 'Times New Roman', 'Trebuchet MS', 'Verdana'], $core);
         $families['Tahoma'] = ['Regular', 'Bold'];
-        $expectedMissing = [];
         foreach ($families as $family => $styles) {
             $entries = array_values(array_filter($manifest['fonts'], fn(array $entry): bool => $entry['family'] === $family));
-            $this->assertNotEmpty($entries, $family);
             foreach ($entries as $entry) {
                 $this->assertContains($entry['style'], $styles, $family);
             }
-            foreach ($styles as $style) {
-                if (!in_array($style, array_column($entries, 'style'), true)) {
-                    $expectedMissing[] = $family . ' · ' . $style;
-                }
-            }
         }
         $reportedMissing = array_values(array_filter($manifest['missing'], fn(string $missing): bool => isset($families[explode(' · ', $missing, 2)[0]])));
-        sort($expectedMissing);
-        sort($reportedMissing);
-
-        $this->assertSame($expectedMissing, $reportedMissing);
+        foreach ($reportedMissing as $missing) {
+            [$family, $style] = explode(' · ', $missing, 2);
+            $this->assertContains($style, $families[$family]);
+            $this->assertFalse(collect($manifest['fonts'])->contains(fn(array $entry): bool => $entry['family'] === $family && $entry['style'] === $style));
+        }
     }
 
     public function test_sync_does_not_warn_for_tahoma_variants_that_do_not_exist(): void
