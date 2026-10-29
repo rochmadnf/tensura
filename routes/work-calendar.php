@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LetterQuestionValueController;
 use App\Http\Controllers\WorkCalendarController;
+use App\Http\Controllers\WorkCalendarHolidayController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function (): void {
@@ -17,5 +18,7 @@ Route::middleware(['auth'])->prefix('work-calendar')->name('wc.')->group(functio
     Route::post('events', [$controller, 'storeEvent'])->name('events.store');
     Route::put('events/{event}', [$controller, 'updateEvent'])->whereUuid('event')->name('events.update');
     Route::delete('events/{event}', [$controller, 'destroyEvent'])->whereUuid('event')->name('events.destroy');
+    Route::post('years/{year}/holidays/preview', [WorkCalendarHolidayController::class, 'preview'])->whereNumber('year')->middleware('throttle:10,1')->name('holidays.preview');
+    Route::post('years/{year}/holidays/apply', [WorkCalendarHolidayController::class, 'apply'])->whereNumber('year')->name('holidays.apply');
     Route::post('count-days', [$controller, 'count'])->name('count');
 });

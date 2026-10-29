@@ -20,6 +20,7 @@ use App\Services\Letter\RunLetterIssuance;
 use App\Services\Letter\RunLetterPreview;
 use App\Services\LetterNumber\RetireLetterNumberCounters;
 use App\Services\WorkCalendar\CalendarFailure;
+use App\Services\WorkCalendar\ImportIndonesianHolidays;
 use App\Services\WorkCalendar\ManageWorkCalendar;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -27,6 +28,7 @@ use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -280,6 +282,30 @@ class LetterConcurrencyTest extends TestCase
         $this->assertSame('revision_conflict', $result['code']);
         $this->assertDatabaseCount('calendar_events', 1);
         $this->assertDatabaseCount('work_calendar_exceptions', 1);
+    }
+
+    public function test_competing_holiday_apply_requests_commit_the_import_once(): void
+    {
+        $actor = UserFactory::new()->create();
+        WorkCalendarYear::factory()->create(['year' => 2026]);
+        $months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        $html = '<div class="entry-content">';
+        foreach ($months as $index => $month) {
+            $html .= '<div class="kalender-indo"><span class="kal-title-link">' . $month . ' 2026</span><ul class="kal-libur-list">' . ($index === 0 ? '<li><span class="kal-libur-day">1</span> Tahun Baru</li>' : '') . '</ul></div>';
+        }
+        Http::preventStrayRequests();
+        Http::fake(['tanggalans.com/*' => Http::response($html . '</div>')]);
+        $preview = app(ImportIndonesianHolidays::class)->preview(2026, ['revision' => 1, 'include_collective_leave' => false], $actor);
+        $input = ['preview_id' => $preview['id'], 'preview_token' => $preview['token'], 'selected_ids' => [$preview['items'][0]['id']]];
+        $result = $this->whileLocked(
+            fn() => app(ImportIndonesianHolidays::class)->apply(2026, $input, $actor),
+            fn(): array => app(ImportIndonesianHolidays::class)->apply(2026, $input, $actor),
+        );
+        $this->assertSame(1, $result['created']);
+        $this->assertSame(2, $result['calendar']['revision']);
+        $this->assertDatabaseCount('calendar_events', 1);
+        $this->assertDatabaseCount('work_calendar_exceptions', 1);
+        Http::assertSentCount(1);
     }
 
     private function crash(callable $work): void

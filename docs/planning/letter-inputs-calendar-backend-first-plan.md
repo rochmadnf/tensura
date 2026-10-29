@@ -138,7 +138,7 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 - [x] BE1 selesai: migration/config/opsi radio relasional, validasi, audit/fingerprint, dan paket terbilang 2.1.1. Verifikasi 124 test / 954 assertion dan Pint lulus pada database disposable `tensura_test_calendar_api`. Jenis baru belum ditawarkan oleh daftar opsi UI. Tahap berikutnya dicatat terpisah.
 - [x] BE2 selesai: token/resolver/snapshot, render literal, copy/penyesuaian dan pertukaran. Lima test integrasi pertanyaan / 49 assertion lulus pada checkpoint ini; jenis baru masih tersembunyi di opsi UI.
 - [x] BE3 selesai: endpoint tahun/kegiatan/count, query empat tampilan, audit, revision/CAS dan mutasi lintas tahun. Lima test endpoint kalender lulus; konflik write antarkoneksi dibuktikan pada suite PostgreSQL khusus.
-- [ ] BE4 selesai dan terverifikasi.
+- [x] BE4 selesai: helper PHP, fixture/cache/parser, preview/apply terikat aktor/tahun/revision, konflik dan idempotensi. Empat test HTTP impor lulus; apply bersamaan dibuktikan pada suite PostgreSQL. Struktur sumber live 2026 diperiksa terpisah.
 - [ ] BE5 selesai dan terverifikasi.
 - [ ] Kontrak aktual dan handoff backend tersedia dengan SHA.
 - [ ] Pengguna melanjutkan fase frontend dan Antigravity mulai dari SHA handoff.
