@@ -132,14 +132,26 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 
 > Backend dikerjakan lebih dahulu. Jangan mulai frontend dari commit proposal lama. Minta/gunakan SHA handoff backend yang sudah diberikan pengguna, lalu buat feat/letter-inputs-calendar-ui dari SHA itu. Baca aturan proyek, rencana backend-dahulu, kontrak yang sudah diperbarui, dan proposal. Inventaris komponen shadcn Base UI; minta persetujuan untuk kekurangannya. Gunakan endpoint nyata dan Wayfinder; jangan mengubah kontrak/backend sepihak. Pengujian visual dilakukan pengguna. Jika menemukan defect backend, laporkan request/response dan reproduksinya untuk perbaikan, bukan membuat backend tandingan.
 
-## 8. Status awal
+## 8. Status implementasi backend
 
 - [x] Baseline backend `66b303e`; branch `feat/letter-inputs-calendar-api`, checkout terisolasi `/tmp/tensura-calendar-api`.
 - [x] BE1 selesai: migration/config/opsi radio relasional, validasi, audit/fingerprint, dan paket terbilang 2.1.1. Verifikasi 124 test / 954 assertion dan Pint lulus pada database disposable `tensura_test_calendar_api`. Jenis baru belum ditawarkan oleh daftar opsi UI. Tahap berikutnya dicatat terpisah.
 - [x] BE2 selesai: token/resolver/snapshot, render literal, copy/penyesuaian dan pertukaran. Lima test integrasi pertanyaan / 49 assertion lulus pada checkpoint ini; jenis baru masih tersembunyi di opsi UI.
 - [x] BE3 selesai: endpoint tahun/kegiatan/count, query empat tampilan, audit, revision/CAS dan mutasi lintas tahun. Lima test endpoint kalender lulus; konflik write antarkoneksi dibuktikan pada suite PostgreSQL khusus.
 - [x] BE4 selesai: helper PHP, fixture/cache/parser, preview/apply terikat aktor/tahun/revision, konflik dan idempotensi. Empat test HTTP impor lulus; apply bersamaan dibuktikan pada suite PostgreSQL. Struktur sumber live 2026 diperiksa terpisah.
-- [ ] BE5 selesai dan terverifikasi.
-- [ ] Kontrak aktual dan handoff backend tersedia dengan SHA.
+- [x] BE5 selesai: rentang inklusif, snapshot parsial/frozen, stale/missing, refresh terkonfirmasi, serta lock dan pemeriksaan ulang sebelum klaim nomor. Regresi akhir 610 test / 5.051 assertion lulus; 38 test khusus dilewati runner reguler. Lima test kalender dijalankan setelahnya dan lulus. Suite konkurensi Surat terpisah: 14 test / 209 assertion lulus.
+- [x] Kontrak aktual dan [handoff backend](letter-inputs-calendar-backend-handoff.md) tersedia; SHA penyerahan dicatat setelah commit penyelesaian.
 - [ ] Pengguna melanjutkan fase frontend dan Antigravity mulai dari SHA handoff.
 - [ ] Frontend dan integrasi akhir selesai; uji visual pengguna tetap dilaporkan terpisah.
+
+## 9. Checkpoint implementasi
+
+| Tahap | Commit            | Versi | Kemampuan web pada tahap backend                                                           |
+| ----- | ----------------- | ----- | ------------------------------------------------------------------------------------------ |
+| BE1   | `0cea613`         | 0.6.1 | Halaman existing tetap; jenis baru belum ditawarkan                                        |
+| BE2   | `0a16afc`         | 0.6.2 | Backend dokumen/resolver siap; editor baru belum tersedia                                  |
+| BE3   | `526f4ed`         | 0.6.3 | Endpoint kalender siap; belum ada menu/halaman kalender                                    |
+| BE4   | `4b03821`         | 0.6.4 | Endpoint preview/apply libur siap; tombol menunggu frontend                                |
+| BE5   | Lihat SHA handoff | 0.6.5 | Backend Surat siap mengunci snapshot kalender; tampilan state/field baru menunggu frontend |
+
+Semua pesan commit menggunakan bahasa Inggris. Pengujian visual belum dilakukan dan tidak dicentang. Perubahan pengguna pada checkout utama tidak disertakan. Fase frontend belum dimulai otomatis.

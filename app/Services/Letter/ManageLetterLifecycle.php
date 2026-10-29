@@ -26,9 +26,13 @@ class ManageLetterLifecycle
         return $this->state->token(['letter' => $letter->uuid, 'status' => $letter->status->value, 'version' => $letter->current_version_id, 'draft' => $draft?->uuid, 'revision' => $draft?->revision, 'cancelled_at' => $letter->cancelled_at?->toIso8601String()]);
     }
 
-    private function lock(Letter $letter): Letter
+    private function lock(Letter $letter, bool $calendar = false): Letter
     {
         LetterTemplate::query()->whereKey($letter->letter_template_id)->sharedLock()->firstOrFail();
+        if ($calendar) {
+            $base = $letter->fresh()->currentVersion;
+            app(LetterCalendarState::class)->lock($base?->snapshot ?? [], $base?->snapshot['inputs']['values'] ?? []);
+        }
         $letter = Letter::query()->whereKey($letter->id)->lockForUpdate()->firstOrFail();
         $letter->setRelation('draft', $letter->draft()->lockForUpdate()->first());
 
@@ -38,7 +42,7 @@ class ManageLetterLifecycle
     public function start(Letter $letter, array $data, User $actor, Kind $kind): void
     {
         DB::transaction(function () use ($letter, $data, $actor, $kind): void {
-            $letter = $this->lock($letter);
+            $letter = $this->lock($letter, true);
             $base = $letter->currentVersion;
             if ($base === null || $base->uuid !== $data['base_version'] || $letter->status !== ($kind === Kind::REVISION ? Status::PUBLISHED : Status::CANCELLED)) {
                 throw ValidationException::withMessages(['lifecycle' => 'Versi resmi atau status surat berubah. Muat ulang halaman.']);

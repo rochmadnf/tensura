@@ -46,7 +46,7 @@ class ManageLetterDraft
     public function update(Letter $letter, array $data, User $actor): void
     {
         DB::transaction(function () use ($letter, $data, $actor): void {
-            [$letter, $draft] = $this->lock($letter, (int) $data['revision']);
+            [$letter, $draft] = $this->lock($letter, (int) $data['revision'], $data['values'] ?? []);
             $this->state->assertIdentity($draft, $data);
             if ($draft->base_version_id !== null) {
                 $base = $draft->baseVersion;
@@ -102,7 +102,7 @@ class ManageLetterDraft
     public function applyChange(Letter $letter, array $data, User $actor, string $kind): void
     {
         DB::transaction(function () use ($letter, $data, $actor, $kind): void {
-            [$letter, $draft] = $this->lock($letter, (int) $data['revision']);
+            [$letter, $draft] = $this->lock($letter, (int) $data['revision'], $data['values'] ?? []);
             $this->state->assertIdentity($draft, $data);
             $plan = $this->plan($letter, $draft, $kind);
             if (!hash_equals($this->changeToken($letter, $draft, $kind, $plan), $data['change_token'])) {
@@ -128,10 +128,12 @@ class ManageLetterDraft
         }, 5);
     }
 
-    /** Lock ordering: template, letter, draft. Template lifecycle operations lock the same parent first. */
-    private function lock(Letter $letter, int $revision): array
+    /** Lock ordering: template, calendar years in ascending order, letter, draft. Template lifecycle operations lock the same parent first. */
+    private function lock(Letter $letter, int $revision, array $inputs = []): array
     {
         LetterTemplate::query()->whereKey($letter->letter_template_id)->sharedLock()->firstOrFail();
+        $candidate = $letter->draft()->first();
+        app(LetterCalendarState::class)->lock($candidate?->snapshot ?? [], [...($candidate?->form_data['values'] ?? []), ...$inputs]);
         $letter = Letter::query()->whereKey($letter->id)->lockForUpdate()->firstOrFail();
         $draft = $letter->draft()->lockForUpdate()->firstOrFail();
         $this->state->assertEditable($letter, $draft, $revision);

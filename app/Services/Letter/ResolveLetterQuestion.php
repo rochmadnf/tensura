@@ -3,6 +3,10 @@
 namespace App\Services\Letter;
 
 use App\Models\MasterData\LetterTemplateVariable;
+use App\Services\LetterTemplate\FormatEmployeeDate;
+use App\Services\WorkCalendar\CountWorkCalendarDays;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class ResolveLetterQuestion
@@ -43,7 +47,15 @@ class ResolveLetterQuestion
             return ['value' => $input, 'display' => $option->label, 'words' => null, 'tokens' => $tokens, 'calendar_state' => null];
         }
         if ($variable->type->value === 8) {
-            throw ValidationException::withMessages(['value' => 'Perhitungan rentang tanggal belum tersedia pada tahap ini.']);
+            Validator::make(['value' => $input], ['value' => 'required|array:start_date,end_date', 'value.start_date' => 'required|date_format:Y-m-d|after_or_equal:1900-01-01|before_or_equal:2199-12-31', 'value.end_date' => 'required|date_format:Y-m-d|after_or_equal:value.start_date|before_or_equal:2199-12-31'])->validate();
+            $result = app(CountWorkCalendarDays::class)->count($input['start_date'], $input['end_date'], $variable->date_range['basis']);
+            $format = $variable->date_range['date_format'];
+            $tokens = [];
+            foreach (['mulai' => app(FormatEmployeeDate::class)->format(CarbonImmutable::parse($input['start_date']), $format), 'akhir' => app(FormatEmployeeDate::class)->format(CarbonImmutable::parse($input['end_date']), $format), 'jumlah_hari' => (string) $result['days'], 'terbilang' => $result['words'], 'durasi' => $result['duration']] as $suffix => $text) {
+                $tokens[$variable->name . ':' . $suffix] = $text;
+            }
+
+            return ['value' => $input, 'display' => $result['duration'], 'words' => $result['words'], 'tokens' => $tokens, 'calendar_state' => $result['calendar_state']];
         }
         if (!is_string($input)) {
             throw ValidationException::withMessages(['value' => 'Nilai angka harus berupa teks desimal.']);

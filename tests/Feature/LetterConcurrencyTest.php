@@ -11,6 +11,7 @@ use App\Models\Letter;
 use App\Models\LetterArtifact;
 use App\Models\LetterAudit;
 use App\Models\LetterOperation;
+use App\Models\MasterData\LetterTemplateVariable;
 use App\Models\MasterData\LetterTemplateVersion;
 use App\Models\WorkCalendarYear;
 use App\Services\Letter\CleanupLetterFiles;
@@ -262,6 +263,38 @@ class LetterConcurrencyTest extends TestCase
         Storage::disk('letter-concurrency')->assertExists($letter->fresh()->currentVersion->wordArtifact->path);
     }
 
+    public function test_calendar_change_fences_a_waiting_issuance_without_consuming_a_number(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        $this->whileLocked(
+            fn() => app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor),
+            function () use ($uuid): array {
+                app(RunLetterIssuance::class)->run($uuid);
+
+                return ['done' => true];
+            },
+        );
+        $this->assertSame(OperationStatus::STALE, LetterOperation::where('uuid', $uuid)->sole()->status);
+        $this->assertDatabaseCount('letter_versions', 0);
+        $this->assertDatabaseCount('letter_number_assignments', 0);
+    }
+
+    public function test_calendar_write_waits_until_issuance_commits_its_frozen_duration(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        $this->whileLocked(
+            fn() => app(RunLetterIssuance::class)->run($uuid),
+            fn(): array => app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor),
+        );
+        $this->assertSame(LetterStatusEnum::PUBLISHED, $letter->fresh()->status);
+        $this->assertSame('6 (Enam) hari', $letter->fresh()->currentVersion->snapshot['values']['cuti:durasi']);
+        $this->assertDatabaseCount('letter_number_assignments', 1);
+    }
+
     public function test_competing_calendar_events_reject_the_stale_revision_atomically(): void
     {
         $actor = UserFactory::new()->create();
@@ -282,6 +315,23 @@ class LetterConcurrencyTest extends TestCase
         $this->assertSame('revision_conflict', $result['code']);
         $this->assertDatabaseCount('calendar_events', 1);
         $this->assertDatabaseCount('work_calendar_exceptions', 1);
+    }
+
+    public function test_calendar_change_during_render_is_rechecked_before_final_number_claim(): void
+    {
+        $letter = $this->workingRange($this->draft());
+        $uuid = $this->prepare($letter);
+        $actor = auth()->user();
+        Process::fake(['*letters:render-preview*' => function ($process) use ($actor) {
+            $exit = Artisan::call('letters:render-preview', ['directory' => $process->command[3]]);
+            app(ManageWorkCalendar::class)->update(2026, ['revision' => 1, 'working_weekdays' => [1, 2, 3, 4, 5]], $actor);
+
+            return Process::result(exitCode: $exit);
+        }]);
+        app(RunLetterIssuance::class)->run($uuid);
+        $this->assertSame(OperationStatus::STALE, LetterOperation::where('uuid', $uuid)->sole()->status);
+        $this->assertDatabaseCount('letter_versions', 0);
+        $this->assertDatabaseCount('letter_number_assignments', 0);
     }
 
     public function test_competing_holiday_apply_requests_commit_the_import_once(): void
@@ -306,6 +356,22 @@ class LetterConcurrencyTest extends TestCase
         $this->assertDatabaseCount('calendar_events', 1);
         $this->assertDatabaseCount('work_calendar_exceptions', 1);
         Http::assertSentCount(1);
+    }
+
+    private function workingRange(Letter $letter): Letter
+    {
+        WorkCalendarYear::factory()->ready()->create(['year' => 2026]);
+        $version = $letter->draft->templateVersion;
+        $variable = LetterTemplateVariable::factory()->create(['version_id' => $version->id, 'name' => 'cuti', 'type' => 8, 'is_required' => true, 'date_range' => ['basis' => 'working_days', 'date_format' => 'd F Y']]);
+        $version->update(['validation_result' => ['valid' => true, 'placeholders' => ['nomor_surat', 'tanggal_surat', 'cuti:durasi', 'cuti:mulai']]]);
+        $doc = new PhpWord();
+        $doc->addSection()->addText('Surat ${nomor_surat} ${tanggal_surat} ${cuti:mulai} ${cuti:durasi}');
+        $disk = Storage::disk($version->source_disk);
+        IOFactory::createWriter($doc, 'Word2007')->save($disk->path($version->source_path));
+        $version->update(['source_sha256' => hash_file('sha256', $disk->path($version->source_path))]);
+        $this->save($letter->fresh(), ['values' => [$variable->uuid => ['start_date' => '2026-11-01', 'end_date' => '2026-11-07']]])->assertSessionHasNoErrors();
+
+        return $letter->fresh();
     }
 
     private function crash(callable $work): void
