@@ -31,7 +31,7 @@ class SaveLetterTemplateConfiguration
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['configuration' => 'Konfigurasi hanya dapat diubah pada draft yang belum digunakan.']);
             }
-            $version->load(['variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
+            $version->load(['variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates', 'signerSlots.employeeAttributes']);
             $this->validateChildOwnership($version, $data);
 
             $groupUuids = collect($data['variables'])->pluck('reference_group')->filter()->unique()->all();
@@ -115,6 +115,7 @@ class SaveLetterTemplateConfiguration
                 $model->uuid = $variable['id'];
             }
             $model->save();
+            app(LetterQuestionConfiguration::class)->save($model, $variable, $old);
             if ($employeeSingle) {
                 $settings = array_key_exists('employee_attributes', $variable) ? ($variable['employee_attributes'] ?? []) : ($sameSource ? $old->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all() : []);
                 $model->employeeAttributes()->createMany($this->attributeSettings($settings));

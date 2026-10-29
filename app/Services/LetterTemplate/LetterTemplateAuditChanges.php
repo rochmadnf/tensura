@@ -13,7 +13,7 @@ class LetterTemplateAuditChanges
     public function snapshot(LetterTemplate $template, LetterTemplateVersion $version): array
     {
         $template = $template->fresh(['activeVersion']);
-        $version = $version->fresh(['letterNumber', 'variables.referenceGroup', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
+        $version = $version->fresh(['letterNumber', 'variables.referenceGroup', 'variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
         $fields = [];
         $put = function (string $key, string $label, mixed $value) use (&$fields): void {
             $fields[$key] = ['label' => $label, 'value' => $value === null || $value === '' ? null : (string) $value];
@@ -41,6 +41,7 @@ class LetterTemplateAuditChanges
                 'group' => ['Grup referensi', $variable->referenceGroup?->name],
                 'multiple' => ['Pilihan lebih dari satu', $variable->is_multiple ? 'Ya' : 'Tidak'],
                 'fallback' => ['Teks Alternatif', $variable->default_text],
+                'question_config' => ['Pengaturan Pertanyaan', $variable->type->value >= 5 ? json_encode(app(LetterQuestionConfiguration::class)->read($variable), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) : null],
             ] as $field => [$title, $value]) {
                 $put("{$key}.{$field}", "{$label} · {$title}", $value);
             }

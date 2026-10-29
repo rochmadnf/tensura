@@ -19,8 +19,9 @@ class LetterTemplateConfigurationRules
         return [
             'variables' => ['present', 'array', 'list'],
             'variables.*' => [
-                'array:id,name,label,type,is_required,option_source,reference_group,is_multiple,columns,default_text,employee_attributes',
+                'array:id,name,label,type,is_required,option_source,reference_group,is_multiple,columns,default_text,employee_attributes,radio,numeric,date_range',
             ],
+            'variables.*.radio' => ['nullable', 'array'], 'variables.*.numeric' => ['nullable', 'array'], 'variables.*.date_range' => ['nullable', 'array'],
             'variables.*.id' => ['bail', 'nullable', 'uuid', 'distinct'],
             'variables.*.name' => $placeholder,
             'variables.*.label' => ['bail', 'required', 'string', 'max:100'],
@@ -56,6 +57,7 @@ class LetterTemplateConfigurationRules
     {
         return [
             'variables' => 'Variabel',
+            'variables.*.radio' => ['nullable', 'array'], 'variables.*.numeric' => ['nullable', 'array'], 'variables.*.date_range' => ['nullable', 'array'],
             'variables.*.id' => 'Identitas Pertanyaan',
             'variables.*.name' => 'Nama Variabel',
             'variables.*.label' => 'Pertanyaan',
@@ -108,6 +110,11 @@ class LetterTemplateConfigurationRules
                 $placeholders = array_fill_keys(LetterSystemFields::NAMES, 'system');
                 foreach ($data['variables'] as $index => $variable) {
                     $path = "variables.{$index}";
+                    foreach (app(LetterQuestionConfiguration::class)->errors($variable) as $field => $messages) {
+                        foreach ($messages as $message) {
+                            $validator->errors()->add($path . '.' . $field, $message);
+                        }
+                    }
                     $this->claimPlaceholder($validator, $placeholders, $variable['name'], "{$path}.name");
                     $isCombo = (int) $variable['type'] === LetterTemplateVariableTypeEnum::COMBOBOX->value;
                     $source = isset($variable['option_source'])

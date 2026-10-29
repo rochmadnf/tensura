@@ -32,7 +32,7 @@ class ChangeLetterTemplateConfigurationItem
             if ($version->status !== LetterTemplateVersionStatusEnum::DRAFT || $version->first_used_at !== null) {
                 throw ValidationException::withMessages(['configuration' => 'Konfigurasi hanya dapat diubah pada draft yang belum digunakan.']);
             }
-            $version->load(['variables.columns', 'variables.employeeAttributes', 'variables.referenceGroup', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
+            $version->load(['variables.radioOptions', 'variables.columns', 'variables.employeeAttributes', 'variables.referenceGroup', 'signerSlots.candidates.employee', 'signerSlots.employeeAttributes']);
             $models = $kind === 'variable' ? $version->variables : $version->signerSlots;
             $owner = $uuid === null ? null : $models->firstWhere('uuid', $uuid);
             abort_if($uuid !== null && $owner === null, 404);
@@ -135,6 +135,7 @@ class ChangeLetterTemplateConfigurationItem
     {
         return [
             'variables' => $version->variables->map(fn(LetterTemplateVariable $variable): array => [
+                ...app(LetterQuestionConfiguration::class)->read($variable),
                 'id' => $variable->uuid, ...$variable->only(['name', 'label', 'is_required', 'is_multiple', 'default_text']),
                 'type' => $variable->type->value, 'option_source' => $variable->option_source?->value, 'reference_group' => $variable->referenceGroup?->uuid,
                 'employee_attributes' => $variable->employeeAttributes->map->only(['source_attribute', 'default_text', 'date_format'])->all(),
@@ -179,6 +180,7 @@ class ChangeLetterTemplateConfigurationItem
             'reference_group_id' => $group?->id, 'sort_order' => $index,
             'default_text' => $item['is_multiple'] || $employeeSingle ? null : (array_key_exists('default_text', $item) ? $item['default_text'] : ($sameSource ? $owner?->default_text : null)),
         ])->save();
+        app(LetterQuestionConfiguration::class)->save($variable, $item, $owner);
         $variable->columns()->delete();
         foreach ($item['columns'] as $position => $column) {
             $model = $variable->columns()->make([...array_intersect_key($column, array_flip(['source_attribute', 'placeholder', 'date_format'])), 'sort_order' => $position]);

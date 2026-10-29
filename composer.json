@@ -15,7 +15,8 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.21",
         "maatwebsite/excel": "^4.0.6",
-        "phpoffice/phpword": "dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e"
+        "phpoffice/phpword": "dev-master#91a1d0d978ff2cff382134c5d0f80c4a03dffd2e",
+        "riskihajar/terbilang": "^2.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

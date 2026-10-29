@@ -134,8 +134,8 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 
 ## 8. Status awal
 
-- [ ] Baseline implementasi backend ditentukan dan branch/checkout disiapkan.
-- [ ] BE1 selesai dan terverifikasi.
+- [x] Baseline backend `66b303e`; branch `feat/letter-inputs-calendar-api`, checkout terisolasi `/tmp/tensura-calendar-api`.
+- [x] BE1 selesai: migration/config/opsi radio relasional, validasi, audit/fingerprint, dan paket terbilang 2.1.1. Verifikasi 124 test / 954 assertion dan Pint lulus pada database disposable `tensura_test_calendar_api`. Jenis baru belum ditawarkan oleh daftar opsi UI. BE2–BE5 belum selesai.
 - [ ] BE2 selesai dan terverifikasi.
 - [ ] BE3 selesai dan terverifikasi.
 - [ ] BE4 selesai dan terverifikasi.
