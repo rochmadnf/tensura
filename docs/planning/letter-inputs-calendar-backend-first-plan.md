@@ -140,18 +140,18 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 - [x] BE3 selesai: endpoint tahun/kegiatan/count, query empat tampilan, audit, revision/CAS dan mutasi lintas tahun. Lima test endpoint kalender lulus; konflik write antarkoneksi dibuktikan pada suite PostgreSQL khusus.
 - [x] BE4 selesai: helper PHP, fixture/cache/parser, preview/apply terikat aktor/tahun/revision, konflik dan idempotensi. Empat test HTTP impor lulus; apply bersamaan dibuktikan pada suite PostgreSQL. Struktur sumber live 2026 diperiksa terpisah.
 - [x] BE5 selesai: rentang inklusif, snapshot parsial/frozen, stale/missing, refresh terkonfirmasi, serta lock dan pemeriksaan ulang sebelum klaim nomor. Regresi akhir 610 test / 5.051 assertion lulus; 38 test khusus dilewati runner reguler. Lima test kalender dijalankan setelahnya dan lulus. Suite konkurensi Surat terpisah: 14 test / 209 assertion lulus.
-- [x] Kontrak aktual dan [handoff backend](letter-inputs-calendar-backend-handoff.md) tersedia; SHA penyerahan dicatat setelah commit penyelesaian.
+- [x] Kontrak aktual dan [handoff backend](letter-inputs-calendar-backend-handoff.md) tersedia; SHA implementasi backend: `eea9a29e9f77c18cffff38ac2b8d9aa7fdc3685a`.
 - [ ] Pengguna melanjutkan fase frontend dan Antigravity mulai dari SHA handoff.
 - [ ] Frontend dan integrasi akhir selesai; uji visual pengguna tetap dilaporkan terpisah.
 
 ## 9. Checkpoint implementasi
 
-| Tahap | Commit            | Versi | Kemampuan web pada tahap backend                                                           |
-| ----- | ----------------- | ----- | ------------------------------------------------------------------------------------------ |
-| BE1   | `0cea613`         | 0.6.1 | Halaman existing tetap; jenis baru belum ditawarkan                                        |
-| BE2   | `0a16afc`         | 0.6.2 | Backend dokumen/resolver siap; editor baru belum tersedia                                  |
-| BE3   | `526f4ed`         | 0.6.3 | Endpoint kalender siap; belum ada menu/halaman kalender                                    |
-| BE4   | `4b03821`         | 0.6.4 | Endpoint preview/apply libur siap; tombol menunggu frontend                                |
-| BE5   | Lihat SHA handoff | 0.6.5 | Backend Surat siap mengunci snapshot kalender; tampilan state/field baru menunggu frontend |
+| Tahap | Commit    | Versi | Kemampuan web pada tahap backend                                                           |
+| ----- | --------- | ----- | ------------------------------------------------------------------------------------------ |
+| BE1   | `0cea613` | 0.6.1 | Halaman existing tetap; jenis baru belum ditawarkan                                        |
+| BE2   | `0a16afc` | 0.6.2 | Backend dokumen/resolver siap; editor baru belum tersedia                                  |
+| BE3   | `526f4ed` | 0.6.3 | Endpoint kalender siap; belum ada menu/halaman kalender                                    |
+| BE4   | `4b03821` | 0.6.4 | Endpoint preview/apply libur siap; tombol menunggu frontend                                |
+| BE5   | `eea9a29` | 0.6.5 | Backend Surat siap mengunci snapshot kalender; tampilan state/field baru menunggu frontend |
 
 Semua pesan commit menggunakan bahasa Inggris. Pengujian visual belum dilakukan dan tidak dicentang. Perubahan pengguna pada checkout utama tidak disertakan. Fase frontend belum dimulai otomatis.

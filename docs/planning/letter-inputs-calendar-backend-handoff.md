@@ -8,7 +8,7 @@ Backend dikerjakan dahulu, mengikuti keputusan pengguna pada 30 Oktober 2026. Fr
 - Branch backend: `feat/letter-inputs-calendar-api`.
 - Checkout implementasi: `/tmp/tensura-calendar-api`. Checkout utama dan perubahan pengguna di sana dipertahankan.
 - Versi setelah lima tahap backend: `0.6.5`. Fitur lengkap belum dinyatakan selesai; kenaikan minor menunggu frontend dan integrasi selesai.
-- Parent frontend harus berasal dari **HEAD backend yang diserahkan**, bukan commit proposal lama. SHA final dicatat pada bagian hasil penyerahan di bawah.
+- Parent frontend harus berasal dari **HEAD backend yang diserahkan**, bukan commit proposal lama. Commit implementasi backend yang menjadi baseline frontend: `eea9a29e9f77c18cffff38ac2b8d9aa7fdc3685a`. Pembaruan setelah commit ini hanya melengkapi catatan penyerahan.
 - Branch frontend: `feat/letter-inputs-calendar-ui`. Backend tidak mengirim penugasan atau pesan ke Antigravity secara otomatis.
 
 ## Yang sudah tersedia
@@ -155,6 +155,6 @@ vendor/bin/phpunit -c phpunit.letters.xml
 
 Suite tersebut menjalankan migration fresh pada database test yang namanya dibatasi bootstrap. Jangan memakai kredensial/database aplikasi. Suite reguler melewati test konkurensi khusus; skip tersebut tidak dihitung sebagai lulus. Suite lifecycle konkurensi dijalankan terpisah, seluruh 14 test/209 assertion lulus. Suite konkurensi lain existing yang dilewati runner reguler tidak diklaim telah diverifikasi ulang.
 
-Regresi akhir: 610 test / 5.051 assertion lulus, dengan 38 test khusus dilewati. Setelah penambahan test tampilan/filter, lima test kalender / 75 assertion dijalankan dan lulus. Verifikasi akhir rentang dan siklus Surat: 14 test / 250 assertion lulus. SHA handoff dicatat setelah commit akhir. Pint, format dokumen, route list, serta diff whitespace juga diperiksa. Tidak ada pengujian visual/browser atau Windows pada pekerjaan backend ini.
+Regresi akhir: 610 test / 5.051 assertion lulus, dengan 38 test khusus dilewati. Setelah penambahan test tampilan/filter, lima test kalender / 75 assertion dijalankan dan lulus. Verifikasi akhir rentang dan siklus Surat: 14 test / 250 assertion lulus. SHA implementasi backend: `eea9a29e9f77c18cffff38ac2b8d9aa7fdc3685a`. Gunakan commit ini sebagai baseline frontend; tip branch juga memuat pembaruan catatan penyerahan tanpa perubahan kode aplikasi. Pint, format dokumen, route list, serta diff whitespace juga diperiksa. Tidak ada pengujian visual/browser atau Windows pada pekerjaan backend ini.
 
 Composer audit menemukan advisory existing pada `symfony/mime`; paket itu tidak ditambahkan atau diperbarui dalam fitur ini. Dependensi di luar scope tidak diubah.
