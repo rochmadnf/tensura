@@ -4,7 +4,7 @@ Tanggal rekapan: 30 Oktober 2026.
 
 Status: proposal dan handoff lintas agent. Dokumen ini menyimpan keputusan percakapan; bukan laporan bahwa fitur sudah diimplementasikan atau seluruh kontrak teknis sudah final. Periksa repository terbaru sebelum bekerja. Bagian keputusan terbuka harus diselesaikan sebelum implementasi yang bergantung padanya.
 
-Kontrak pelaksanaan paralel tersedia di [Kontrak v1 pertanyaan dan kalender](letter-inputs-calendar-contract.md). Untuk payload, endpoint, default keputusan teknis, branch, kepemilikan file, dan strategi mock, gunakan kontrak tersebut. Bagian keputusan terbuka di bawah merekam keadaan diskusi saat rekapan dibuat; default yang sudah ditetapkan kontrak menjadi acuan kerja kecuali pengguna mengoreksinya. Persetujuan komponen yang belum tersedia tetap harus diminta.
+**Urutan pelaksanaan terbaru:** [backend dahulu, frontend setelah handoff](letter-inputs-calendar-backend-first-plan.md). Antigravity belum mulai; pembagian paralel di bagian akhir proposal adalah riwayat yang sudah digantikan. [Kontrak v1 pertanyaan dan kalender](letter-inputs-calendar-contract.md) tetap menjadi acuan payload, endpoint, dan default teknis, sedangkan branch/pembagian tugas/strategi pelaksanaan mengikuti rencana aktif. Bagian keputusan terbuka di bawah merekam keadaan diskusi saat rekapan dibuat; default yang sudah ditetapkan kontrak menjadi acuan kerja kecuali pengguna mengoreksinya. Persetujuan komponen yang belum tersedia tetap harus diminta.
 
 ## 1. Tujuan dan konteks
 

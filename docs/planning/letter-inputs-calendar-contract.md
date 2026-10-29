@@ -2,6 +2,8 @@
 
 Tanggal: 30 Oktober 2026. Contract ID: `letter-inputs-calendar/v1`.
 
+**Perubahan cara kerja:** pengguna memilih **backend dahulu, frontend setelah handoff**. Ikuti [rencana aktif backend-dahulu](letter-inputs-calendar-backend-first-plan.md). Bagian pembagian paralel, tiga branch serentak, gateway mock wajib, kepemilikan integrator PHP terpisah, dan milestone paralel di dokumen ini menjadi riwayat rancangan, bukan instruksi pelaksanaan aktif. Payload, endpoint, token, validasi, dan aturan bisnis tetap menjadi kontrak teknis sampai diperbarui secara tercatat. Antigravity memulai dari SHA handoff backend, bukan commit kontrak awal.
+
 Dokumen ini menetapkan kontrak kerja backend/frontend berdasarkan [proposal](letter-questions-work-calendar-proposal.md). Ini hasil permintaan pengguna untuk membuat kesepakatan agar agent dapat bekerja paralel; bukan laporan implementasi. Default teknis yang sebelumnya terbuka ditetapkan di sini dan dapat diubah hanya melalui prosedur perubahan kontrak pada bagian terakhir. Ketentuan ini tidak menggantikan kewajiban meminta persetujuan komponen/dependensi yang belum disetujui atau persetujuan PR.
 
 ## 1. Branch, baseline, dan penanggung jawab
