@@ -20,9 +20,18 @@ import {
     letterInitialValues,
     preserveLetterSelectionOrder,
     type LetterConfiguration,
+    type LetterDraftValue,
     type LetterResource,
 } from '@/schemas/letter';
 import { create, index, show, store, update } from '@/routes/ltr';
+import { useQuestionResolver } from '@/hooks/use-question-resolver';
+import {
+    DateRangeQuestionField,
+    MoneyQuestionField,
+    NumberQuestionField,
+    RadioQuestionField,
+} from '@/components/question-fields';
+import { toCanonicalNumber } from '@/lib/canonical-numbers';
 
 export function LetterForm({
     configuration: incomingConfiguration,
@@ -57,9 +66,19 @@ export function LetterForm({
     const continuation = (resource?.draft?.kind ?? 1) !== 1;
     const revisionOnly = resource?.draft?.kind === 2;
     const errors: Record<string, string | undefined> = form.errors;
+
+    const { resolvedFields, isResolving, resolverErrors, resolveValues } = useQuestionResolver(configuration.version);
+
+    useEffect(() => {
+        if (editing) {
+            resolveValues(form.data.values);
+        }
+    }, [editing, form.data.values, resolveValues]);
+
     useEffect(() => {
         onProcessingChange?.(form.processing);
     }, [form.processing, onProcessingChange]);
+
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
         if (busy) return;
@@ -68,6 +87,30 @@ export function LetterForm({
             gooeyToast.error('Galat', {
                 description: 'Draft belum disimpan. Periksa pesan dan isian; input tetap tersedia.',
             });
+
+        form.transform((data) => {
+            const normalizedValues = { ...data.values };
+            for (const variable of configuration.variables) {
+                const val = normalizedValues[variable.id];
+                if (variable.type === 8) {
+                    if (val && typeof val === 'object' && !Array.isArray(val)) {
+                        const range = val as { start_date?: string; end_date?: string };
+                        if (!range.start_date && !range.end_date) {
+                            normalizedValues[variable.id] = null;
+                        }
+                    }
+                } else if (variable.type === 6 || variable.type === 7) {
+                    if (typeof val === 'string' && val.trim() !== '') {
+                        normalizedValues[variable.id] = toCanonicalNumber(val) ?? val;
+                    }
+                }
+            }
+            return {
+                ...data,
+                values: normalizedValues,
+            };
+        });
+
         if (
             !submit(action.method, action.url, {
                 preserveScroll: true,
@@ -90,6 +133,32 @@ export function LetterForm({
                 .map((id) => options.find((option) => option.value === id)?.label ?? 'Pilihan tersimpan tidak tersedia')
                 .join('; ') || '—'
         );
+    };
+    const formatVariableDisplay = (
+        variable: (typeof configuration.variables)[number],
+        rawValue: (typeof form.data.values)[string] | undefined,
+    ) => {
+        if (rawValue === undefined || rawValue === null || rawValue === '') return '—';
+        if (variable.type === 4) {
+            return selectedLabel(rawValue as string | string[] | null, variable.options);
+        }
+        if (variable.type === 5) {
+            const code = typeof rawValue === 'string' ? rawValue : '';
+            const option = variable.radio?.options.find((opt) => opt.code === code);
+            return option?.label ?? (code || '—');
+        }
+        if (variable.type === 8) {
+            if (typeof rawValue === 'object' && !Array.isArray(rawValue) && rawValue !== null) {
+                const { start_date, end_date } = rawValue as { start_date?: string; end_date?: string };
+                if (!start_date && !end_date) return '—';
+                return `${start_date || '—'} s.d. ${end_date || '—'}`;
+            }
+            return String(rawValue);
+        }
+        if (Array.isArray(rawValue)) {
+            return rawValue.join('; ');
+        }
+        return String(rawValue);
     };
     if (resource && !editing)
         return (
@@ -136,9 +205,7 @@ export function LetterForm({
                         <div key={variable.id}>
                             <p className="text-sm text-muted-foreground">{variable.label}</p>
                             <p className="break-words whitespace-pre-wrap">
-                                {variable.type === 4
-                                    ? selectedLabel(resource.draft?.values[variable.id], variable.options)
-                                    : String(resource.draft?.values[variable.id] ?? '—')}
+                                {formatVariableDisplay(variable, resource.draft?.values[variable.id])}
                             </p>
                         </div>
                     ))}
@@ -347,8 +414,94 @@ export function LetterForm({
                     {configuration.variables.map((variable) => {
                         const path = `values.${variable.id}`;
                         const value = form.data.values[variable.id];
-                        const setValue = (next: string | string[]) =>
+                        const setValue = (next: LetterDraftValue) =>
                             form.setData('values', { ...form.data.values, [variable.id]: next });
+
+                        if (variable.type === 5) {
+                            return (
+                                <RadioQuestionField
+                                    key={variable.id}
+                                    id={variable.id}
+                                    path={path}
+                                    label={variable.label}
+                                    required={variable.required}
+                                    disabled={busy}
+                                    options={variable.radio?.options ?? []}
+                                    value={typeof value === 'string' ? value : null}
+                                    error={errors[path] ?? resolverErrors[`values.${variable.id}`]}
+                                    onChange={(code) => setValue(code)}
+                                />
+                            );
+                        }
+
+                        if (variable.type === 6) {
+                            return (
+                                <NumberQuestionField
+                                    key={variable.id}
+                                    id={variable.id}
+                                    path={path}
+                                    label={variable.label}
+                                    required={variable.required}
+                                    disabled={busy}
+                                    allowNegative={variable.numeric?.allow_negative ?? false}
+                                    value={typeof value === 'string' ? value : ''}
+                                    resolved={resolvedFields[variable.id]}
+                                    isResolving={isResolving}
+                                    error={errors[path] ?? resolverErrors[`values.${variable.id}`]}
+                                    onChange={(val) => setValue(val)}
+                                />
+                            );
+                        }
+
+                        if (variable.type === 7) {
+                            return (
+                                <MoneyQuestionField
+                                    key={variable.id}
+                                    id={variable.id}
+                                    path={path}
+                                    label={variable.label}
+                                    required={variable.required}
+                                    disabled={busy}
+                                    isInteger={variable.numeric?.mode === 'integer'}
+                                    allowNegative={variable.numeric?.allow_negative ?? false}
+                                    value={typeof value === 'string' ? value : ''}
+                                    resolved={resolvedFields[variable.id]}
+                                    isResolving={isResolving}
+                                    error={errors[path] ?? resolverErrors[`values.${variable.id}`]}
+                                    onChange={(val) => setValue(val)}
+                                />
+                            );
+                        }
+
+                        if (variable.type === 8) {
+                            return (
+                                <DateRangeQuestionField
+                                    key={variable.id}
+                                    id={variable.id}
+                                    path={path}
+                                    label={variable.label}
+                                    required={variable.required}
+                                    disabled={busy}
+                                    value={
+                                        typeof value === 'object' && !Array.isArray(value) && value !== null
+                                            ? (value as { start_date?: string; end_date?: string })
+                                            : null
+                                    }
+                                    resolved={resolvedFields[variable.id]}
+                                    isResolving={isResolving}
+                                    error={
+                                        errors[path] ??
+                                        errors[`${path}.start_date`] ??
+                                        errors[`${path}.end_date`] ??
+                                        resolverErrors[`values.${variable.id}`] ??
+                                        resolverErrors[`values.${variable.id}.start_date`] ??
+                                        resolverErrors[`values.${variable.id}.end_date`]
+                                    }
+                                    onChange={(range) => setValue(range)}
+                                />
+                            );
+                        }
+
                         return (
                             <Field key={variable.id} data-invalid={!!errors[path]}>
                                 <FieldLabel htmlFor={`letter-${variable.id}`}>
@@ -397,7 +550,7 @@ export function LetterForm({
                                                 preserveSelectedLabels: true,
                                             }}
                                             value={typeof value === 'string' ? value : ''}
-                                            onValueChange={setValue}
+                                            onValueChange={(val) => setValue(val)}
                                             disabled={busy}
                                             placeholder="Pilih data"
                                         />
@@ -407,7 +560,7 @@ export function LetterForm({
                                         id={`letter-${variable.id}`}
                                         name={path}
                                         value={typeof value === 'string' ? value : ''}
-                                        onValueChange={setValue}
+                                        onValueChange={(val) => setValue(val)}
                                         disabled={busy}
                                     />
                                 ) : variable.type === 2 ? (

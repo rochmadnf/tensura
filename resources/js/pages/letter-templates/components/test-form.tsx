@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { CheckmarkCircle02Icon, Download04Icon, PlayCircle02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -15,6 +16,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import { confirm, download, store } from '@/routes/lt/test';
 import type { LetterTemplateTest } from '@/schemas/letter-template-test';
+import { useQuestionResolver } from '@/hooks/use-question-resolver';
+import {
+    DateRangeQuestionField,
+    MoneyQuestionField,
+    NumberQuestionField,
+    RadioQuestionField,
+} from '@/components/question-fields';
+import { toCanonicalNumber } from '@/lib/canonical-numbers';
 
 const states = {
     missing: 'Belum ada hasil uji',
@@ -44,8 +53,11 @@ export function LetterTemplateTestForm({
     const form = useForm({
         validation_token: test.validation_token,
         values: Object.fromEntries(
-            test.variables.map((variable) => [variable.id, variable.is_multiple ? [] : '']),
-        ) as Record<string, string | string[]>,
+            test.variables.map((variable) => [
+                variable.id,
+                variable.type === 8 ? { start_date: '', end_date: '' } : variable.is_multiple ? [] : '',
+            ]),
+        ) as Record<string, any>,
         signers: Object.fromEntries(test.signer_slots.map((slot) => [slot.id, ''])) as Record<string, string>,
     });
     const confirmation = useForm({ test_token: test.test_token ?? '', confirmed: false });
@@ -53,11 +65,42 @@ export function LetterTemplateTestForm({
     const confirmErrors: Record<string, string | undefined> = confirmation.errors;
     const busy = disabled || form.processing || confirmation.processing;
     const args = { letterTemplate: templateId, version: test.id };
+
+    const { resolvedFields, isResolving, resolverErrors, resolveValues } = useQuestionResolver(test.id);
+
+    useEffect(() => {
+        resolveValues(form.data.values);
+    }, [form.data.values, resolveValues]);
+
     const showError = () =>
         gooeyToast.error('Galat', { description: 'Periksa data contoh dan status DOCX hasil uji.' });
     const handleSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
         event.preventDefault();
         if (busy || !test.can_generate) return;
+
+        form.transform((data) => {
+            const normalizedValues = { ...data.values };
+            for (const variable of test.variables) {
+                const val = normalizedValues[variable.id];
+                if (variable.type === 8) {
+                    if (val && typeof val === 'object' && !Array.isArray(val)) {
+                        const range = val as { start_date?: string; end_date?: string };
+                        if (!range.start_date && !range.end_date) {
+                            normalizedValues[variable.id] = null;
+                        }
+                    }
+                } else if (variable.type === 6 || variable.type === 7) {
+                    if (typeof val === 'string' && val.trim() !== '') {
+                        normalizedValues[variable.id] = toCanonicalNumber(val) ?? val;
+                    }
+                }
+            }
+            return {
+                ...data,
+                values: normalizedValues,
+            };
+        });
+
         form.post(store(args).url, {
             preserveScroll: true,
             onStart: () => onProcessingChange(true),
@@ -119,13 +162,96 @@ export function LetterTemplateTestForm({
                             {test.variables.map((variable) => {
                                 const path = `values.${variable.id}`;
                                 const value = form.data.values[variable.id];
-                                const setValue = (next: string | string[]) => {
+                                const setValue = (next: any) => {
                                     form.setData('values', { ...form.data.values, [variable.id]: next });
                                     form.clearErrors();
                                 };
                                 const messages = Object.entries(errors)
                                     .filter(([key]) => key === path || key.startsWith(path + '.'))
                                     .map(([, message]) => message);
+                                const resolverError =
+                                    resolverErrors[path] ??
+                                    resolverErrors[`${path}.start_date`] ??
+                                    resolverErrors[`${path}.end_date`];
+
+                                if (variable.type === 5) {
+                                    return (
+                                        <RadioQuestionField
+                                            key={variable.id}
+                                            id={`test-${variable.id}`}
+                                            path={path}
+                                            label={variable.label}
+                                            required={variable.is_required}
+                                            disabled={busy}
+                                            options={variable.radio?.options ?? []}
+                                            value={typeof value === 'string' ? value : null}
+                                            error={messages[0] ?? resolverError}
+                                            onChange={(code) => setValue(code)}
+                                        />
+                                    );
+                                }
+
+                                if (variable.type === 6) {
+                                    return (
+                                        <NumberQuestionField
+                                            key={variable.id}
+                                            id={`test-${variable.id}`}
+                                            path={path}
+                                            label={variable.label}
+                                            required={variable.is_required}
+                                            disabled={busy}
+                                            allowNegative={variable.numeric?.allow_negative ?? false}
+                                            value={typeof value === 'string' ? value : ''}
+                                            resolved={resolvedFields[variable.id]}
+                                            isResolving={isResolving}
+                                            error={messages[0] ?? resolverError}
+                                            onChange={(val) => setValue(val)}
+                                        />
+                                    );
+                                }
+
+                                if (variable.type === 7) {
+                                    return (
+                                        <MoneyQuestionField
+                                            key={variable.id}
+                                            id={`test-${variable.id}`}
+                                            path={path}
+                                            label={variable.label}
+                                            required={variable.is_required}
+                                            disabled={busy}
+                                            isInteger={variable.numeric?.mode === 'integer'}
+                                            allowNegative={variable.numeric?.allow_negative ?? false}
+                                            value={typeof value === 'string' ? value : ''}
+                                            resolved={resolvedFields[variable.id]}
+                                            isResolving={isResolving}
+                                            error={messages[0] ?? resolverError}
+                                            onChange={(val) => setValue(val)}
+                                        />
+                                    );
+                                }
+
+                                if (variable.type === 8) {
+                                    return (
+                                        <DateRangeQuestionField
+                                            key={variable.id}
+                                            id={`test-${variable.id}`}
+                                            path={path}
+                                            label={variable.label}
+                                            required={variable.is_required}
+                                            disabled={busy}
+                                            value={
+                                                typeof value === 'object' && !Array.isArray(value) && value !== null
+                                                    ? (value as { start_date?: string; end_date?: string })
+                                                    : null
+                                            }
+                                            resolved={resolvedFields[variable.id]}
+                                            isResolving={isResolving}
+                                            error={messages[0] ?? resolverError}
+                                            onChange={(range) => setValue(range)}
+                                        />
+                                    );
+                                }
+
                                 return (
                                     <Field key={variable.id} data-invalid={messages.length > 0}>
                                         <FieldLabel htmlFor={`test-${path}`}>
@@ -245,7 +371,12 @@ export function LetterTemplateTestForm({
                                 konfirmasi sebelumnya. Hasil berlaku {test.limits.expires_hours} jam.
                             </FieldDescription>
                             <Button type="submit" className="self-start" disabled={busy}>
-                                <HugeiconsIcon icon={PlayCircle02Icon} data-icon="inline-start" aria-hidden="true" />
+                                <HugeiconsIcon
+                                    icon={PlayCircle02Icon}
+                                    strokeWidth={2}
+                                    data-icon="inline-start"
+                                    aria-hidden="true"
+                                />
                                 {form.processing ? 'Membuat hasil uji…' : 'Generate Hasil Uji'}
                             </Button>
                         </FieldGroup>
@@ -269,7 +400,12 @@ export function LetterTemplateTestForm({
                             disabled={busy}
                             render={<a href={download(args, { query: { test_token: test.test_token } }).url} />}
                         >
-                            <HugeiconsIcon icon={Download04Icon} data-icon="inline-start" aria-hidden="true" />
+                            <HugeiconsIcon
+                                icon={Download04Icon}
+                                strokeWidth={2}
+                                data-icon="inline-start"
+                                aria-hidden="true"
+                            />
                             Unduh Hasil Uji DOCX
                         </Button>
                         <Button
@@ -320,6 +456,7 @@ export function LetterTemplateTestForm({
                                 >
                                     <HugeiconsIcon
                                         icon={CheckmarkCircle02Icon}
+                                        strokeWidth={2}
                                         data-icon="inline-start"
                                         aria-hidden="true"
                                     />

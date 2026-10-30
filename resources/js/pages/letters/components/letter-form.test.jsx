@@ -13,6 +13,8 @@ vi.mock('react', async (original) => ({
         state.definition ??= initial;
         return [state.definition, vi.fn()];
     },
+    useRef: (initial) => ({ current: initial }),
+    useCallback: (fn) => fn,
 }));
 vi.mock('@inertiajs/react', async (original) => ({ ...(await original()), router: { get: state.get } }));
 vi.mock('@/hooks/use-valibot-form', () => ({ useValibotForm: () => ({ form: state.form, submit: state.submit }) }));

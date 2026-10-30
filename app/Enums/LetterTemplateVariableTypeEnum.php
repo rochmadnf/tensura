@@ -27,6 +27,6 @@ enum LetterTemplateVariableTypeEnum: int
     /** @return list<array{id: int, label: string}> */
     public static function options(): array
     {
-        return collect(self::cases())->filter(fn(self $item): bool => $item->value <= 4)->map(fn(self $item): array => ['id' => $item->value, 'label' => $item->label()])->all();
+        return collect(self::cases())->map(fn(self $item): array => ['id' => $item->value, 'label' => $item->label()])->all();
     }
 }

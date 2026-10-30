@@ -4,12 +4,13 @@ Backend dikerjakan dahulu, mengikuti keputusan pengguna pada 30 Oktober 2026. Fr
 
 ## Baseline dan branch
 
-- Baseline backend: `66b303e`.
-- Branch backend: `feat/letter-inputs-calendar-api`.
-- Checkout implementasi: `/tmp/tensura-calendar-api`. Checkout utama dan perubahan pengguna di sana dipertahankan.
-- Versi setelah lima tahap backend: `0.6.5`. Fitur lengkap belum dinyatakan selesai; kenaikan minor menunggu frontend dan integrasi selesai.
-- Parent frontend harus berasal dari **HEAD backend yang diserahkan**, bukan commit proposal lama. Commit implementasi backend yang menjadi baseline frontend: `eea9a29e9f77c18cffff38ac2b8d9aa7fdc3685a`. Pembaruan setelah commit ini hanya melengkapi catatan penyerahan.
-- Branch frontend: `feat/letter-inputs-calendar-ui`. Backend tidak mengirim penugasan atau pesan ke Antigravity secara otomatis.
+- Baseline backend asal: `66b303e`.
+- Branch backend asal: `feat/letter-inputs-calendar-api`.
+- Checkout implementasi backend: `/tmp/tensura-calendar-api`. Checkout utama dan perubahan pengguna di sana dipertahankan.
+- Status merge: Backend BE1–BE5 sudah digabung ke branch `main` melalui PR #10 dengan commit merge `164b6a8c536ea9a781d7aa1e3e586efbfed4a095`.
+- Versi setelah merge: `0.6.5`.
+- Branch frontend: `feat/letter-inputs-calendar-ui` dibuat dari `main` terbaru (`164b6a8`).
+- Baseline implementasi frontend dimulai langsung dari main terbaru tersebut; seluruh kontrak, payload, token, dan endpoint backend yang dijelaskan di bawah ini sudah tersedia di branch ini.
 
 ## Yang sudah tersedia
 
@@ -50,10 +51,11 @@ Semua route terdaftar melalui `routes/work-calendar.php`, memakai middleware `we
 | `wc.events.update`    | PUT    | `WorkCalendarController::updateEvent`    |
 | `wc.events.destroy`   | DELETE | `WorkCalendarController::destroyEvent`   |
 | `wc.count`            | POST   | `WorkCalendarController::count`          |
+| `wc.index`            | GET    | `WorkCalendarController::index`          |
 | `wc.holidays.preview` | POST   | `WorkCalendarHolidayController::preview` |
 | `wc.holidays.apply`   | POST   | `WorkCalendarHolidayController::apply`   |
 
-`wc.index` dan Inertia `work-calendar/index` **belum didaftarkan** karena halaman belum tersedia. Frontend/integrasi menambahkan wrapper tersebut dan navigasinya setelah komponen siap. Jangan menambahkan halaman placeholder produksi hanya agar route tersedia.
+`wc.index` dan halaman Inertia `work-calendar/index` telah didaftarkan dan terhubung ke antarmuka Kalender Kerja pada branch `feat/letter-inputs-calendar-ui`.
 
 Gunakan Wayfinder dari route aktual saat integrasi. File generated tidak ditulis atau di-commit secara manual. Vite plugin existing menghasilkan route; `php artisan wayfinder:generate --with-form --no-interaction` dapat dipakai mengikuti workflow proyek.
 

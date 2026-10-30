@@ -2,15 +2,21 @@ import { defineRequest } from '@/lib/request';
 import {
     array,
     boolean,
+    integer,
+    literal,
     maxLength,
+    maxValue,
+    minValue,
     nonEmpty,
     nullable,
     number,
     object,
+    optional,
     pipe,
     regex,
     string,
     trim,
+    union,
     type InferInput,
 } from 'valibot';
 
@@ -28,6 +34,49 @@ const employeeAttributeSchema = object({
 });
 export type EmployeeAttributeSetting = InferInput<typeof employeeAttributeSchema>;
 export type EmployeeAttributeOption = { id: string; label: string; suffix: string; type: string };
+
+const radioOptionSchema = object({
+    id: optional(nullable(string())),
+    code: pipe(
+        string('Kode opsi harus berupa teks.'),
+        trim(),
+        nonEmpty('Kode opsi wajib diisi.'),
+        maxLength(100, 'Kode opsi maksimal 100 karakter.'),
+        regex(/^[a-z][a-z0-9_]*$/, 'Gunakan huruf kecil, angka, dan garis bawah; awali dengan huruf.'),
+    ),
+    label: pipe(
+        string('Label opsi harus berupa teks.'),
+        trim(),
+        nonEmpty('Label opsi wajib diisi.'),
+        maxLength(100, 'Label opsi maksimal 100 karakter.'),
+    ),
+});
+export type RadioOption = InferInput<typeof radioOptionSchema>;
+
+const radioConfigurationSchema = object({
+    selected_text: pipe(
+        string('Tanda terpilih harus berupa teks.'),
+        trim(),
+        nonEmpty('Tanda terpilih wajib diisi.'),
+        maxLength(100, 'Tanda terpilih maksimal 100 karakter.'),
+    ),
+    options: array(radioOptionSchema),
+});
+export type RadioConfiguration = InferInput<typeof radioConfigurationSchema>;
+
+const numericConfigurationSchema = object({
+    mode: union([literal('integer'), literal('decimal')]),
+    scale: pipe(number(), integer(), minValue(0), maxValue(6)),
+    allow_negative: boolean(),
+});
+export type NumericConfiguration = InferInput<typeof numericConfigurationSchema>;
+
+const dateRangeConfigurationSchema = object({
+    basis: union([literal('calendar_days'), literal('working_days')]),
+    date_format: pipe(string(), trim(), nonEmpty('Format tanggal wajib diisi.'), maxLength(100)),
+});
+export type DateRangeConfiguration = InferInput<typeof dateRangeConfigurationSchema>;
+
 const variableSchema = object({
     id: nullable(string()),
     name: placeholder,
@@ -52,6 +101,9 @@ const variableSchema = object({
             date_format: nullable(string()),
         }),
     ),
+    radio: optional(nullable(radioConfigurationSchema)),
+    numeric: optional(nullable(numericConfigurationSchema)),
+    date_range: optional(nullable(dateRangeConfigurationSchema)),
 });
 const slotSchema = object({
     id: nullable(string()),

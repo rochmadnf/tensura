@@ -111,6 +111,23 @@ export default function LetterShow({
                                 tersebut secara eksplisit pada draft, lalu periksa ulang.
                             </FieldDescription>
                         )}
+                        {draft?.calendar_state && draft.calendar_state.state !== 'current' && (
+                            <div className="flex items-center gap-2">
+                                <Badge
+                                    variant={draft.calendar_state.state === 'stale' ? 'warning' : 'destructive'}
+                                    size="sm"
+                                >
+                                    {draft.calendar_state.state === 'stale'
+                                        ? 'Kalender Berubah'
+                                        : 'Kalender Belum Tersedia'}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                    {draft.calendar_state.state === 'stale'
+                                        ? 'Pola hari kerja tahun terkait telah berubah. Segarkan data master untuk menghitung ulang durasi surat.'
+                                        : 'Pengaturan tahun kalender untuk rentang tanggal surat belum dikonfigurasi.'}
+                                </span>
+                            </div>
+                        )}
                         {draft?.reasons.map((reason) => (
                             <FieldDescription key={reason}>{reason}</FieldDescription>
                         ))}

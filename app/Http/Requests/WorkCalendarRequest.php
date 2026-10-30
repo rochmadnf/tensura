@@ -10,6 +10,10 @@ class WorkCalendarRequest extends FormRequest
 {
     protected function failedValidation(Validator $validator): void
     {
+        if ($this->routeIs('wc.index') && !$this->expectsJson()) {
+            parent::failedValidation($validator);
+        }
+
         throw new HttpResponseException(response()->json(['code' => 'validation_failed', 'message' => 'Periksa isian kalender.', 'errors' => (object) $validator->errors()->messages()], 422));
     }
 

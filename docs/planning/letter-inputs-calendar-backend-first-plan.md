@@ -141,17 +141,50 @@ Frontend kemudian memakai endpoint nyata dan Wayfinder dari SHA handoff. Mock bu
 - [x] BE4 selesai: helper PHP, fixture/cache/parser, preview/apply terikat aktor/tahun/revision, konflik dan idempotensi. Empat test HTTP impor lulus; apply bersamaan dibuktikan pada suite PostgreSQL. Struktur sumber live 2026 diperiksa terpisah.
 - [x] BE5 selesai: rentang inklusif, snapshot parsial/frozen, stale/missing, refresh terkonfirmasi, serta lock dan pemeriksaan ulang sebelum klaim nomor. Regresi akhir 610 test / 5.051 assertion lulus; 38 test khusus dilewati runner reguler. Lima test kalender dijalankan setelahnya dan lulus. Suite konkurensi Surat terpisah: 14 test / 209 assertion lulus.
 - [x] Kontrak aktual dan [handoff backend](letter-inputs-calendar-backend-handoff.md) tersedia; SHA implementasi backend: `eea9a29e9f77c18cffff38ac2b8d9aa7fdc3685a`.
-- [ ] Pengguna melanjutkan fase frontend dan Antigravity mulai dari SHA handoff.
-- [ ] Frontend dan integrasi akhir selesai; uji visual pengguna tetap dilaporkan terpisah.
+- [x] Backend BE1–BE5 digabung ke `main` melalui PR #10 (commit merge `164b6a8c536ea9a781d7aa1e3e586efbfed4a095`).
+- [x] Fase frontend dimulai oleh Antigravity pada branch `feat/letter-inputs-calendar-ui` dari `main` terbaru (`164b6a8`).
+- [x] Implementasi frontend FE1–FE6 selesai: tipe & schema, editor konfigurasi templat (radio, numeric, money, date_range), form draft Surat & generate uji dengan feedback resolver terbilang, halaman Kalender Kerja Inertia (4 tampilan: Bulan, Minggu, Hari, Agenda), alur ambil hari libur nasional preview & apply, integrasi status kalender surat, serta aktivasi enum jenis 1–8 pada `LetterTemplateVariableTypeEnum::options()`.
+- [ ] Pengujian visual oleh pengguna melalui panduan `docs/tests/letter/tahap-11.md`.
+
+## 10. Rencana Pelaksanaan Frontend (Antigravity)
+
+1. **Tahap FE1 — Schema, Tipe, dan Kompatibilitas Token** [Selesai]:
+    - Pembaruan schema TS: `letter-template-configuration.ts`, `letter-template-test.ts`, `letter.ts`, serta definisi tipe kalender `work-calendar.ts`.
+    - Dukungan token bersuffix titik dua (`:`) pada `CopyPlaceholder` dan katalog token.
+    - Penanganan format tampilan rentang tanggal (`{start_date, end_date}`) pada pembacaan draft Surat agar tidak muncul `[object Object]`.
+2. **Tahap FE2 — Editor Pertanyaan Baru pada Templat Surat** [Selesai]:
+    - Editor konfigurasi untuk Radio (opsi relasional, code unik, token per opsi, default `selected_text` ✔).
+    - Editor konfigurasi Angka dan Nominal (mode integer/decimal, scale, izinkan negatif).
+    - Editor konfigurasi Rentang Tanggal (basis hari kalender/hari kerja, format tanggal).
+    - Penamaan variabel otomatis dan kode opsi yang dapat diubah manual tanpa tertimpa saat label diubah.
+3. **Tahap FE3 — Form Draft Surat, Generate Uji, dan Feedback Terbilang** [Selesai]:
+    - Integrasi input Radio, Angka, Nominal, dan Rentang pada form draft Surat dan form generate uji.
+    - Feedback langsung melalui `lt.values.resolve` dengan debounce, pembatalan/pengabaian response lama, status menghitung, dan penanganan validasi tanpa menghilangkan input pengguna.
+    - Format nominal Indonesia di form dikonversi eksplisit ke bentuk kanonis saat request.
+4. **Tahap FE4 — Halaman Kalender Kerja (Bulan, Minggu, Hari, Agenda) dan Navigasi** [Selesai]:
+    - Registrasi wrapper Inertia `wc.index` pada route/controller dan penambahan menu Kalender Kerja di sidebar Data Master.
+    - Implementasi 4 tampilan kalender sesuai referensi visual token/komponen proyek.
+    - Pengelolaan tahun kalender, pola mingguan kerja, dan konfirmasi kesiapan tahun.
+    - Pengelolaan kegiatan biasa, libur, dan hari kerja pengganti beserta penanganan CAS/revision conflict.
+5. **Tahap FE5 — Tinjauan Impor Libur Nasional Indonesia** [Selesai]:
+    - Tombol pengambilan libur nasional dengan alur: request preview -> dialog tinjauan/pemilihan item -> apply terkonfirmasi.
+    - Penandaan status item (new, duplicate, conflict) dan pencegahan duplikasi/penimpaan data manual.
+6. **Tahap FE6 — Integrasi Kalender Kerja pada Alur Surat dan Verifikasi Akhir** [Selesai]:
+    - Tampilan status `calendar_state` (current/stale/missing) pada draft surat beserta alasan penahanan penerbitan.
+    - Alur refresh dependensi melalui preview dan apply existing (`ltr.masters.preview` / `ltr.masters.apply`).
+    - Aktivasi jenis baru 1–8 pada `LetterTemplateVariableTypeEnum::options()`.
+    - Checklist pengujian visual pada `docs/tests/letter/tahap-11.md`.
+    - Pemeriksaan kualitas: `pnpm check:ui`, `pnpm types:check`, test PHP dan vitest, serta Pint dan format Vite Plus.
 
 ## 9. Checkpoint implementasi
 
-| Tahap | Commit    | Versi | Kemampuan web pada tahap backend                                                           |
-| ----- | --------- | ----- | ------------------------------------------------------------------------------------------ |
-| BE1   | `0cea613` | 0.6.1 | Halaman existing tetap; jenis baru belum ditawarkan                                        |
-| BE2   | `0a16afc` | 0.6.2 | Backend dokumen/resolver siap; editor baru belum tersedia                                  |
-| BE3   | `526f4ed` | 0.6.3 | Endpoint kalender siap; belum ada menu/halaman kalender                                    |
-| BE4   | `4b03821` | 0.6.4 | Endpoint preview/apply libur siap; tombol menunggu frontend                                |
-| BE5   | `eea9a29` | 0.6.5 | Backend Surat siap mengunci snapshot kalender; tampilan state/field baru menunggu frontend |
+| Tahap | Commit    | Versi | Kemampuan web pada tahap backend                                                                                                                 |
+| ----- | --------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| BE1   | `0cea613` | 0.6.1 | Halaman existing tetap; jenis baru belum ditawarkan                                                                                              |
+| BE2   | `0a16afc` | 0.6.2 | Backend dokumen/resolver siap; editor baru belum tersedia                                                                                        |
+| BE3   | `526f4ed` | 0.6.3 | Endpoint kalender siap; belum ada menu/halaman kalender                                                                                          |
+| BE4   | `4b03821` | 0.6.4 | Endpoint preview/apply libur siap; tombol menunggu frontend                                                                                      |
+| BE5   | `eea9a29` | 0.6.5 | Backend Surat siap mengunci snapshot kalender; tampilan state/field baru menunggu frontend                                                       |
+| FE    | `HEAD`    | 0.7.0 | Frontend terintegrasi penuh: konfigurasi pertanyaan baru, form surat/uji, kalender kerja 4 tampilan, impor libur, dan verifikasi status kalender |
 
-Semua pesan commit menggunakan bahasa Inggris. Pengujian visual belum dilakukan dan tidak dicentang. Perubahan pengguna pada checkout utama tidak disertakan. Fase frontend belum dimulai otomatis.
+Semua pesan commit menggunakan bahasa Inggris. Pengujian visual disiapkan pada tahap 11 untuk pengguna. Perubahan pengguna pada checkout utama tetap dijaga.

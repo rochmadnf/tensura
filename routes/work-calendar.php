@@ -11,6 +11,7 @@ Route::middleware('auth')->group(function (): void {
 
 Route::middleware(['auth'])->prefix('work-calendar')->name('wc.')->group(function (): void {
     $controller = WorkCalendarController::class;
+    Route::get('', [$controller, 'index'])->name('index');
     Route::get('data', [$controller, 'data'])->name('data');
     Route::post('years', [$controller, 'store'])->name('years.store');
     Route::patch('years/{year}', [$controller, 'update'])->whereNumber('year')->name('years.update');

@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useRef } from 'react';
 import { useValibotForm } from '@/hooks/use-valibot-form';
 import {
     letterTemplateVariableItemSchema,
@@ -14,6 +14,7 @@ import { FormActions } from '@/components/form-actions';
 import { gooeyToast } from '@/components/ui/goey-toaster';
 import variables from '@/routes/lt/configuration/variables';
 import { ConfigurationVariableDetails } from './configuration-variable';
+import { slugifyVariable } from '@/lib/variable-slug';
 
 export function ConfigurationVariableRow({
     variable,
@@ -40,6 +41,8 @@ export function ConfigurationVariableRow({
     const busy = disabled || form.processing;
     const id = `variable-form-${variable.id ?? 'new'}`;
     const employee = value.type === 4 && value.option_source === 2 && !value.is_multiple;
+    const manualNameRef = useRef(Boolean(variable.id && variable.name));
+
     function patch(changes: Partial<ConfigurationVariable>) {
         form.setData('item', { ...value, ...changes });
         form.clearErrors();
@@ -62,7 +65,10 @@ export function ConfigurationVariableRow({
                             maxLength={100}
                             disabled={busy}
                             aria-invalid={!!errors['item.name']}
-                            onChange={(event) => patch({ name: event.target.value })}
+                            onChange={(event) => {
+                                manualNameRef.current = true;
+                                patch({ name: event.target.value });
+                            }}
                             placeholder="Cth: nama_variabel"
                         />
                         <FieldError>{errors['item.name']}</FieldError>
@@ -80,7 +86,17 @@ export function ConfigurationVariableRow({
                             maxLength={100}
                             disabled={busy}
                             aria-invalid={!!errors['item.label']}
-                            onChange={(event) => patch({ label: event.target.value })}
+                            onChange={(event) => {
+                                const newLabel = event.target.value;
+                                const isNameAuto =
+                                    !manualNameRef.current ||
+                                    !value.name ||
+                                    value.name === slugifyVariable(value.label);
+                                patch({
+                                    label: newLabel,
+                                    ...(isNameAuto && !variable.id ? { name: slugifyVariable(newLabel) } : {}),
+                                });
+                            }}
                             placeholder="Cth: Kamu sehat hari ini?"
                         />
                         <FieldError>{errors['item.label']}</FieldError>
@@ -99,17 +115,36 @@ export function ConfigurationVariableRow({
                                 items={options.types.map((type) => ({ value: String(type.id), label: type.label }))}
                                 value={String(value.type)}
                                 disabled={busy}
-                                onValueChange={(type) =>
+                                onValueChange={(type) => {
+                                    const numType = Number(type);
                                     patch({
-                                        type: Number(type),
+                                        type: numType,
                                         option_source: null,
                                         reference_group: null,
                                         is_multiple: false,
                                         columns: [],
                                         default_text: null,
                                         employee_attributes: [],
-                                    })
-                                }
+                                        radio:
+                                            numType === 5
+                                                ? {
+                                                      selected_text: '✔',
+                                                      options: [
+                                                          { id: null, code: '', label: '' },
+                                                          { id: null, code: '', label: '' },
+                                                      ],
+                                                  }
+                                                : null,
+                                        numeric:
+                                            numType === 6
+                                                ? { mode: 'integer', scale: 0, allow_negative: false }
+                                                : numType === 7
+                                                  ? { mode: 'decimal', scale: 2, allow_negative: false }
+                                                  : null,
+                                        date_range:
+                                            numType === 8 ? { basis: 'working_days', date_format: 'd-m-Y' } : null,
+                                    });
+                                }}
                             />
                         </Field>
                         <Field orientation="horizontal" className="w-auto">
@@ -125,7 +160,7 @@ export function ConfigurationVariableRow({
                     <FieldError>{errors['item.type'] || errors['item.is_required']}</FieldError>
                 </TableCell>
                 <TableCell className="min-w-44">
-                    {value.is_multiple ? (
+                    {value.is_multiple || [5, 6, 7, 8].includes(value.type) ? (
                         'Tidak berlaku'
                     ) : employee ? (
                         'Per atribut'
@@ -194,7 +229,7 @@ export function ConfigurationVariableRow({
                     </form>
                 </TableCell>
             </TableRow>
-            {value.type === 4 && (
+            {[4, 5, 6, 7, 8].includes(value.type) && (
                 <TableRow>
                     <TableCell colSpan={6} className="bg-muted/30 p-4 whitespace-normal">
                         <ConfigurationVariableDetails

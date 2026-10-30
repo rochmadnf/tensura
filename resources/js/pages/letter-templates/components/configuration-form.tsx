@@ -33,6 +33,9 @@ const newVariable = (): ConfigurationVariable => ({
     default_text: null,
     employee_attributes: [],
     columns: [],
+    radio: null,
+    numeric: null,
+    date_range: null,
 });
 
 export function LetterTemplateConfigurationForm({
@@ -236,7 +239,7 @@ export function LetterTemplateConfigurationForm({
                                             </span>
                                         </TableCell>
                                         <TableCell className="max-w-80 whitespace-pre-wrap">
-                                            {variable.is_multiple
+                                            {variable.is_multiple || [5, 6, 7, 8].includes(variable.type)
                                                 ? 'Tidak berlaku'
                                                 : variable.option_source === 2
                                                   ? 'Per atribut'
@@ -353,6 +356,118 @@ export function LetterTemplateConfigurationForm({
                                                         ))}
                                                     </div>
                                                 )}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                    {variable.type === 5 && variable.radio && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
+                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                    Tanda terpilih:{' '}
+                                                    <span className="font-semibold text-foreground">
+                                                        {variable.radio.selected_text}
+                                                    </span>
+                                                </p>
+                                                <div className="flex flex-col gap-2">
+                                                    {variable.radio.options.map((opt) => (
+                                                        <div
+                                                            key={opt.id ?? opt.code}
+                                                            className="flex flex-wrap items-center gap-3 text-sm"
+                                                        >
+                                                            <CopyPlaceholder name={`${variable.name}:${opt.code}`} />
+                                                            <span>{opt.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                    {variable.type === 6 && variable.numeric && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
+                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                    Mode:{' '}
+                                                    {variable.numeric.mode === 'decimal'
+                                                        ? `Desimal (${variable.numeric.scale} digit)`
+                                                        : 'Bulat (Integer)'}{' '}
+                                                    · Negatif:{' '}
+                                                    {variable.numeric.allow_negative ? 'Diizinkan' : 'Ditolak'}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-4 text-sm">
+                                                    <CopyPlaceholder
+                                                        name={variable.name}
+                                                        label="Salin variabel nilai"
+                                                    />
+                                                    <CopyPlaceholder
+                                                        name={`${variable.name}:terbilang`}
+                                                        label="Salin variabel terbilang"
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                    {variable.type === 7 && variable.numeric && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
+                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                    Mode:{' '}
+                                                    {variable.numeric.mode === 'decimal'
+                                                        ? 'Desimal (Rupiah dan Sen)'
+                                                        : 'Bulat (Rupiah penuh)'}{' '}
+                                                    · Negatif:{' '}
+                                                    {variable.numeric.allow_negative ? 'Diizinkan' : 'Ditolak'}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-4 text-sm">
+                                                    <CopyPlaceholder
+                                                        name={variable.name}
+                                                        label="Salin variabel nominal"
+                                                    />
+                                                    <CopyPlaceholder
+                                                        name={`${variable.name}:terbilang`}
+                                                        label="Salin variabel terbilang"
+                                                    />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                    {variable.type === 8 && variable.date_range && (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={configuration.editable ? 6 : 5}
+                                                className="whitespace-normal"
+                                            >
+                                                <p className="mb-2 text-sm text-muted-foreground">
+                                                    Basis:{' '}
+                                                    {variable.date_range.basis === 'working_days'
+                                                        ? 'Hari Kerja (Kalender Kerja)'
+                                                        : 'Hari Kalender'}{' '}
+                                                    · Format: {variable.date_range.date_format}
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-3 text-sm">
+                                                    <CopyPlaceholder name={`${variable.name}:mulai`} label="Mulai" />
+                                                    <CopyPlaceholder name={`${variable.name}:akhir`} label="Akhir" />
+                                                    <CopyPlaceholder
+                                                        name={`${variable.name}:jumlah_hari`}
+                                                        label="Jumlah hari"
+                                                    />
+                                                    <CopyPlaceholder
+                                                        name={`${variable.name}:terbilang`}
+                                                        label="Terbilang hari"
+                                                    />
+                                                    <CopyPlaceholder
+                                                        name={`${variable.name}:durasi`}
+                                                        label="Durasi lengkap"
+                                                    />
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     )}

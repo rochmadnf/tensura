@@ -6,9 +6,19 @@ use App\Http\Requests\WorkCalendarRequest;
 use App\Services\WorkCalendar\CountWorkCalendarDays;
 use App\Services\WorkCalendar\ManageWorkCalendar;
 use Illuminate\Http\JsonResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class WorkCalendarController extends Controller
 {
+    public function index(WorkCalendarRequest $request, ManageWorkCalendar $calendar): Response
+    {
+        return Inertia::render('work-calendar/index', [
+            'page' => ['id' => 'work-calendar'],
+            'calendarData' => $calendar->data($request->validated()),
+        ]);
+    }
+
     public function data(WorkCalendarRequest $request, ManageWorkCalendar $calendar): JsonResponse
     {
         return response()->json(['data' => $calendar->data($request->validated())]);

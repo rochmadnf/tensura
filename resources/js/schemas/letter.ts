@@ -23,22 +23,51 @@ import {
 } from 'valibot';
 import { defineRequest } from '@/lib/request';
 
+export type LetterConfigurationVariable = {
+    id: string;
+    name: string;
+    label: string;
+    type: number;
+    required: boolean;
+    multiple: boolean;
+    options: { value: string; label: string }[];
+    radio?: {
+        selected_text: string;
+        options: { id: string | null; code: string; label: string }[];
+    } | null;
+    numeric?: {
+        mode: 'integer' | 'decimal';
+        scale: number;
+        allow_negative: boolean;
+    } | null;
+    date_range?: {
+        basis: 'calendar_days' | 'working_days';
+        date_format: string;
+    } | null;
+};
+
 export type LetterConfiguration = {
     version: string;
     number: number;
     date_format: string;
     classification: string;
-    variables: {
-        id: string;
-        name: string;
-        label: string;
-        type: number;
-        required: boolean;
-        multiple: boolean;
-        options: { value: string; label: string }[];
-    }[];
+    variables: LetterConfigurationVariable[];
     signers: { id: string; label: string; options: { value: string; label: string }[] }[];
 };
+
+export type DateRangeValue = {
+    start_date: string;
+    end_date: string;
+};
+
+export type LetterDraftValue = string | string[] | DateRangeValue | null;
+
+export type LetterCalendarState = {
+    state: 'current' | 'stale' | 'missing';
+    years?: { year: number; work_revision: number }[];
+    changed_years?: number[];
+};
+
 export type LetterDraft = {
     kind?: number;
     subject?: string;
@@ -54,7 +83,7 @@ export type LetterDraft = {
     number_month: number;
     page_number: number | null;
     sequence_number: number | null;
-    values: Record<string, string | string[] | null>;
+    values: Record<string, LetterDraftValue>;
     signers: Record<string, string | null>;
     complete: boolean;
     resolved: Record<string, string>;
@@ -63,6 +92,9 @@ export type LetterDraft = {
     can_adjust: boolean;
     can_refresh: boolean;
     reasons: string[];
+    calendar_state?: LetterCalendarState | null;
+    question_results?: Record<string, unknown>;
+    held_reasons?: string[];
 };
 export type LetterResource = {
     official?: import('@/schemas/letter-preview').LetterOfficial;
@@ -103,6 +135,10 @@ export type LetterAudit = {
 
 const numeric = (max: number) => pipe(string(), nonEmpty(), toNumber(), integer(), minValue(1), maxValue(max));
 export function createLetterSchema(configuration: LetterConfiguration) {
+    const dateRangeSchema = object({
+        start_date: string(),
+        end_date: string(),
+    });
     const base = object({
         template: pipe(string(), uuid()),
         template_version: pipe(string(), uuid()),
@@ -117,7 +153,7 @@ export function createLetterSchema(configuration: LetterConfiguration) {
         number_month: numeric(12),
         page_number: nullable(numeric(2147483647)),
         sequence_number: nullable(numeric(99)),
-        values: record(string(), union([string(), array(string()), nullable(string())])),
+        values: record(string(), union([string(), array(string()), dateRangeSchema, nullable(string())])),
         signers: record(string(), nullable(string())),
     });
     let schema: GenericSchema<InferInput<typeof base>, InferOutput<typeof base>> = base;
@@ -128,11 +164,24 @@ export function createLetterSchema(configuration: LetterConfiguration) {
                 check(
                     (input) => {
                         const value = input.values[variable.id];
-                        if (!variable.required && (value === undefined || value === null || value === '')) return true;
+                        const isRange = variable.type === 8;
+                        if (!variable.required) {
+                            if (value === undefined || value === null || value === '') return true;
+                            if (isRange && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                                const range = value as { start_date?: string; end_date?: string };
+                                if (!range.start_date && !range.end_date) return true;
+                            }
+                        }
                         if (variable.multiple)
                             return (
                                 Array.isArray(value) && value.length <= 100 && (!variable.required || value.length > 0)
                             );
+                        if (isRange) {
+                            if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+                            const range = value as { start_date?: string; end_date?: string };
+                            if (!range.start_date || !range.end_date) return false;
+                            return range.start_date <= range.end_date;
+                        }
                         return (
                             typeof value === 'string' &&
                             (!variable.required || value.trim().length > 0) &&
@@ -201,11 +250,18 @@ export function letterInitialValues(
         page_number: draft?.page_number ? String(draft.page_number) : (null as string | null),
         sequence_number: draft?.sequence_number ? String(draft.sequence_number) : (null as string | null),
         values: Object.fromEntries(
-            configuration.variables.map((variable) => [
-                variable.id,
-                draft?.values[variable.id] ?? (variable.multiple ? [] : ''),
-            ]),
-        ) as Record<string, string | string[] | null>,
+            configuration.variables.map((variable) => {
+                const existing = draft?.values[variable.id];
+                if (variable.type === 8) {
+                    const fallback =
+                        typeof existing === 'object' && existing !== null && !Array.isArray(existing)
+                            ? existing
+                            : { start_date: '', end_date: '' };
+                    return [variable.id, fallback];
+                }
+                return [variable.id, existing ?? (variable.multiple ? [] : '')];
+            }),
+        ) as Record<string, LetterDraftValue>,
         signers: Object.fromEntries(
             configuration.signers.map((slot) => [slot.id, draft?.signers[slot.id] ?? '']),
         ) as Record<string, string | null>,

@@ -23,10 +23,13 @@ export function CopyPlaceholder({ name, label }: { name: string; label?: string 
                 variant="outline"
                 size="sm"
                 onClick={copy}
-                disabled={!/^(?:\/?blok:)?[a-z][a-z0-9_]*$/.test(name) || name.replace(/^\/?blok:/, '').length > 100}
+                disabled={
+                    !/^(?:\/?blok:)?[a-z][a-z0-9_]*(?::[a-z0-9_]+)?$/.test(name) ||
+                    name.replace(/^\/?blok:/, '').length > 100
+                }
                 aria-label={label ?? `Salin variabel ${name}`}
             >
-                <HugeiconsIcon icon={Copy01Icon} data-icon="inline-start" aria-hidden="true" />
+                <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} data-icon="inline-start" aria-hidden="true" />
                 {label ?? 'Salin'}
             </Button>
         </div>

@@ -1,4 +1,26 @@
 export type TestOption = { id: string; label: string };
+export type LetterTemplateTestVariable = {
+    id: string;
+    label: string;
+    type: number;
+    is_required: boolean;
+    is_multiple: boolean;
+    options: TestOption[];
+    radio?: {
+        selected_text: string;
+        options: { id: string | null; code: string; label: string }[];
+    } | null;
+    numeric?: {
+        mode: 'integer' | 'decimal';
+        scale: number;
+        allow_negative: boolean;
+    } | null;
+    date_range?: {
+        basis: 'calendar_days' | 'working_days';
+        date_format: string;
+    } | null;
+};
+
 export type LetterTemplateTest = {
     fonts?: import('./document-font').DocumentFontReport;
     id: string;
@@ -18,13 +40,6 @@ export type LetterTemplateTest = {
         max_output_bytes: number;
         max_pdf_bytes: number;
     };
-    variables: {
-        id: string;
-        label: string;
-        type: number;
-        is_required: boolean;
-        is_multiple: boolean;
-        options: TestOption[];
-    }[];
+    variables: LetterTemplateTestVariable[];
     signer_slots: { id: string; label: string; options: TestOption[] }[];
 };

@@ -22,6 +22,7 @@ import {
     BookUserIcon,
     UserDollarIcon,
     Archive01Icon,
+    Calendar03Icon,
 } from '@hugeicons/core-free-icons';
 import { Link, usePage } from '@inertiajs/react';
 import { NavMain } from './nav-main';
@@ -30,6 +31,7 @@ import { about, dashboard } from '@/routes';
 import { NavGroups } from './nav-groups';
 import ln from '@/routes/ln';
 import lt from '@/routes/lt';
+import wc from '@/routes/wc';
 import jt from '@/routes/jt';
 import empl from '@/routes/empl';
 import { index as archiveIndex } from '@/routes/archives';
@@ -79,6 +81,12 @@ const navigations = {
                 name: 'Daftar Referensi',
                 url: ref.index().url,
                 icon: <HugeiconsIcon icon={FolderDetailsReferenceIcon} strokeWidth={2} />,
+            },
+            {
+                id: 'a3063dd5-9610-482d-8e42-7cf21c56ab41',
+                name: 'Kalender Kerja',
+                url: wc.index().url,
+                icon: <HugeiconsIcon icon={Calendar03Icon} strokeWidth={2} />,
             },
         ],
     },
